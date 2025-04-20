@@ -152,26 +152,36 @@ async def pints(interaction: discord.Interaction):
 
 
 #See everyone's pints
-"""
-@bot.tree.command(name="allpints", description="See everyone's current pint debts.")
+@bot.tree.command(name="allpints", description="See everyone's total pint debts.")
 async def allpints(interaction: discord.Interaction):
-    summary = {}
-    for debtor, creditors in debts.items():
-        for creditor, entries in creditors.items():
-            summary[(debtor, creditor)] = summary.get((debtor, creditor), Fraction(0)) + sum(entry[0] for entry in entries)
-
-    if not summary:
-        await interaction.response.send_message("No one owes anyone pints. The pint economy is in shambles.")
+    # Call the external API to fetch all debts
+    try:
+        response = requests.get(f"{CONST_API_URL}/allpints")
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.RequestException as e:
+        await interaction.response.send_message(f"Error fetching all pint debts: {e}")
         return
 
-    lines = []
-    for (debtor_id, creditor_id), total in summary.items():
-        debtor = await bot.fetch_user(debtor_id)
-        creditor = await bot.fetch_user(creditor_id)
-        lines.append(f"{debtor.display_name} owes {creditor.display_name}: {pint_formatter(total)}")
+    # Check if the API returned an empty response
+    if not data:
+        await interaction.response.send_message("No pint debts found. The pint economy is in shambles.")
+        return
 
+    # Format the response
+    lines = ["__**TOTAL PINT DEBTS:**__"]
+    for user_id, totals in data.items():
+        try:
+            user = await bot.fetch_user(int(user_id))  # Fetch the user's username
+            user_name = user.display_name
+        except discord.NotFound:
+            user_name = f"Unknown User ({user_id})"
+
+        owes = pint_formatter(totals["owes"])
+        is_owed = pint_formatter(totals["is_owed"])
+        lines.append(f"**{user_name}** - Owes: {owes}. Is Owed: {is_owed}")
+
+    # Send the formatted response
     await interaction.response.send_message("\n".join(lines))
-"""
-    
 # Replace with your bot token
 bot.run(CONST_BOT_TOKEN)

@@ -11,7 +11,6 @@ from OweRequest import OweRequest
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
 
-
 # Set up FastAPI
 app = FastAPI()
 
@@ -143,5 +142,29 @@ async def pints(user_id: int, debts: dict = Depends(get_debts)):
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
         return {"message": "No debts found for this user. That's kind of cringe, get some pint debt bro."}
+
+    return result
+
+@app.get("/allpints")
+async def all_pints(debts: dict = Depends(get_debts)):
+    result = {}
+
+    for debtor_id, creditors in debts.items():
+        total_owed_by = sum(
+            sum(Fraction(entry["amount"]) for entry in entries)
+            for entries in creditors.values()
+        )
+        if debtor_id not in result:
+            result[debtor_id] = {"owes": str(total_owed_by), "is_owed": "0"}
+
+    for debtor_id, creditors in debts.items():
+        for creditor_id, entries in creditors.items():
+            total_owed_to = sum(Fraction(entry["amount"]) for entry in entries)
+            if creditor_id not in result:
+                result[creditor_id] = {"owes": "0", "is_owed": str(total_owed_to)}
+            else:
+                result[creditor_id]["is_owed"] = str(
+                    Fraction(result[creditor_id]["is_owed"]) + total_owed_to
+                )
 
     return result
