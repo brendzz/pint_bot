@@ -18,23 +18,7 @@
         }
       },
       "preferences": {
-        "use_unicode": false
-      }
-    },
-    "147073087358238720": {
-      "debts": {
-        "creditors": {
-          "1176626160482914385": [
-            {
-              "amount": "2",
-              "reason": "",
-              "timestamp": "20-04-2025"
-            }
-          ]
-        }
-      },
-      "preferences": {
-        "use_unicode": false
+        "use_unicode": true
       }
     },
     "2": {
@@ -305,15 +289,35 @@
         "creditors": {
           "38": [
             {
-              "amount": "3/2",
+              "amount": "10/3",
               "reason": "dh",
-              "timestamp": "20-04-2025"
+              "timestamp": "24-04-2025"
+            },
+            {
+              "amount": "2/3",
+              "reason": "dh",
+              "timestamp": "26-04-2025"
+            },
+            {
+              "amount": "8/3",
+              "reason": "dh",
+              "timestamp": "26-04-2025"
+            },
+            {
+              "amount": "13/6",
+              "reason": "dh",
+              "timestamp": "26-04-2025"
+            },
+            {
+              "amount": "2/3",
+              "reason": "dh",
+              "timestamp": "26-04-2025"
             }
           ]
         }
       },
       "preferences": {
-        "use_unicode": false
+        "use_unicode": true
       }
     }
   }

@@ -5,9 +5,9 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import json
-from mixed_number_to_fraction import mixed_number_to_fraction
+from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
-from models_api import PintEconomy, UserData, DebtEntry, OweRequest, UserPreferences
+from models import PintEconomy, UserData, DebtEntry, OweRequest, UserPreferences, SettleRequest, SetUnicodePreferenceRequest
 from data_manager import load_data, save_data
 
 # Setup 
@@ -17,52 +17,66 @@ load_dotenv(".env")
 # Set up FastAPI
 app = FastAPI()
 
-CURRENCY_NAME = os.environ.get("CURRENCY_NAME","pint")
-QUANTIZED_FRACTIONS = os.environ.get("QUANTIZED_FRACTIONS","[1, 2, 3, 6]")
+SMALLEST_UNIT = os.environ.get("SMALLEST_UNIT","1/6")
+QUANTIZE_SETTLING_DEBTS = os.environ.get("QUANTIZE_SETTLING_DEBTS",True)
 GET_DEBTS_COMMAND = os.environ.get("GET_DEBTS_COMMAND","pints")
-GET_ALL_DEBTS_COMMAND = os.environ.get("GET_ALL_DEBTS_COMMAND","allpints")
+GET_ALL_DEBTS_COMMAND = os.environ.get("GET_ALL_DEBTS_COMMAND","all_pints")
+MAXMIMUM_PER_DEBT = int(os.environ.get("MAXIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
+#QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
 
 # /owe to add pint debts
 @app.post("/owe")
 async def add_debt(request: OweRequest):
+
     data = load_data()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
     #check if valid target to owe
     if debtor_id == creditor_id:
-        raise HTTPException(status_code=400, detail=f"You can't owe yourself {CURRENCY_NAME}s, that would be too confusing sorry. The {CURRENCY_NAME} economy is a complex system, and we don't want to break it.")
+        raise HTTPException(status_code=400, detail=f"CANNOT_OWE_SELF")
   
     try:
-        amount = mixed_number_to_fraction(request.pint_number.strip())
+        amount = mixed_number_to_fraction(request.amount.strip())
     except (ValueError, ZeroDivisionError):
-        raise HTTPException(status_code=400, detail=f"Invalid {CURRENCY_NAME} amount {request.pint_number}. Use a number like 1, 0.5, or 1/3. Mixed fractions like 1 1/3 also allowed.")
+        raise HTTPException(status_code=400, detail=f"INVALID_AMOUNT")
     except (Exception):
-        raise HTTPException(status_code=400, detail="Bad request {request.pint_number}, that's not good input.")
+        raise HTTPException(status_code=400, detail=f"BAD_REQUEST")
     #check in range
     if amount < 0:
-        raise HTTPException(status_code=400, detail="Negative {CURRENCY_NAME}s detected! That's ILLEGAL!")
+        raise HTTPException(status_code=400, detail=f"NEGATIVE_AMOUNT")
     elif amount == 0:
-        raise HTTPException(status_code=400, detail="As funny as zero {CURRENCY_NAME} debts would be, let's keep this to real debts for sanity's sake.")
-    elif amount > 10:
-        raise HTTPException(status_code=400, detail="Do you really need to add that many {CURRENCY_NAME}s at once?")
-    #check valid fraction
-    if amount.denominator not in [1, 2, 3, 6]:
-        raise HTTPException(status_code=400, detail="Woah there buckaroo, {CURRENCY_NAME} are quantized to 1/6 amounts.")
+        raise HTTPException(status_code=400, detail=f"ZERO_AMOUNT")
+    elif amount > Fraction(MAXMIMUM_PER_DEBT):
+        raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
     
+    # Check if the fraction is quantized to the smallest unit using modulo
+    smallest_unit = Fraction(SMALLEST_UNIT)
+
+    if (amount % smallest_unit != 0):
+        raise HTTPException(
+            status_code=400,
+            detail=f"NOT_QUANTIZED"
+        )
+
      # Get or create the debtor's data
     if debtor_id not in data.users:
         data.users[debtor_id] = UserData()
 
     debtor_data = data.users[debtor_id]
     
+  
    # Add the debt
     if creditor_id not in debtor_data.debts.creditors:
         debtor_data.debts.creditors[creditor_id] = []
 
+    try:
+        {
     debtor_data.debts.creditors[creditor_id].append(
         DebtEntry(amount=amount, reason=request.reason, timestamp=datetime.now().strftime("%d-%m-%Y"))
     )
-
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
     # Save the updated data
     save_data(data)
 
@@ -76,22 +90,32 @@ async def get_debts(user_id: int):
 
     # initial check if user has debts they owe
     if user_id_str not in data.users:
-        return {"message": "No debts found owed to or from this user. That's kind of cringe, get some {CURRENCY_NAME} debt bro."}
+        return {"message": f"No debts found owed to or from this user."}
    
     user_data = data.users[user_id_str]
+
+    use_unicode = getattr(user_data.preferences, "use_unicode", False)
      # Prepare the response
     result = {"owed_by_you": {},
               "total_owed_by_you": 0, 
               "owed_to_you": {}, 
-              "total_owed_to_you": 0}
-
+              "total_owed_to_you": 0
+      }  # Include the user's preference}
+    
     # Debts owed by the user
     for creditor_id, entries in user_data.debts.creditors.items():
+        if not isinstance(entries, list):
+            raise TypeError(f"Expected 'entries' to be a list, but got {type(entries)}")
         result["owed_by_you"][creditor_id] = [
-            {"amount": str(entry.amount), "reason": entry.reason, "timestamp": entry.timestamp}
+            {
+                "amount": str(entry.amount),  # Use dot notation to access fields
+                "reason": entry.reason,
+                "timestamp": entry.timestamp
+            }
             for entry in entries
         ]
-    result["total_owed_by_you"] += sum(entry.amount for entry in entries)
+        # Convert amount to Fraction for summation
+        result["total_owed_by_you"] += sum(Fraction(entry.amount) for entry in entries)
 
     # Debts owed to the user
     for debtor_id, user in data.users.items():
@@ -99,20 +123,30 @@ async def get_debts(user_id: int):
             if debtor_id not in result["owed_to_you"]:
                 result["owed_to_you"][debtor_id] = []
             result["owed_to_you"][debtor_id].extend(
-                {"amount": str(entry.amount), "reason": entry.reason, "timestamp": entry.timestamp}
+                {
+                    "amount": str(entry.amount),  # Use dot notation to access fields
+                    "reason": entry.reason,
+                    "timestamp": entry.timestamp
+                }
                 for entry in user.debts.creditors[user_id_str]
             )
-    result["total_owed_to_you"] += sum(entry.amount for entry in user.debts.creditors[user_id_str])
+            # Convert amount to Fraction for summation
+            result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id_str])
 
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
-        return {"message": f"No debts found owed to or from this user. That's kind of cringe, get some {CURRENCY_NAME} debt bro."}
+        return {"message": f"No debts found owed to or from this user."}
+
+    # Convert totals back to strings for the response
+    result["total_owed_by_you"] = str(result["total_owed_by_you"])
+    result["total_owed_to_you"] = str(result["total_owed_to_you"])
 
     return result
 
 @app.get(f"/{GET_ALL_DEBTS_COMMAND}")
 async def get_all_debts():
     data = load_data()
+
     result = {}
 
     for debtor_id, debtor_data in data.users.items():
@@ -136,28 +170,46 @@ async def get_all_debts():
     return result
 
 @app.post("/settle")
-async def settle_debt(request: dict):
-    data=load_data
-    debtor_id = str(request["debtor"])
-    creditor_id = str(request["creditor"])
-    pint_number = Fraction(request["pint_number"])
+async def settle_debt(request: SettleRequest):
+    data = load_data()
+    debtor_id = str(request.debtor)
+    creditor_id = str(request.creditor)
 
-    if pint_number < 0:
-        raise HTTPException(status_code=400, detail="A negative? Really? Please use /owe to add your debts instead of trying to settle for negatives.")
-    elif pint_number == 0:
-        raise HTTPException(status_code=400, detail=f"The {CURRENCY_NAME} economy can only function with real valid transactions. Settling zero {CURRENCY_NAME}s is not that bro.")
+    # Validate and parse the pint number
+    try:
+        amount = Fraction(request.amount.strip())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
 
+    # Validate pint number constraints
+    if amount < 0:
+        raise HTTPException(status_code=400, detail="NEGATIVE_AMOUNT")
+    elif amount == 0:
+        raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
+
+    # Check if the fraction is quantized to the smallest unit using modulo
+    smallest_unit = Fraction(SMALLEST_UNIT)
+
+    if QUANTIZE_SETTLING_DEBTS == True and (amount % smallest_unit != 0):
+        raise HTTPException(
+            status_code=400,
+            detail=f"NOT_QUANTIZED"
+        )
+    
+    # Check if the debtor owes the creditor
     if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
-        raise HTTPException(status_code=400, detail=f"You don't owe that person any debts. The {CURRENCY_NAME} economy cannot function without debts! Please get some debts to avoid the imminent financial crisis!")
+        raise HTTPException(
+            status_code=400,
+            detail=f"NO_DEBTS_FOUND"
+        )
 
     # Settle debts starting with the oldest
-     # Settle debts starting with the oldest
     debtor_data = data.users[debtor_id]
     creditor_entries = debtor_data.debts.creditors[creditor_id]
-    remaining_to_settle = pint_number
+    remaining_to_settle = amount # Track amount left to settle in this transaction
     settled_amount = Fraction(0)
     updated_entries = []
-
+    
     for entry in creditor_entries:
         entry_amount = entry.amount
         if remaining_to_settle <= 0:
@@ -171,8 +223,12 @@ async def settle_debt(request: dict):
         else:
             # Partially settle this entry
             settled_amount += remaining_to_settle
-            entry.amount = entry_amount - remaining_to_settle
-            updated_entries.append(entry)
+            updated_entry = DebtEntry(
+                amount=entry_amount - remaining_to_settle,
+                reason=entry.reason,
+                timestamp=entry.timestamp
+            )
+            updated_entries.append(updated_entry)
             remaining_to_settle = 0
 
     # Update debts
@@ -187,15 +243,33 @@ async def settle_debt(request: dict):
     # Save the updated data
     save_data(data)
 
+    # Calculate the total remaining debt for the creditor
+    total_remaining_debt = sum(entry.amount for entry in updated_entries)
+
     return {
         "settled_amount": str(settled_amount),
-        "remaining_amount": str(max(remaining_to_settle, 0)),
+        "remaining_amount": str(total_remaining_debt),
     }
 
-@app.post("/set_preference")
-async def set_preference(user_id: int, use_unicode: bool):
+@app.get("/get_unicode_preference/{user_id}")
+async def get_unicode_preference(user_id: int):
     data = load_data()
     user_id_str = str(user_id)
+
+    # Check if the user exists in the data
+    if user_id_str not in data.users:
+        return {"use_unicode": False}  # Default value if the user does not exist
+
+    # Retrieve the user's Unicode preference or return the default value
+    use_unicode = getattr(data.users[user_id_str].preferences, "use_unicode", False)
+
+    return {"use_unicode": use_unicode}
+
+@app.post("/set_unicode_preference")
+async def set_unicode_preference(request: SetUnicodePreferenceRequest):
+    data = load_data()
+    user_id_str = str(request.user_id)
+    use_unicode = request.use_unicode
 
     if user_id_str not in data.users:
         data.users[user_id_str] = UserData()

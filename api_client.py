@@ -24,8 +24,17 @@ def get_all_debts():
     response.raise_for_status()
     return response.json()
 
-def set_preference(user_id: int, use_unicode: bool):
-    payload = {"user_id": user_id, "use_unicode": use_unicode}
-    response = requests.post(f"{API_URL}/set_preference", json=payload)
+def settle_debt(payload: dict):
+    response = requests.post(f"{API_URL}/settle", json=payload)
+    response.raise_for_status()
+    return response.json()
+
+def get_unicode_preference(user_id: int):
+    response = requests.get(f"{API_URL}/get_unicode_preference/{user_id}")
+    response.raise_for_status()
+    return response.json()
+
+def set_unicode_preference(payload: dict):
+    response = requests.post(f"{API_URL}/set_unicode_preference", json=payload)
     response.raise_for_status()
     return response.json()
