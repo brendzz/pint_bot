@@ -23,6 +23,7 @@ uvicorn API:app
 ## Usage
 - /help - to see all commands
 - Customise the bot using the .env files
+- Debts are stored in a json file
 
 Both mixed numbers (2 1/3) and improper fractions (7/3) are supported, as are decimals.
 
