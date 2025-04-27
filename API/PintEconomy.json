@@ -1,0 +1,94 @@
+{
+  "users": {
+    "147073087358238720": {
+      "debts": {
+        "creditors": {
+          "385138928493002752": [
+            {
+              "amount": "2",
+              "reason": "being nice :)",
+              "timestamp": "27-04-2025"
+            },
+            {
+              "amount": "1",
+              "reason": "getting standard promo WOOO \ud83d\udc4f",
+              "timestamp": "27-04-2025"
+            }
+          ],
+          "246742940116844546": [
+            {
+              "amount": "3",
+              "reason": "board game apiary",
+              "timestamp": "27-04-2025"
+            },
+            {
+              "amount": "2",
+              "reason": "debt schenanigans specifically only cashable if darren goes to oxford???",
+              "timestamp": "27-04-2025"
+            },
+            {
+              "amount": "1",
+              "reason": "standing order April",
+              "timestamp": "27-04-2025"
+            },
+            {
+              "amount": "2/3",
+              "reason": "hosting pint bot",
+              "timestamp": "27-04-2025"
+            }
+          ],
+          "511552638853185536": [
+            {
+              "amount": "1",
+              "reason": "he asked nicely",
+              "timestamp": "27-04-2025"
+            }
+          ],
+          "270662581432221707": [
+            {
+              "amount": "1",
+              "reason": "getting a job promo",
+              "timestamp": "27-04-2025"
+            },
+            {
+              "amount": "1",
+              "reason": "server debt schenanignas with oscar idk bro",
+              "timestamp": "27-04-2025"
+            },
+            {
+              "amount": "1",
+              "reason": "uncancelling me",
+              "timestamp": "27-04-2025"
+            }
+          ]
+        }
+      },
+      "preferences": {
+        "use_unicode": false
+      }
+    },
+    "246742940116844546": {
+      "debts": {
+        "creditors": {
+          "147073087358238720": [
+            {
+              "amount": "1/6",
+              "reason": "unfunny joke",
+              "timestamp": "27-04-2025"
+            }
+          ],
+          "270662581432221707": [
+            {
+              "amount": "1/6",
+              "reason": "unfunny joke",
+              "timestamp": "27-04-2025"
+            }
+          ]
+        }
+      },
+      "preferences": {
+        "use_unicode": false
+      }
+    }
+  }
+}

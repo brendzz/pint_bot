@@ -10,7 +10,7 @@ from error_messages import ERROR_MESSAGES
 
 import api_client
 
-from send_messages import send_error_message, send_success_message, send_info_message, send_table_message
+from send_messages import send_error_message, send_success_message, send_info_message, send_one_column_table_message, send_two_column_table_message
 import requests
 
 from fractions import Fraction
@@ -32,6 +32,7 @@ GET_ALL_DEBTS_COMMAND = environ.get("GET_ALL_DEBTS_COMMAND", "all_pints")
 MAXMIMUM_PER_DEBT = int(environ.get("MAXMIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
 SMALLEST_UNIT = Fraction(environ.get("SMALLEST_UNIT", "1/6"))
 MAXIMUM_DEBT_CHARACTER_LIMIT = int(environ.get("MAXIMUM_DEBT_CHARACTER_LIMIT", "200"))
+QUANTIZE_SETTLING_DEBTS = environ.get("QUANTIZE_SETTLING_DEBTS", True)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -76,6 +77,7 @@ async def help_command(interaction: discord.Interaction):
         {"name": f"/{GET_ALL_DEBTS_COMMAND}", "description": f"See everyone's total {CURRENCY_NAME} debts."},
         {"name": "/settle", "description": f"Settle {CURRENCY_NAME} debts with someone, starting with the oldest debts."},
         {"name": "/set_unicode_preference", "description": "Set your preference on whether to use unicode fromatted fractions or not."},
+        {"name": "/settings", "description": "See the current bot settings."},
     ]
 
     # Format the response
@@ -276,7 +278,8 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None):
 
 #See everyone's pints
 @bot.tree.command(name=f"{GET_ALL_DEBTS_COMMAND}", description=f"See everyone's total {CURRENCY_NAME} debts.")
-async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = None):
+@app_commands.describe(use_unicode="Use Unicode fractions (default: based on your preference).", table_format="Display in table format (not recommended for mobile, default: False).")
+async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = None, table_format: bool = False):
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
     # Call the external API to fetch all debts
@@ -309,6 +312,7 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
             )
             return
    # Prepare the data for the table
+    total_in_circulation = data.pop("total_in_circulation", 0)
     table_data = []
     for user_id, totals in data.items():
         try:
@@ -324,11 +328,12 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
         })
 
     # Call send_table_message to send the data as a table
-    await send_table_message(
+    await send_two_column_table_message(
         interaction,
         title=f"{CURRENCY_NAME} Economy Overview",
-        description=f"Current state of the {CURRENCY_NAME} economy:",
-        data=table_data
+        description=f"Current state of the {CURRENCY_NAME} economy.\n**Total {CURRENCY_NAME_PLURAL} in circulation: {total_in_circulation}**",
+        data=table_data,
+        table_format=table_format
     )
 
 @bot.tree.command(name="settle", description=f"Settle {CURRENCY_NAME} debts with someone, starting with the oldest debts.")
@@ -446,5 +451,32 @@ async def set_unicode_preference(interaction: discord.Interaction, use_unicode: 
         interaction,
         title="Preference Updated",
         description=data["message"])
+
+@bot.tree.command(name="settings", description="View the current bot settings.")
+@app_commands.describe(table_format="Display in table format (not recommended for mobile, default: False).")
+async def settings_command(interaction: discord.Interaction, table_format: bool = False):
+    # Defer the interaction to avoid timeout
+    await interaction.response.defer()
+
+   # Prepare the settings data
+    settings_data = [
+        {"Setting": "Bot Name", "Value": BOT_NAME},
+        {"Setting": "Currency Name", "Value": CURRENCY_NAME},
+        {"Setting": "Currency Name (Plural)", "Value": CURRENCY_NAME_PLURAL},
+        {"Setting": "Maximum Debt Per Transaction", "Value": MAXMIMUM_PER_DEBT},
+        {"Setting": "Smallest Unit Allowed (Quantization)", "Value": SMALLEST_UNIT},
+        {"Setting": "Maximum Debt Description Character Limit", "Value": MAXIMUM_DEBT_CHARACTER_LIMIT},
+        {"Setting": "Use Decimal Output", "Value": USE_DECIMAL},
+        {"Setting": "Enforce Quantization when Settling Debts", "Value": QUANTIZE_SETTLING_DEBTS}
+    ]
+
+    # Send the settings as a one-column table
+    await send_one_column_table_message(
+        interaction,
+        title="Bot Settings",
+        description="Here are the current bot settings:",
+        data=settings_data,
+        table_format=table_format
+    )
 
 bot.run(BOT_TOKEN)
