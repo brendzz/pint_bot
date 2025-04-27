@@ -5,3 +5,7 @@ __pycache__/currency_formatter.cpython-313.pyc
 __pycache__/error_messages.cpython-313.pyc
 __pycache__/fraction_formatter.cpython-313.pyc
 __pycache__/send_messages.cpython-313.pyc
+API/.env
+.env
+API/.DS_Store
+API/__pycache__/API.cpython-313.pyc

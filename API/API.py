@@ -148,14 +148,15 @@ async def get_all_debts():
     data = load_data()
 
     result = {}
-
+    total_in_circulation= Fraction(0)
+    # Iterate over all users to calculate debts owed by them
     for debtor_id, debtor_data in data.users.items():
         total_owed_by = Fraction(0)
         for creditor_id, entries in debtor_data.debts.creditors.items():
             total_owed_by += sum(entry.amount for entry in entries)
         if debtor_id not in result:
             result[debtor_id] = {"owes": str(total_owed_by), "is_owed": "0"}
-
+        total_in_circulation += total_owed_by
      # Iterate over all users to calculate debts owed to them
     for debtor_id, debtor_data in data.users.items():
         for creditor_id, entries in debtor_data.debts.creditors.items():
@@ -166,7 +167,7 @@ async def get_all_debts():
                 result[creditor_id]["is_owed"] = str(
                     Fraction(result[creditor_id]["is_owed"]) + total_owed_to
                 )
-
+    result["total_in_circulation"] = str(total_in_circulation)
     return result
 
 @app.post("/settle")
