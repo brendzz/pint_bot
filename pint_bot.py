@@ -10,7 +10,7 @@ from error_messages import ERROR_MESSAGES
 
 import api_client
 
-from send_messages import send_error_message, send_success_message, send_info_message, send_table_message
+from send_messages import send_error_message, send_success_message, send_info_message, send_one_column_table_message, send_two_column_table_message
 import requests
 
 from fractions import Fraction
@@ -32,6 +32,7 @@ GET_ALL_DEBTS_COMMAND = environ.get("GET_ALL_DEBTS_COMMAND", "all_pints")
 MAXMIMUM_PER_DEBT = int(environ.get("MAXMIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
 SMALLEST_UNIT = Fraction(environ.get("SMALLEST_UNIT", "1/6"))
 MAXIMUM_DEBT_CHARACTER_LIMIT = int(environ.get("MAXIMUM_DEBT_CHARACTER_LIMIT", "200"))
+QUANTIZE_SETTLING_DEBTS = environ.get("QUANTIZE_SETTLING_DEBTS", True)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -324,7 +325,7 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
         })
 
     # Call send_table_message to send the data as a table
-    await send_table_message(
+    await send_two_column_table_message(
         interaction,
         title=f"{CURRENCY_NAME} Economy Overview",
         description=f"Current state of the {CURRENCY_NAME} economy:",
@@ -446,5 +447,30 @@ async def set_unicode_preference(interaction: discord.Interaction, use_unicode: 
         interaction,
         title="Preference Updated",
         description=data["message"])
+
+@bot.tree.command(name="settings", description="View the current bot settings.")
+async def settings_command(interaction: discord.Interaction):
+    # Defer the interaction to avoid timeout
+    await interaction.response.defer()
+
+   # Prepare the settings data
+    settings_data = [
+        {"Setting": "Bot Name", "Value": BOT_NAME},
+        {"Setting": "Currency Name", "Value": CURRENCY_NAME},
+        {"Setting": "Currency Name (Plural)", "Value": CURRENCY_NAME_PLURAL},
+        {"Setting": "Maximum Debt Per Transaction", "Value": MAXMIMUM_PER_DEBT},
+        {"Setting": "Smallest Unit Allowed (Quantization)", "Value": SMALLEST_UNIT},
+        {"Setting": "Maximum Debt Description Character Limit", "Value": MAXIMUM_DEBT_CHARACTER_LIMIT},
+        {"Setting": "Use Decimal Output", "Value": USE_DECIMAL},
+        {"Setting": "Enforce Quantization when Settling Debts", "Value": QUANTIZE_SETTLING_DEBTS}
+    ]
+
+    # Send the settings as a one-column table
+    await send_one_column_table_message(
+        interaction,
+        title="Bot Settings",
+        description="Here are the current bot settings:",
+        data=settings_data
+    )
 
 bot.run(BOT_TOKEN)
