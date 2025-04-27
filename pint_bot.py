@@ -233,14 +233,14 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None):
 
     # Debts owed by the user
     if data["owed_by_you"]:
-        lines.append(f"__**{CURRENCY_NAME} YOU OWE:**__ {currency_formatter(data["total_owed_by_you"], use_unicode,CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL).upper()}")
+        lines.append(f"__**{CURRENCY_NAME} YOU OWE:**__ {currency_formatter(data['total_owed_by_you'], use_unicode,CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL).upper()}")
         for creditor_id, entries in data["owed_by_you"].items():
             try:
                 creditor = await bot.fetch_user(int(creditor_id))  # Fetch the creditor's username
                 creditor_name = creditor.display_name
             except discord.NotFound:
                 creditor_name = f"Unknown User ({creditor_id})"
-            lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry["amount"]) for entry in entries), use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL)}")
+            lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL)}")
             for entry in entries:
                 amount = currency_formatter(entry["amount"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL)
                 reason = entry["reason"]
@@ -249,7 +249,7 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None):
 
     # Debts owed to the user
     if data["owed_to_you"]:
-        lines.append(f"\n__**{CURRENCY_NAME} OWED TO YOU:**__ {currency_formatter(data["total_owed_to_you"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL).upper()}")
+        lines.append(f"\n__**{CURRENCY_NAME} OWED TO YOU:**__ {currency_formatter(data['total_owed_to_you'], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL).upper()}")
         for debtor_id, entries in data["owed_to_you"].items():
             try:
                 debtor = await bot.fetch_user(int(debtor_id))  # Fetch the debtor's username
@@ -257,7 +257,7 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None):
             except discord.NotFound:
                 debtor_name = f"Unknown User ({debtor_id})"
             
-            lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry["amount"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL) for entry in entries))}")
+            lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry['amount'], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL) for entry in entries))}")
             for entry in entries:
                 amount = currency_formatter(entry["amount"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL)
                 reason = entry["reason"]
@@ -319,8 +319,8 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
 
         table_data.append({
             "name": user_name,
-            "Owes": currency_formatter(totals["owes"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL),
-            "Is Owed": currency_formatter(totals["is_owed"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL)
+            "Owes": currency_formatter(totals['owes'], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL),
+            "Is Owed": currency_formatter(totals['is_owed'], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL)
         })
 
     # Call send_table_message to send the data as a table
