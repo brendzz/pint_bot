@@ -295,7 +295,7 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None, 
                 debtor_name = debtor.display_name
             except discord.NotFound:
                 debtor_name = f"Unknown User ({debtor_id})"
-            
+
             lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL_OUTPUT)}")
             for entry in entries:
                 amount = currency_formatter(entry["amount"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL_OUTPUT)
