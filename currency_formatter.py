@@ -2,9 +2,9 @@ from fractions import Fraction
 from fraction_formatter import fraction_to_unicode
 
 # Format pints
-def currency_formatter(pint_number, use_unicode=False, currency_name="Pint", currency_name_plural="Pints", use_decimal=False) -> str:
+def currency_formatter(amount, use_unicode=False, currency_name="Pint", currency_name_plural="Pints", use_decimal=False) -> str:
     # Convert pint_number to a Fraction
-    fraction = Fraction(pint_number)
+    fraction = Fraction(amount)
     
     # Check if the number is singular or plural
     if fraction > 0 and fraction <= 1:

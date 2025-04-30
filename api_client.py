@@ -1,13 +1,20 @@
 import requests
 from os import environ
 from dotenv import load_dotenv
-load_dotenv(".env")
-API_URL = environ.get("API_URL")
+import json
+from pathlib import Path
 
 load_dotenv("API/.env")
 GET_DEBTS_COMMAND = environ.get("GET_DEBTS_COMMAND")
 GET_ALL_DEBTS_COMMAND = environ.get("GET_ALL_DEBTS_COMMAND")
 
+config_path = Path("Config/bot_config.json")
+if not config_path.exists():
+    raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
+
+with open(config_path, "r") as config_file:
+    config = json.load(config_file)
+API_URL = config.get("API_URL", "http://127.0.0.1:8000")
 
 def add_debt(payload: dict):
     response = requests.post(f"{API_URL}/owe", json=payload)

@@ -1,0 +1,25 @@
+{
+    "BOT_NAME": "Pint Bot",
+    "CURRENCY_NAME": "Pint",
+    "CURRENCY_NAME_PLURAL": "Pints",
+    "API_URL": "http://127.0.0.1:8000",
+    "USE_DECIMAL_OUTPUT": false,
+    "USE_TABLE_FORMAT_DEFAULT": false,
+    "SHOW_PERCENTAGES_DEFAULT": false,
+    "PERCENTAGE_DECIMAL_PLACES": 1,
+    "REACT_TO_MESSAGES_MENTIONING_CURRENCY":true,
+    "REACTION_EMOJI":"🍺",
+    "TRANSFERABLE_ITEMS": [
+        "1 Pint of liquid from a pub",
+        "£6 of board games from Thirsty Meeples (preferably ordered via Brendan's accout so he can collect the Meeple Points)",
+        "3 Scoops of Ice Cream/Gelato from G&Ds in Oxford",
+        "Other things if you can convince me"
+    ],
+    "ECONOMY_HEALTH_MESSAGES": [
+        {"threshold": 20, "message": "The {CURRENCY_NAME} economy is booming! Prosperity for all!"},
+        {"threshold": 15, "message": "The {CURRENCY_NAME} economy is in great shape!"},
+        {"threshold": 10, "message": "The {CURRENCY_NAME}economy is stable."},
+        {"threshold": 5, "message": "The {CURRENCY_NAME} economy is in terrible shape. Please add debts to avoid imminent financial crash!"},
+        {"threshold": 0, "message": "The {CURRENCY_NAME} economy is in shambles! Financial Crash!"}
+    ]
+}
