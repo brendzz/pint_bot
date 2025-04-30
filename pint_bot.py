@@ -94,7 +94,7 @@ async def on_message(message: discord.Message):
     await bot.process_commands(message)
 
 
-@bot.tree.command(name="test_help", description="Get a list of available commands and their descriptions.")
+@bot.tree.command(name="help", description="Get a list of available commands and their descriptions.")
 async def help_command(interaction: discord.Interaction):
     await interaction.response.defer()
     # Define the list of commands and their descriptions
@@ -158,7 +158,7 @@ def handle_api_error(e):
         }
     
 #Add a debt
-@bot.tree.command(name="test_owe", description=f"Add a number of {CURRENCY_NAME} you owe someone.")
+@bot.tree.command(name="owe", description=f"Add a number of {CURRENCY_NAME} you owe someone.")
 @app_commands.describe(user="Who you owe", amount=f"How many {CURRENCY_NAME_PLURAL}", reason="Why you owe them (optional)")
 async def owe(interaction: discord.Interaction, user: discord.User, amount: str, *, reason: str = ""):
     debtor = interaction.user.id
@@ -224,7 +224,7 @@ async def owe(interaction: discord.Interaction, user: discord.User, amount: str,
         )
 
 #See your own pint debts
-@bot.tree.command(name=f"test_{GET_DEBTS_COMMAND}", description=f"See your current {CURRENCY_NAME} debts.")
+@bot.tree.command(name=f"{GET_DEBTS_COMMAND}", description=f"See your current {CURRENCY_NAME} debts.")
 @app_commands.describe(use_unicode="Use Unicode fractions (Default: Based on your preference).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
 async def get_debts(interaction: discord.Interaction, use_unicode: bool = None, show_percentages: bool = SHOW_PERCENTAGES_DEFAULT):
     
@@ -316,7 +316,7 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None, 
 
 
 #See everyone's pints
-@bot.tree.command(name=f"test_{GET_ALL_DEBTS_COMMAND}", description=f"See everyone's total {CURRENCY_NAME} debts.")
+@bot.tree.command(name=f"{GET_ALL_DEBTS_COMMAND}", description=f"See everyone's total {CURRENCY_NAME} debts.")
 @app_commands.describe(use_unicode="Use Unicode fractions (Default: Based on your preference).", table_format="Display in table format (not recommended for mobile, Default: In Bot settings).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
 async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = None, table_format: bool = USE_TABLE_FORMAT_DEFAULT, show_percentages: bool = SHOW_PERCENTAGES_DEFAULT):
 
@@ -389,7 +389,7 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
         table_format=table_format
     )
 
-@bot.tree.command(name="test_settle", description=f"Settle {CURRENCY_NAME} debts with someone, starting with the oldest debts.")
+@bot.tree.command(name="settle", description=f"Settle {CURRENCY_NAME} debts with someone, starting with the oldest debts.")
 @app_commands.describe(user="Who you want to settle debts with", amount=f"How many {CURRENCY_NAME} to settle")
 async def settle(interaction: discord.Interaction, user: discord.User, amount: str):
     debtor = interaction.user.id
@@ -468,7 +468,7 @@ async def settle(interaction: discord.Interaction, user: discord.User, amount: s
         description=  f"Settled {settled_amount} with {user.mention}. Remaining debt: {remaining_amount}."
     )
 
-@bot.tree.command(name="test_set_unicode_preference", description="Set your default preference for using Unicode fractions.")
+@bot.tree.command(name="set_unicode_preference", description="Set your default preference for using Unicode fractions.")
 @app_commands.describe(use_unicode="Set to True to use Unicode fractions, False otherwise.")
 async def set_unicode_preference(interaction: discord.Interaction, use_unicode: bool):
     await interaction.response.defer()
@@ -505,7 +505,7 @@ async def set_unicode_preference(interaction: discord.Interaction, use_unicode: 
         title="Preference Updated",
         description=data["message"])
 
-@bot.tree.command(name="test_settings", description="View the current bot settings.")
+@bot.tree.command(name="settings", description="View the current bot settings.")
 @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot Settings.).")
 async def settings_command(interaction: discord.Interaction, table_format: bool = USE_TABLE_FORMAT_DEFAULT):
     # Defer the interaction to avoid timeout
