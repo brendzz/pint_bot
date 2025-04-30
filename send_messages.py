@@ -35,7 +35,7 @@ async def send_one_column_table_message(interaction, title, description, data, t
             for row in chunk:
                 embed.add_field(
                     name=row["Setting"],  # Use the setting name as the field title
-                    value=f"Value: {row['Value']}",  # Display the value below the setting name
+                    value=f"{row['Value']}",  # Display the value below the setting name
                     inline=False  # Ensure the field spans the full width
                 )
 

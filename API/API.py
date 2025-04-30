@@ -87,14 +87,7 @@ async def add_debt(request: OweRequest):
 async def get_debts(user_id: int):
     data = load_data()
     user_id_str = str(user_id)
-
-    # initial check if user has debts they owe
-    if user_id_str not in data.users:
-        return {"message": f"No debts found owed to or from this user."}
-   
-    user_data = data.users[user_id_str]
-
-    use_unicode = getattr(user_data.preferences, "use_unicode", False)
+    
      # Prepare the response
     result = {"owed_by_you": {},
               "total_owed_by_you": 0, 
@@ -102,37 +95,45 @@ async def get_debts(user_id: int):
               "total_owed_to_you": 0
       }  # Include the user's preference}
     
-    # Debts owed by the user
-    for creditor_id, entries in user_data.debts.creditors.items():
-        if not isinstance(entries, list):
-            raise TypeError(f"Expected 'entries' to be a list, but got {type(entries)}")
-        result["owed_by_you"][creditor_id] = [
-            {
-                "amount": str(entry.amount),  # Use dot notation to access fields
-                "reason": entry.reason,
-                "timestamp": entry.timestamp
-            }
-            for entry in entries
-        ]
-        # Convert amount to Fraction for summation
-        result["total_owed_by_you"] += sum(Fraction(entry.amount) for entry in entries)
+    # Check if the user exists in the data
+    if user_id_str in data.users:
+        user_data = data.users[user_id_str]
 
-    # Debts owed to the user
+        # Debts owed by the user
+        for creditor_id, entries in user_data.debts.creditors.items():
+            if not isinstance(entries, list):
+                raise TypeError(f"Expected 'entries' to be a list, but got {type(entries)}")
+            result["owed_by_you"][creditor_id] = [
+                {
+                    "amount": str(entry.amount),
+                    "reason": entry.reason,
+                    "timestamp": entry.timestamp,
+                }
+                for entry in entries
+            ]
+            # Convert amount to Fraction for summation
+            result["total_owed_by_you"] += sum(Fraction(entry.amount) for entry in entries)
+
+    # Check if the user is a creditor in other users' debts
     for debtor_id, user in data.users.items():
         if user_id_str in user.debts.creditors:
             if debtor_id not in result["owed_to_you"]:
                 result["owed_to_you"][debtor_id] = []
             result["owed_to_you"][debtor_id].extend(
                 {
-                    "amount": str(entry.amount),  # Use dot notation to access fields
+                    "amount": str(entry.amount),
                     "reason": entry.reason,
-                    "timestamp": entry.timestamp
+                    "timestamp": entry.timestamp,
                 }
                 for entry in user.debts.creditors[user_id_str]
             )
             # Convert amount to Fraction for summation
             result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id_str])
 
+    print("owed by you")
+    print(result["owed_by_you"])
+    print("owed to you")
+    print(result["owed_to_you"])
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
         return {"message": f"No debts found owed to or from this user."}
