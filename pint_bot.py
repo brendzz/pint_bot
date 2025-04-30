@@ -280,7 +280,7 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None, 
             for entry in entries:
                 amount = currency_formatter(entry["amount"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL_OUTPUT)
                 if show_percentages:
-                    amount+=f" ({(100*Fraction(entry["amount"])/total_owed_by_you):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
+                    amount+=f" ({(100*Fraction(entry['amount'])/total_owed_by_you):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
                 reason = entry["reason"]
                 timestamp = entry["timestamp"]
                 lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -300,7 +300,7 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None, 
             for entry in entries:
                 amount = currency_formatter(entry["amount"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL_OUTPUT)
                 if show_percentages:
-                    amount+=f" ({(100*Fraction(entry["amount"])/total_owed_to_you):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
+                    amount+=f" ({(100*Fraction(entry['amount'])/total_owed_to_you):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
                 reason = entry["reason"]
                 timestamp = entry["timestamp"]
                 lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -365,8 +365,8 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
         is_owed=currency_formatter(totals['is_owed'], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL_OUTPUT)
 
         if show_percentages:
-            owes+=f" ({(100*Fraction(totals["owes"])/total_in_circulation):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
-            is_owed+=f" ({(100*Fraction(totals["is_owed"])/total_in_circulation):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
+            owes+=f" ({(100*Fraction(totals['owes'])/total_in_circulation):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
+            is_owed+=f" ({(100*Fraction(totals['is_owed'])/total_in_circulation):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
 
         table_data.append({
             "name": user_name,
