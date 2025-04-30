@@ -33,18 +33,18 @@ Both mixed numbers (2 1/3) and improper fractions (7/3) are supported, as are de
 - Customise the way the bot sends messages in the send_messages.py file (by default it uses embeds)
 
 ## bot_config.json
-BOT_NAME = Name of the bot in Discord
-API_URL = The URL of your API for the economy
-CURRENCY_NAME = The name of the currency used in the economy
-CURRENCY_NAME_PLURAL = Plural name of the currency used in the economy
-USE_DECIMAL_OUTPUT = True to use decimal output, False to use fraction output
-USE_TABLE_FORMAT_DEFAULT = True to set the default for output on certain commands to use a table format that looks good on desktop but doesn't make sense on mobile, False to use a more mobile friendly output by default (recommended)
-SHOW_PERCENTAGES_DEFAULT = True to set the default for commands showing pint debts to also show what percetanges of the total owed by that person/the whole economy each debt is
-PERCENTAGE_DECIMAL_PLACES = The number of decimal places to show the above percetanges to if it is True
-REACT_TO_MESSAGES_MENTIONING_CURRENCY = True to automatically react to messages that contain the name of your currency.
-REACTION_EMOJI = The emoji to use when reacting.
-TRANSFERABLE_ITEMS = The list of objects your currency can be transfered into
-ECONOMY_HEALTH_MESSAGES = In descending order, a list of what messages to show when using the get_all_debts command based on how many debts are owed in the total economy.
+- BOT_NAME = Name of the bot in Discord
+- API_URL = The URL of your API for the economy
+- CURRENCY_NAME = The name of the currency used in the economy
+- CURRENCY_NAME_PLURAL = Plural name of the currency used in the economy
+- USE_DECIMAL_OUTPUT = True to use decimal output, False to use fraction output
+- USE_TABLE_FORMAT_DEFAULT = True to set the default for output on certain commands to use a table format that looks good on desktop but doesn't make sense on mobile, False to use a more mobile friendly output by default (recommended)
+- SHOW_PERCENTAGES_DEFAULT = True to set the default for commands showing pint debts to also show what percetanges of the total owed by that person/the whole economy each debt is
+- PERCENTAGE_DECIMAL_PLACES = The number of decimal places to show the above percetanges to if it is True
+- REACT_TO_MESSAGES_MENTIONING_CURRENCY = True to automatically react to messages that contain the name of your currency.
+- REACTION_EMOJI = The emoji to use when reacting.
+- TRANSFERABLE_ITEMS = The list of objects your currency can be transfered into
+- ECONOMY_HEALTH_MESSAGES = In descending order, a list of what messages to show when using the get_all_debts command based on how many debts are owed in the total economy.
 
 ## License
 MIT Licence
