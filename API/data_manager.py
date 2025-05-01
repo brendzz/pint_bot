@@ -26,6 +26,9 @@ def save_transaction(transaction: str, pint_quantity: str, debtor_id: str, credi
     now = datetime.datetime.now().isoformat()
     filename: str = os.path.join(LOG_PATH, f"logs-{datetime.datetime.now().year}-{datetime.datetime.now().month}.csv")
 
+    if not os.path.exists(LOG_PATH):
+        os.makedirs(LOG_PATH, exist_ok=True)
+
     with open(filename, "a") as logfile:
         logfile.write(','.join([
             now,
