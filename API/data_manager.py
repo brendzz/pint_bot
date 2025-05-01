@@ -34,4 +34,4 @@ def save_transaction(transaction: str, pint_quantity: str, debtor_id: str, credi
             debtor_id,
             creditor_id,
             reason
-        ]))
+        ]) + "\n")
