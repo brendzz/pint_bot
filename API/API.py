@@ -8,7 +8,7 @@ import json
 from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
 from models import PintEconomy, UserData, DebtEntry, OweRequest, UserPreferences, SettleRequest, SetUnicodePreferenceRequest
-from data_manager import load_data, save_data
+from data_manager import load_data, save_data, save_transaction
 
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
@@ -79,6 +79,7 @@ async def add_debt(request: OweRequest):
         raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
     # Save the updated data
     save_data(data)
+    save_transaction("owe", str(amount), debtor_id, creditor_id, request.reason)
 
     return {"amount": str(amount), "reason": request.reason, "timestamp": datetime.now().strftime("%d-%m-%Y")}
 
@@ -244,6 +245,7 @@ async def settle_debt(request: SettleRequest):
 
     # Save the updated data
     save_data(data)
+    save_transaction("settle", str(settled_amount), debtor_id, creditor_id, "")
 
     # Calculate the total remaining debt for the creditor
     total_remaining_debt = sum(entry.amount for entry in updated_entries)
