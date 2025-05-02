@@ -9,3 +9,4 @@ API/.env
 .env
 API/.DS_Store
 API/__pycache__/API.cpython-313.pyc
+/.vscode
