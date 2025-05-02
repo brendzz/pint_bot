@@ -22,7 +22,7 @@ BOT_TOKEN = environ.get("BOT_TOKEN")
 load_dotenv("API/.env")
 GET_DEBTS_COMMAND = environ.get("GET_DEBTS_COMMAND", "pints")
 GET_ALL_DEBTS_COMMAND = environ.get("GET_ALL_DEBTS_COMMAND", "all_pints")
-MAXMIMUM_PER_DEBT = int(environ.get("MAXMIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
+MAXIMUM_PER_DEBT = int(environ.get("MAXIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
 SMALLEST_UNIT = Fraction(environ.get("SMALLEST_UNIT", "1/6"))
 MAXIMUM_DEBT_CHARACTER_LIMIT = int(environ.get("MAXIMUM_DEBT_CHARACTER_LIMIT", "200"))
 QUANTIZE_SETTLING_DEBTS = environ.get("QUANTIZE_SETTLING_DEBTS", True)
@@ -104,7 +104,7 @@ async def help_command(interaction: discord.Interaction):
         {"name": f"/{GET_DEBTS_COMMAND}", "description": f"See your current {CURRENCY_NAME} debts."},
         {"name": f"/{GET_ALL_DEBTS_COMMAND}", "description": f"See everyone's total {CURRENCY_NAME} debts."},
         {"name": "/settle", "description": f"Settle {CURRENCY_NAME} debts with someone, starting with the oldest debts."},
-        {"name": "/set_unicode_preference", "description": "Set your preference on whether to use unicode fromatted fractions or not."},
+        {"name": "/set_unicode_preference", "description": "Set your preference on whether to use unicode formatted fractions or not."},
         {"name": "/settings", "description": "See the current bot settings."},
     ]
 
@@ -141,7 +141,7 @@ def handle_api_error(e):
                 "description": error_message["description"].format(
                     currency=CURRENCY_NAME,
                     currency_plural=CURRENCY_NAME_PLURAL,
-                    max_debt=MAXMIMUM_PER_DEBT,
+                    max_debt=MAXIMUM_PER_DEBT,
                     smallest_unit=SMALLEST_UNIT
                 )
             }
@@ -528,7 +528,7 @@ async def settings_command(interaction: discord.Interaction, table_format: bool 
 
      # Prepare the settings data
     api_settings_data = [
-        {"Setting": "Maximum Debt Per Transaction", "Value": MAXMIMUM_PER_DEBT},
+        {"Setting": "Maximum Debt Per Transaction", "Value": MAXIMUM_PER_DEBT},
         {"Setting": "Smallest Unit Allowed (Quantization)", "Value": SMALLEST_UNIT},
         {"Setting": "Maximum Debt Description Character Limit", "Value": MAXIMUM_DEBT_CHARACTER_LIMIT},
         {"Setting": "Enforce Quantization when Settling Debts", "Value": QUANTIZE_SETTLING_DEBTS}

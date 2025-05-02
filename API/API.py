@@ -21,7 +21,7 @@ SMALLEST_UNIT = os.environ.get("SMALLEST_UNIT","1/6")
 QUANTIZE_SETTLING_DEBTS = os.environ.get("QUANTIZE_SETTLING_DEBTS",True)
 GET_DEBTS_COMMAND = os.environ.get("GET_DEBTS_COMMAND","pints")
 GET_ALL_DEBTS_COMMAND = os.environ.get("GET_ALL_DEBTS_COMMAND","all_pints")
-MAXMIMUM_PER_DEBT = int(os.environ.get("MAXIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
+MAXIMUM_PER_DEBT = int(os.environ.get("MAXIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
 #QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
 
 # /owe to add pint debts
@@ -46,7 +46,7 @@ async def add_debt(request: OweRequest):
         raise HTTPException(status_code=400, detail=f"NEGATIVE_AMOUNT")
     elif amount == 0:
         raise HTTPException(status_code=400, detail=f"ZERO_AMOUNT")
-    elif amount > Fraction(MAXMIMUM_PER_DEBT):
+    elif amount > Fraction(MAXIMUM_PER_DEBT):
         raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
     
     # Check if the fraction is quantized to the smallest unit using modulo
