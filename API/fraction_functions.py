@@ -18,7 +18,7 @@ def mixed_number_to_fraction(input_str: str) -> Fraction:
 
         return Fraction(whole * denominator + numerator, denominator)
 
-# Function to calcualte the allowed denominators for Fractions based on the minimum allowed size 
+# Function to calculate the allowed denominators for Fractions based on the minimum allowed size 
 # E.g. [1, 2, 3, 6] for 1/6
 """
 def calculate_allowed_denominators(minimum_unit: str) -> list:
