@@ -57,6 +57,17 @@ intents.message_content = True
 
 bot = commands.Bot("!",intents=intents)
 
+async def fetch_unicode_preference(interaction, user_id):
+    try:
+        return api_client.get_unicode_preference(user_id)
+    except requests.exceptions.RequestException as e:
+        await send_error_message(
+            interaction,
+            title="Unicode fetching Error",
+            description=f"Error fetching your unicode preference: {e}"
+        )
+        return None
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
@@ -208,15 +219,11 @@ async def owe(interaction: discord.Interaction, user: discord.User, amount: str,
             description=f"Looks like you've got some invalid data there buddy - we've got {MAXIMUM_DEBT_CHARACTER_LIMIT} character limits around these parts."
         )
         return
-    try:
-        use_unicode = api_client.get_unicode_preference(interaction.user.id)
-    except requests.exceptions.RequestException as e:
-        await send_error_message(
-            interaction,
-            title=f"Unicode fetching Error.",
-            description=f"Error fetching your unicode preference: {e}"
-        )
+    
+    use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
+    if use_unicode is None:
         return
+    
     await send_success_message(
             interaction,
             title=f"{CURRENCY_NAME} Debt Added - {CURRENCY_NAME} Economy Thriving",
@@ -251,16 +258,9 @@ async def get_debts(interaction: discord.Interaction, use_unicode: bool = None, 
         )
         return
 
-   
     if use_unicode is None:
-        try:
-            use_unicode = api_client.get_unicode_preference(user_id)
-        except requests.exceptions.RequestException as e:
-            await send_error_message(
-                interaction,
-                title=f"Unicode fetching Error.",
-                description=f"Error fetching your unicode preference: {e}"
-            )
+        use_unicode = await fetch_unicode_preference(interaction, user_id)
+        if use_unicode is None:
             return
 
     # Format the response
@@ -342,14 +342,8 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
         return
     
     if use_unicode is None:
-        try:
-            use_unicode = api_client.get_unicode_preference(interaction.user.id)
-        except requests.exceptions.RequestException as e:
-            await send_error_message(
-                interaction,
-                title=f"Unicode fetching Error.",
-                description=f"Error fetching your unicode preference: {e}"
-            )
+        use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
+        if use_unicode is None:
             return
    # Prepare the data for the table
     total_in_circulation = Fraction(data.pop("total_in_circulation", 0))
@@ -449,14 +443,8 @@ async def settle(interaction: discord.Interaction, user: discord.User, amount: s
         )
         return
 
-    try:
-        use_unicode = api_client.get_unicode_preference(interaction.user.id)
-    except requests.exceptions.RequestException as e:
-        await send_error_message(
-            interaction,
-            title=f"Unicode fetching Error.",
-            description=f"Error fetching your unicode preference: {e}"
-        )
+    use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
+    if use_unicode is None:
         return
 
     # Send confirmation message
