@@ -57,62 +57,61 @@ intents.message_content = True
 
 bot = commands.Bot("!",intents=intents)
 
+def format_error_message(text):
+    return text.format(
+            CURRENCY=CURRENCY_NAME,
+            CURRENCY_PLURAL=CURRENCY_NAME_PLURAL,
+            MAX_DEBT=MAXIMUM_PER_DEBT,
+            SMALLEST_UNIT=SMALLEST_UNIT,
+            BOT_NAME=BOT_NAME,
+        )
+
+def get_error_message(error_code):
+    #Retrieves and formats an error message from ERROR_MESSAGES
+    error = ERROR_MESSAGES.get(error_code, ERROR_MESSAGES["UNKNOWN_ERROR"])
+    return {
+        "title": format_error_message(error["title"]),
+        "description": format_error_message(error["description"])
+    }
+
 def parse_api_error(e):
     try:
-        # Access the response JSON from the HTTPError object
-        response_json = e.response.json()
-
         # Extract the "detail" field from the response
-        error_details = response_json.get("detail", "UNKNOWN_ERROR")
+        error_details = e.response.json().get("detail", "UNKNOWN_ERROR")
         if isinstance(error_details, str):
             error_code = error_details.split(":")[0]
 
-            # Get the error message from the ERROR_MESSAGES dictionary
-            error_message = ERROR_MESSAGES.get(error_code, ERROR_MESSAGES["UNKNOWN_ERROR"])
-
             # Return the formatted error message
-            return {
-                "title": error_message["title"],
-                "description": error_message["description"].format(
-                    currency=CURRENCY_NAME,
-                    currency_plural=CURRENCY_NAME_PLURAL,
-                    max_debt=MAXIMUM_PER_DEBT,
-                    smallest_unit=SMALLEST_UNIT
-                )
-            }
+            return get_error_message(error_code)
 
         # Fallback if "detail" is not a string
-        return {
-            "title": "Error",
-            "description": "Unexpected error format received from the API."
-        }
+        return get_error_message("UNKNOWN_API_ERROR")
     except Exception:
-        return {
-            "title": "Error",
-            "description": "An unknown error occurred."
-        }
+        return get_error_message("ERROR_PARSING_ERROR")
 
-async def handle_error(interaction, error=None, title="Error", message=None):
-    # Handles various types of errors and sends appropriate error messages.
-    if message is None:
-        if isinstance(error, requests.exceptions.HTTPError):
-            parsed = parse_api_error(error)
-            message = parsed["description"]
-            title = parsed["title"]
-        elif isinstance(error, ValidationError):
-            message = f"Looks like you've got some invalid data there buddy - we've got {MAXIMUM_DEBT_CHARACTER_LIMIT} character limits around these parts."
-        elif isinstance(error, requests.exceptions.RequestException):
-            message = f"An error occurred while processing your request: {error}"
-        else:
-            message = "An unexpected error occurred."
+async def handle_error(interaction, error=None, error_code=None, title=None):
+    # Handles errors and sends appropriate error messages.
+    if error_code:
+        error_message = get_error_message(error_code)
+    elif isinstance(error, requests.exceptions.HTTPError):
+        error_message = parse_api_error(error)
+    elif isinstance(error, ValidationError):
+        error_message = get_error_message("VALIDATION_ERROR")
+    elif isinstance(error, requests.exceptions.RequestException):
+        error_message = get_error_message("REQUEST_ERROR")
+    else:
+        error_message = get_error_message("UNKNOWN_ERROR")
 
-    await send_error_message(interaction, title, message)
+    if title:
+        error_message["title"] = format_error_message(title)
+
+    await send_error_message(interaction, error_message["title"], error_message["description"])
 
 async def fetch_unicode_preference(interaction, user_id):
     try:
         return api_client.get_unicode_preference(user_id)
     except Exception as e:
-        await handle_error(interaction, title="Error Fetching Unicode Preference")
+        await handle_error(interaction, e, title="Error Fetching Unicode Preference")
         return None
 
 @bot.event
@@ -191,17 +190,10 @@ async def owe(interaction: discord.Interaction, user: discord.User, amount: str,
     await interaction.response.defer()
     
     if debtor == creditor:
-        await handle_error(
-            interaction,
-            title=f"Illegal {CURRENCY_NAME} Activities Detected",
-            message=f"You can't owe yourself {CURRENCY_NAME_PLURAL}, that would be too confusing sorry. The {CURRENCY_NAME} economy is a complex system, and we don't want to break it.")
+        await handle_error(interaction, error_code="CANNOT_OWE_SELF")
         return
     elif creditor == bot.user.id:
-        await send_info_message(
-            interaction,
-            title=f"{BOT_NAME} thanks you for the offer!",
-            description=f"{BOT_NAME} already has plenty of {CURRENCY_NAME_PLURAL}, but thanks for the generous offer!"
-        )
+        await handle_error(interaction, error_code="CANNOT_OWE_BOT")
         return
     
 
@@ -216,7 +208,7 @@ async def owe(interaction: discord.Interaction, user: discord.User, amount: str,
         payload = owe_request.model_dump()
         data = api_client.add_debt(payload)
     except Exception as e:
-        await handle_error(interaction, e, title=f"Error Adding Debt")
+        await handle_error(interaction, e, title="Error Adding Debt")
         return
     
     use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
@@ -326,11 +318,7 @@ async def get_all_debts(interaction: discord.Interaction, use_unicode: bool = No
 
     # Check if the API returned an empty response
     if not data:
-        await handle_error(
-            interaction,
-            title=f"No {CURRENCY_NAME} debts found.",
-            message=f"The {CURRENCY_NAME} economy has no debts! It's the end!"
-            )
+        await handle_error(interaction, error_code="NO_DEBTS_IN_ECONOMY")
         return
     
     if use_unicode is None:
@@ -382,16 +370,10 @@ async def settle(interaction: discord.Interaction, user: discord.User, amount: s
     creditor = user.id
 
     if debtor == creditor:
-        await handle_error(
-            interaction,
-            title=f"Illegal {CURRENCY_NAME} Activities Detected",
-            description=f"You can't have {CURRENCY_NAME} debts with yourself. You have the power to buy yourself a {CURRENCY_NAME} without the need for this bot.")
+        await handle_error(interaction, error_code="CANNOT_SETTLE_SELF")
         return
     elif creditor == bot.user.id:
-        await handle_error(
-            interaction,
-            title=f"{CURRENCY_NAME} Economy Financial Regulations Violation",
-            description=f"Due to {CURRENCY_NAME} Economy Financial Regulations, it is illegal to settle pints with {BOT_NAME} as it would be conflict of interest for {BOT_NAME} to run the {CURRENCY_NAME} economy and also participate in it.")
+        await handle_error(interaction, error_code="CANNOT_SETTLE_BOT")
         return
     
    # Defer the response to avoid timeout
