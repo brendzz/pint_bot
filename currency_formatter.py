@@ -1,21 +1,34 @@
+import json
+from pathlib import Path
 from fractions import Fraction
 from fraction_formatter import fraction_to_unicode
 
+# Load configuration from config.json
+config_path = Path("Config/bot_config.json")
+if not config_path.exists():
+    raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
+
+with open(config_path, "r") as config_file:
+    config = json.load(config_file)
+
+CURRENCY_NAME = config.get("CURRENCY_NAME","Pint")
+CURRENCY_NAME_PLURAL = config.get("CURRENCY_NAME_PLURAL","Pints")
+USE_DECIMAL_OUTPUT = config.get("USE_DECIMAL_OUTPUT", False)
+
 # Format pints
-def currency_formatter(amount, use_unicode=False, currency_name="Pint", currency_name_plural="Pints", use_decimal=False) -> str:
+def currency_formatter(amount, use_unicode=False) -> str:
     # Convert pint_number to a Fraction
     fraction = Fraction(amount)
     
     # Check if the number is singular or plural
     if fraction > 0 and fraction <= 1:
-        currency = currency_name.lower()
+        currency = CURRENCY_NAME.lower()
     else:
-        currency = currency_name_plural.lower()
+        currency = CURRENCY_NAME_PLURAL.lower()
     
-    if use_decimal == True:
+    if USE_DECIMAL_OUTPUT == True:
         return f"{float(fraction)} {currency}"
     else:
-         
         # Get the whole number part
         whole_number = fraction.numerator // fraction.denominator
         # Get the remainder (numerator of the fractional part)
