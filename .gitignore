@@ -1,7 +1,5 @@
-__pycache__
-*.pyc
-.DS_Store
-API/.env
-.env
-API/.DS_Store
 /.vscode
+*.pyc
+*.env
+*.DS_Store
+PintEconomy.json
