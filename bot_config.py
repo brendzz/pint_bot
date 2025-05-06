@@ -14,7 +14,7 @@ def load_config():
     if not config_path.exists():
         raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
 
-    with open(config_path, "r") as config_file:
+    with open(file=config_path, mode="r", encoding="utf-8") as config_file:
         config = json.load(config_file)
 
     # Process ECONOMY_HEALTH_MESSAGES to inject config values and convert types
