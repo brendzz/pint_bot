@@ -1,5 +1,5 @@
 import requests
-from config import load_config
+from bot_config import load_config
 
 _config = None
 def get_config():

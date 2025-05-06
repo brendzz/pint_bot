@@ -2,17 +2,17 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
-from config import load_config
+from api_config import load_config
 from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
-from models import PintEconomy, UserData, DebtEntry, OweRequest, UserPreferences, SettleRequest, SetUnicodePreferenceRequest
+from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 from data_manager import load_data, save_data
 
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
 CONFIG = load_config()
 
-SMALLEST_UNIT = CONFIG["SMALLEST_UNIT","1/6"]
+SMALLEST_UNIT = CONFIG["SMALLEST_UNIT"]
 QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
 GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
 GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]

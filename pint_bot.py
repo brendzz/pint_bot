@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from fractions import Fraction
 from pydantic import ValidationError
-from config import load_config
+from bot_config import load_config
 from currency_formatter import currency_formatter
 from API.models import OweRequest, SettleRequest, SetUnicodePreferenceRequest
 from error_messages import ERROR_MESSAGES
