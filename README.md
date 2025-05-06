@@ -21,7 +21,10 @@ uvicorn API:app
 2. Invite the bot to your server with the "application.commands" permission.
 3. Set up a `.env` file. See the `.env.example` file for reference. Add your Discord Bot Token from the Developer Portal as `BOT_TOKEN`.
 4. Add your API URL to the `bot_config.json` file as `API_URL` (if running locally, this is likely `http://127.0.0.1:8000`). Customise the other settings if you wish, or leave them as defaults.
-5. Run `pint_bot.py` to start the bot.
+5. Run `pint_bot.py` to start the bot:
+```bash
+python pint_bot.py
+```
 
 ## Usage
 - Use `/help` to see all commands.
