@@ -2,9 +2,9 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
-from dotenv import load_dotenv
 import os
 import json
+from config import load_config
 from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
 from models import PintEconomy, UserData, DebtEntry, OweRequest, UserPreferences, SettleRequest, SetUnicodePreferenceRequest
@@ -12,17 +12,17 @@ from data_manager import load_data, save_data
 
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
-load_dotenv(".env")
+CONFIG = load_config()
+
+SMALLEST_UNIT = CONFIG["SMALLEST_UNIT","1/6"]
+QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
+GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
+GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
+MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
+#QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
 
 # Set up FastAPI
 app = FastAPI()
-
-SMALLEST_UNIT = os.environ.get("SMALLEST_UNIT","1/6")
-QUANTIZE_SETTLING_DEBTS = os.environ.get("QUANTIZE_SETTLING_DEBTS",True)
-GET_DEBTS_COMMAND = os.environ.get("GET_DEBTS_COMMAND","pints")
-GET_ALL_DEBTS_COMMAND = os.environ.get("GET_ALL_DEBTS_COMMAND","all_pints")
-MAXIMUM_PER_DEBT = int(os.environ.get("MAXIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
-#QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
 
 # /owe to add pint debts
 @app.post("/owe")

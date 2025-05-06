@@ -3,53 +3,38 @@ from discord.ext import commands
 from discord import app_commands
 from fractions import Fraction
 from pydantic import ValidationError
+from config import load_config
 from currency_formatter import currency_formatter
 from API.models import OweRequest, SettleRequest, SetUnicodePreferenceRequest
 from error_messages import ERROR_MESSAGES
-from pathlib import Path
-import json
 import api_client
 from send_messages import send_error_message, send_success_message, send_info_message, send_one_column_table_message, send_two_column_table_message
 import requests
 from fractions import Fraction
-from dotenv import load_dotenv
-from os import environ
 
-# Load Bot Token from environment variable
-load_dotenv("Config/.env")
-BOT_TOKEN = environ.get("BOT_TOKEN")
+# Load the configuration
+CONFIG = load_config()
 
-load_dotenv("API/.env")
-GET_DEBTS_COMMAND = environ.get("GET_DEBTS_COMMAND", "pints")
-GET_ALL_DEBTS_COMMAND = environ.get("GET_ALL_DEBTS_COMMAND", "all_pints")
-MAXIMUM_PER_DEBT = int(environ.get("MAXIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
-SMALLEST_UNIT = Fraction(environ.get("SMALLEST_UNIT", "1/6"))
-MAXIMUM_DEBT_CHARACTER_LIMIT = int(environ.get("MAXIMUM_DEBT_CHARACTER_LIMIT", "200"))
-QUANTIZE_SETTLING_DEBTS = environ.get("QUANTIZE_SETTLING_DEBTS", True)
+BOT_TOKEN = CONFIG["BOT_TOKEN"]
 
-# Load configuration from config.json
-config_path = Path("Config/bot_config.json")
-if not config_path.exists():
-    raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
+GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
+GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
+MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
+SMALLEST_UNIT = Fraction(CONFIG["SMALLEST_UNIT"])
+MAXIMUM_DEBT_CHARACTER_LIMIT = int(CONFIG["MAXIMUM_DEBT_CHARACTER_LIMIT"])
+QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
 
-with open(config_path, "r") as config_file:
-    config = json.load(config_file)
-
-BOT_NAME = config.get("BOT_NAME", "Pint Bot")
-CURRENCY_NAME = config.get("CURRENCY_NAME","Pint")
-CURRENCY_NAME_PLURAL = config.get("CURRENCY_NAME_PLURAL","Pints")
-USE_DECIMAL_OUTPUT = config.get("USE_DECIMAL_OUTPUT", False)
-USE_TABLE_FORMAT_DEFAULT = config.get("USE_TABLE_FORMAT_DEFAULT",False)
-SHOW_PERCENTAGES_DEFAULT = config.get("SHOW_PERCENTAGES_DEFAULT",False)
-PERCENTAGE_DECIMAL_PLACES = config.get("PERCENTAGE_DECIMAL_PLACES",0)
-REACT_TO_MESSAGES_MENTIONING_CURRENCY = config.get("REACT_TO_MESSAGES_MENTIONING_CURRENCY", False)
-REACTION_EMOJI=config.get("REACTION_EMOJI","🍺")
-TRANSFERABLE_ITEMS = config.get("TRANSFERABLE_ITEMS", [])
-ECONOMY_HEALTH_MESSAGES = config.get("ECONOMY_HEALTH_MESSAGES", [])
-
-for message in ECONOMY_HEALTH_MESSAGES:
-    message["threshold"] = Fraction(message["threshold"]) 
-    message["message"] = message["message"].replace("{CURRENCY_NAME}", CURRENCY_NAME)
+BOT_NAME = CONFIG["BOT_NAME"]
+CURRENCY_NAME = CONFIG["CURRENCY_NAME"]
+CURRENCY_NAME_PLURAL = CONFIG["CURRENCY_NAME_PLURAL"]
+USE_DECIMAL_OUTPUT = CONFIG["USE_DECIMAL_OUTPUT"]
+USE_TABLE_FORMAT_DEFAULT = CONFIG["USE_TABLE_FORMAT_DEFAULT"]
+SHOW_PERCENTAGES_DEFAULT = CONFIG["SHOW_PERCENTAGES_DEFAULT"]
+PERCENTAGE_DECIMAL_PLACES = CONFIG["PERCENTAGE_DECIMAL_PLACES"]
+REACT_TO_MESSAGES_MENTIONING_CURRENCY = CONFIG["REACT_TO_MESSAGES_MENTIONING_CURRENCY"]
+REACTION_EMOJI = CONFIG["REACTION_EMOJI"]
+TRANSFERABLE_ITEMS = CONFIG["TRANSFERABLE_ITEMS"]
+ECONOMY_HEALTH_MESSAGES = CONFIG["ECONOMY_HEALTH_MESSAGES"]
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -58,11 +43,11 @@ bot = commands.Bot("!",intents=intents)
 
 def format_error_message(text):
     return text.format(
-            CURRENCY=CURRENCY_NAME,
-            CURRENCY_PLURAL=CURRENCY_NAME_PLURAL,
-            MAX_DEBT=MAXIMUM_PER_DEBT,
-            SMALLEST_UNIT=SMALLEST_UNIT,
-            BOT_NAME=BOT_NAME,
+            CURRENCY=CONFIG["CURRENCY_NAME"],
+            CURRENCY_PLURAL=CONFIG["CURRENCY_NAME_PLURAL"],
+            MAX_DEBT=CONFIG["MAXIMUM_PER_DEBT"],
+            SMALLEST_UNIT=CONFIG["SMALLEST_UNIT"],
+            BOT_NAME=CONFIG["BOT_NAME"],
         )
 
 def get_error_message(error_code):

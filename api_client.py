@@ -1,12 +1,11 @@
 import requests
-from os import environ
-from dotenv import load_dotenv
 import json
 from pathlib import Path
+from config import load_config
 
-load_dotenv("API/.env")
-GET_DEBTS_COMMAND = environ.get("GET_DEBTS_COMMAND")
-GET_ALL_DEBTS_COMMAND = environ.get("GET_ALL_DEBTS_COMMAND")
+CONFIG = load_config()
+GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
+GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
 
 config_path = Path("Config/bot_config.json")
 if not config_path.exists():
