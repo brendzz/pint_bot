@@ -1,17 +1,17 @@
 import discord
-async def send_error_message(interaction, title, description):
+async def send_error_message(interaction: discord.Interaction, title: str, description: str):
     embed = discord.Embed(title=title, description=description, color=discord.Color.red())
     await interaction.followup.send(embed=embed)
 
-async def send_success_message(interaction, title, description):
+async def send_success_message(interaction: discord.Interaction, title: str, description: str):
     embed = discord.Embed(title=title, description=description, color=discord.Color.green())
     await interaction.followup.send(embed=embed)
 
-async def send_info_message(interaction, title, description):
+async def send_info_message(interaction: discord.Interaction, title: str, description: str):
     embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
     await interaction.followup.send(embed=embed)
         
-async def send_one_column_table_message(interaction, title, description, data, table_format):
+async def send_one_column_table_message(interaction: discord.Interaction, title: str, description: str, data: list, table_format: bool):
     # Split data into chunks of 25 rows (Discord's limit for embed fields)
     chunk_size = 25
     chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
@@ -47,7 +47,7 @@ async def send_one_column_table_message(interaction, title, description, data, t
             # For subsequent embeds, send them as additional messages
             await interaction.channel.send(embed=embed)
 
-async def send_two_column_table_message(interaction, title, description, data, table_format):
+async def send_two_column_table_message(interaction: discord.Interaction, title: str, description: str, data: list, table_format: bool):
     # Split data into chunks of 25 rows (Discord's limit for embed fields)
     chunk_size = 25
     chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]

@@ -2,7 +2,7 @@ from fractions import Fraction
 from fraction_formatter import fraction_to_unicode
 
 # Format pints
-def currency_formatter(amount, config, use_unicode=False) -> str:
+def currency_formatter(amount, config: dict[str, any], use_unicode: bool=False) -> str:
     # Convert pint_number to a Fraction
     fraction = Fraction(amount)
     

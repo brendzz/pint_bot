@@ -29,12 +29,12 @@ def get_config():
         _config = load_config()
     return _config
 
-def format_error_message(text):
+def format_error_message(error_message: str):
     """
     Formats the error message with values from config.
     """
     config = get_config()
-    return text.format(
+    return error_message.format(
             CURRENCY=config["CURRENCY_NAME"],
             CURRENCY_PLURAL=config["CURRENCY_NAME_PLURAL"],
             MAX_DEBT=config["MAXIMUM_PER_DEBT"],
@@ -42,7 +42,7 @@ def format_error_message(text):
             BOT_NAME=config["BOT_NAME"],
         )
 
-def get_error_message(error_code):
+def get_error_message(error_code: str):
     """
     Retrieves and formats an error message from ERROR_MESSAGES
     """
@@ -52,7 +52,7 @@ def get_error_message(error_code):
         "description": format_error_message(error["description"])
     }
 
-def parse_api_error(e):
+def parse_api_error(e: requests.exceptions.HTTPError):
     """
     Parses the API error response and returns a formatted error message.
     """
