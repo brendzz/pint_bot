@@ -12,42 +12,27 @@ from send_messages import send_error_message, send_success_message, send_info_me
 import requests
 from fractions import Fraction
 
-# Load the configuration
-CONFIG = load_config()
-
-BOT_TOKEN = CONFIG["BOT_TOKEN"]
-
-GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
-GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
-MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
-SMALLEST_UNIT = Fraction(CONFIG["SMALLEST_UNIT"])
-MAXIMUM_DEBT_CHARACTER_LIMIT = int(CONFIG["MAXIMUM_DEBT_CHARACTER_LIMIT"])
-QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
-
-BOT_NAME = CONFIG["BOT_NAME"]
-CURRENCY_NAME = CONFIG["CURRENCY_NAME"]
-CURRENCY_NAME_PLURAL = CONFIG["CURRENCY_NAME_PLURAL"]
-USE_DECIMAL_OUTPUT = CONFIG["USE_DECIMAL_OUTPUT"]
-USE_TABLE_FORMAT_DEFAULT = CONFIG["USE_TABLE_FORMAT_DEFAULT"]
-SHOW_PERCENTAGES_DEFAULT = CONFIG["SHOW_PERCENTAGES_DEFAULT"]
-PERCENTAGE_DECIMAL_PLACES = CONFIG["PERCENTAGE_DECIMAL_PLACES"]
-REACT_TO_MESSAGES_MENTIONING_CURRENCY = CONFIG["REACT_TO_MESSAGES_MENTIONING_CURRENCY"]
-REACTION_EMOJI = CONFIG["REACTION_EMOJI"]
-TRANSFERABLE_ITEMS = CONFIG["TRANSFERABLE_ITEMS"]
-ECONOMY_HEALTH_MESSAGES = CONFIG["ECONOMY_HEALTH_MESSAGES"]
-
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot("!",intents=intents)
 
+_config = None
+
+def get_config():
+    global _config
+    if _config is None:
+        _config = load_config()
+    return _config
+
 def format_error_message(text):
+    config = get_config()
     return text.format(
-            CURRENCY=CURRENCY_NAME,
-            CURRENCY_PLURAL=CURRENCY_NAME_PLURAL,
-            MAX_DEBT=MAXIMUM_PER_DEBT,
-            SMALLEST_UNIT=SMALLEST_UNIT,
-            BOT_NAME=BOT_NAME,
+            CURRENCY=config["CURRENCY_NAME"],
+            CURRENCY_PLURAL=config["CURRENCY_NAME_PLURAL"],
+            MAX_DEBT=config["MAXIMUM_PER_DEBT"],
+            SMALLEST_UNIT=config["SMALLEST_UNIT"],
+            BOT_NAME=config["BOT_NAME"],
         )
 
 def get_error_message(error_code):
@@ -102,19 +87,35 @@ async def fetch_unicode_preference(interaction, user_id):
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("------")
+
+    config = get_config()
+
+    bot.tree.get_command("owe").description = f"Add a number of {config['CURRENCY_NAME']} you owe someone."
+    bot.tree.get_command("settle").description = f"Settle {config['CURRENCY_NAME']} debts with someone, starting with the oldest debts."
+    bot.tree.get_command("get_debts").description = f"See your current {config['CURRENCY_NAME']} debts."
+    bot.tree.get_command("get_all_debts").description = f"See everyone's total {config['CURRENCY_NAME']} debts."
+    bot.tree.get_command("help").description="Get a list of available commands and their descriptions."
+    bot.tree.get_command("set_unicode_preference").description = "Set your default preference for using Unicode fractions."
+    bot.tree.get_command("settings").description = "View the current bot settings."
+
+    bot.tree.get_command("get_debts").name = config["GET_DEBTS_COMMAND"]
+    bot.tree.get_command("get_all_debts").name = config["GET_ALL_DEBTS_COMMAND"]
+
     await bot.tree.sync()
 
 @bot.event
 async def on_message(message: discord.Message):
+    config = get_config()
+    
     # Ignore messages sent by the bot itself
     if message.author == bot.user:
         return
 
     # React to messages containing the currency name if the feature is enabled
-    if REACT_TO_MESSAGES_MENTIONING_CURRENCY:
-        if CURRENCY_NAME.lower() in message.content.lower():
+    if config["REACT_TO_MESSAGES_MENTIONING_CURRENCY"]:
+        if config["CURRENCY_NAME"].lower() in message.content.lower():
             try:
-                await message.add_reaction(REACTION_EMOJI)  # React with an emoji
+                await message.add_reaction(config["REACTION_EMOJI"])  # React with an emoji
             except discord.Forbidden:
                 print("Bot does not have permission to add reactions.")
             except discord.HTTPException as e:
@@ -124,10 +125,10 @@ async def on_message(message: discord.Message):
     if bot.user in message.mentions and not message.reference:
         embed = discord.Embed(
             title=f"Hello {message.author.display_name}!",
-            description=f"I am {BOT_NAME}!\nI am currently set to manage the {CURRENCY_NAME} economy.\nUse '/help' to learn more.",
+            description=f"I am {config["BOT_NAME"]}!\nI am currently set to manage the {config["CURRENCY_NAME"]} economy.\nUse '/help' to learn more.",
             color=discord.Color.yellow()
         )
-        embed.set_footer(text=f"{BOT_NAME} - Your Local Friendly {CURRENCY_NAME} Economy Assistant.")
+        embed.set_footer(text=f"{config["BOT_NAME"]} - Your Local Friendly {config["CURRENCY_NAME"]} Economy Assistant.")
         embed.set_thumbnail(url=bot.user.avatar.url)
         await message.channel.send(embed=embed)
 
@@ -135,38 +136,41 @@ async def on_message(message: discord.Message):
     await bot.process_commands(message)
 
 
-@bot.tree.command(name="help", description="Get a list of available commands and their descriptions.")
+@bot.tree.command(name="help")
 async def help_command(interaction: discord.Interaction):
+    config = get_config()
+    # Defer the interaction to avoid timeout
     await interaction.response.defer()
     # Define the list of commands and their descriptions
     commands = [
         {"name": "/help", "description": "Get a list of available commands and their descriptions."},
-        {"name": "/owe", "description": f"Add a number of {CURRENCY_NAME_PLURAL} you owe someone."},
-        {"name": f"/{GET_DEBTS_COMMAND}", "description": f"See your current {CURRENCY_NAME} debts."},
-        {"name": f"/{GET_ALL_DEBTS_COMMAND}", "description": f"See everyone's total {CURRENCY_NAME} debts."},
-        {"name": "/settle", "description": f"Settle {CURRENCY_NAME} debts with someone, starting with the oldest debts."},
+        {"name": "/owe", "description": f"Add a number of {config["CURRENCY_NAME_PLURAL"]} you owe someone."},
+        {"name": f"/{config["GET_DEBTS_COMMAND"]}", "description": f"See your current {config["CURRENCY_NAME"]} debts."},
+        {"name": f"/{config["GET_ALL_DEBTS_COMMAND"]}", "description": f"See everyone's total {config["CURRENCY_NAME"]} debts."},
+        {"name": "/settle", "description": f"Settle {config["CURRENCY_NAME"]} debts with someone, starting with the oldest debts."},
         {"name": "/set_unicode_preference", "description": "Set your preference on whether to use unicode formatted fractions or not."},
         {"name": "/settings", "description": "See the current bot settings."},
     ]
 
     # Format the response
-    help_message = f"I help to keep track of {CURRENCY_NAME} debts owed between users.\n__**{BOT_NAME} Commands:**__\n"
+    help_message = f"I help to keep track of {config["CURRENCY_NAME"]} debts owed between users.\n__**{config["BOT_NAME"]} Commands:**__\n"
     for command in commands:
         help_message += f"**{command['name']}** - {command['description']}\n"
 
     help_message += "\n__**What can you use your Pints for?**__\n"
-    for item in TRANSFERABLE_ITEMS:
+    for item in config["TRANSFERABLE_ITEMS"]:
         help_message += f"- {item}\n"
 
     # Send the help message
     await send_info_message(interaction,
-                            title=f"{BOT_NAME} Help",
+                            title=f"{config["BOT_NAME"]} Help",
                             description=help_message)
     
 #Add a debt
-@bot.tree.command(name="owe", description=f"Add a number of {CURRENCY_NAME} you owe someone.")
-@app_commands.describe(user="Who you owe", amount=f"How many {CURRENCY_NAME_PLURAL}", reason="Why you owe them (optional)")
+@bot.tree.command(name="owe")
+@app_commands.describe(user="Who you owe", amount=f"How many to owe", reason="Why you owe them (optional)")
 async def owe(interaction: discord.Interaction, user: discord.User, amount: str, *, reason: str = ""):
+    config = get_config()
     debtor = interaction.user.id
     creditor = user.id
 
@@ -198,14 +202,18 @@ async def owe(interaction: discord.Interaction, user: discord.User, amount: str,
     
     await send_success_message(
             interaction,
-            title=f"{CURRENCY_NAME} Debt Added - {CURRENCY_NAME} Economy Thriving",
-            description=  f"Added {currency_formatter(data['amount'],use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
+            title=f"{config["CURRENCY_NAME"]} Debt Added - {config["CURRENCY_NAME"]} Economy Thriving",
+            description=  f"Added {currency_formatter(data['amount'], config, use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
         )
 
 #See your own pint debts
-@bot.tree.command(name=f"{GET_DEBTS_COMMAND}", description=f"See your current {CURRENCY_NAME} debts.")
+@bot.tree.command(name="get_debts")
 @app_commands.describe(show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
-async def get_debts(interaction: discord.Interaction, show_percentages: bool = SHOW_PERCENTAGES_DEFAULT):
+async def get_debts(interaction: discord.Interaction, show_percentages: bool = None):
+    config = get_config()
+    if show_percentages is None:
+        show_percentages = config["SHOW_PERCENTAGES_DEFAULT"]
+
     user_id = str(interaction.user.id)
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
@@ -213,15 +221,15 @@ async def get_debts(interaction: discord.Interaction, show_percentages: bool = S
     try:
         data = api_client.get_debts(user_id)
     except Exception as e:
-        await handle_error(interaction, e, title=f"Error Fetching {CURRENCY_NAME} Debts")
+        await handle_error(interaction, e, title=f"Error Fetching {config["CURRENCY_NAME"]} Debts")
         return
     
     # Check if the API returned a "message" field (no debts found)
     if "message" in data:
         await send_info_message(
             interaction,
-            title=f"Looks like you're not currently contributing to the {CURRENCY_NAME} economy.",
-            description=f"No debts found owed to or from this user. That's kind of cringe, get some {CURRENCY_NAME} debt bro."
+            title=f"Looks like you're not currently contributing to the {config["CURRENCY_NAME"]} economy.",
+            description=f"No debts found owed to or from this user. That's kind of cringe, get some {config["CURRENCY_NAME"]} debt bro."
         )
         return
 
@@ -233,18 +241,18 @@ async def get_debts(interaction: discord.Interaction, show_percentages: bool = S
     # Debts owed by the user
     if data["owed_by_you"]:
         total_owed_by_you = Fraction(data['total_owed_by_you'])
-        lines.append(f"__**{CURRENCY_NAME} YOU OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}")
+        lines.append(f"__**{config["CURRENCY_NAME"]} YOU OWE:**__ {currency_formatter(total_owed_by_you, config, use_unicode).upper()}")
         for creditor_id, entries in data["owed_by_you"].items():
             try:
                 creditor = await bot.fetch_user(int(creditor_id))  # Fetch the creditor's username
                 creditor_name = creditor.display_name
             except discord.NotFound:
                 creditor_name = f"Unknown User ({creditor_id})"
-            lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
+            lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), config, use_unicode)}")
             for entry in entries:
-                amount = currency_formatter(entry["amount"], use_unicode)
+                amount = currency_formatter(entry["amount"], config, use_unicode)
                 if show_percentages:
-                    amount+=f" ({(100*Fraction(entry['amount'])/total_owed_by_you):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
+                    amount+=f" ({(100*Fraction(entry['amount'])/total_owed_by_you):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
                 reason = entry["reason"]
                 timestamp = entry["timestamp"]
                 lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -252,7 +260,7 @@ async def get_debts(interaction: discord.Interaction, show_percentages: bool = S
     # Debts owed to the user
     if data["owed_to_you"]:
         total_owed_to_you = Fraction(data['total_owed_to_you'])
-        lines.append(f"\n__**{CURRENCY_NAME} OWED TO YOU:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}")
+        lines.append(f"\n__**{config["CURRENCY_NAME"]} OWED TO YOU:**__ {currency_formatter(total_owed_to_you, config, use_unicode).upper()}")
         for debtor_id, entries in data["owed_to_you"].items():
             try:
                 debtor = await bot.fetch_user(int(debtor_id))  # Fetch the debtor's username
@@ -260,11 +268,11 @@ async def get_debts(interaction: discord.Interaction, show_percentages: bool = S
             except discord.NotFound:
                 debtor_name = f"Unknown User ({debtor_id})"
 
-            lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
+            lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), config, use_unicode)}")
             for entry in entries:
-                amount = currency_formatter(entry["amount"], use_unicode)
+                amount = currency_formatter(entry["amount"], config, use_unicode)
                 if show_percentages:
-                    amount+=f" ({(100*Fraction(entry['amount'])/total_owed_to_you):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
+                    amount+=f" ({(100*Fraction(entry['amount'])/total_owed_to_you):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
                 reason = entry["reason"]
                 timestamp = entry["timestamp"]
                 lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -273,23 +281,29 @@ async def get_debts(interaction: discord.Interaction, show_percentages: bool = S
     # Send the formatted response
     await send_info_message(
         interaction,
-        title=f"Your {CURRENCY_NAME} debts *{interaction.user.display_name}*, thanks for participating in the {CURRENCY_NAME} economy!", 
+        title=f"Your {config["CURRENCY_NAME"]} debts *{interaction.user.display_name}*, thanks for participating in the {config["CURRENCY_NAME"]} economy!", 
         description="\n".join(lines)
         )
     # Send the formatted response
 
 
 #See everyone's pints
-@bot.tree.command(name=f"{GET_ALL_DEBTS_COMMAND}", description=f"See everyone's total {CURRENCY_NAME} debts.")
+@bot.tree.command(name="get_all_debts")
 @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot settings).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
-async def get_all_debts(interaction: discord.Interaction, table_format: bool = USE_TABLE_FORMAT_DEFAULT, show_percentages: bool = SHOW_PERCENTAGES_DEFAULT):
+async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
+    config = get_config()
+    if table_format is None:
+        table_format = config["USE_TABLE_FORMAT_DEFAULT"]
+    if show_percentages is None:
+        show_percentages = config["SHOW_PERCENTAGES_DEFAULT"]
+
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
     # Call the external API to fetch all debts
     try:
         data = api_client.get_all_debts()
     except Exception as e:
-        await handle_error(interaction, e, title=f"Error Fetching {CURRENCY_NAME} Debts")
+        await handle_error(interaction, e, title=f"Error Fetching {config["CURRENCY_NAME"]} Debts")
         return
 
     # Check if the API returned an empty response
@@ -309,12 +323,12 @@ async def get_all_debts(interaction: discord.Interaction, table_format: bool = U
         except discord.NotFound:
             user_name = f"Unknown User ({user_id})"
         
-        owes = currency_formatter(totals['owes'], use_unicode)
-        is_owed = currency_formatter(totals['is_owed'], use_unicode)
+        owes = currency_formatter(totals['owes'], config, use_unicode)
+        is_owed = currency_formatter(totals['is_owed'], config, use_unicode)
 
         if show_percentages:
-            owes += f" ({(100 * Fraction(totals['owes']) / total_in_circulation):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
-            is_owed += f" ({(100 * Fraction(totals['is_owed']) / total_in_circulation):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
+            owes += f" ({(100 * Fraction(totals['owes']) / total_in_circulation):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
+            is_owed += f" ({(100 * Fraction(totals['is_owed']) / total_in_circulation):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
 
         table_data.append({
             "name": user_name,
@@ -324,22 +338,23 @@ async def get_all_debts(interaction: discord.Interaction, table_format: bool = U
 
     # Determine the economy health message
     economy_health_message = next(
-        (health["message"] for health in ECONOMY_HEALTH_MESSAGES if total_in_circulation >= health["threshold"]),
+        (health["message"] for health in config["ECONOMY_HEALTH_MESSAGES"] if total_in_circulation >= health["threshold"]),
         "The economy is in an unknown state"
     )
 
     # Call send_table_message to send the data as a table
     await send_two_column_table_message(
         interaction,
-        title=f"{CURRENCY_NAME} Economy Overview",
-        description=f"{economy_health_message}\n\n**Total {CURRENCY_NAME_PLURAL} in circulation: {currency_formatter(total_in_circulation, use_unicode)}**",
+        title=f"{config["CURRENCY_NAME"]} Economy Overview",
+        description=f"{economy_health_message}\n\n**Total {config["CURRENCY_NAME_PLURAL"]} in circulation: {currency_formatter(total_in_circulation, config, use_unicode)}**",
         data=table_data,
         table_format=table_format
     )
 
-@bot.tree.command(name="settle", description=f"Settle {CURRENCY_NAME} debts with someone, starting with the oldest debts.")
-@app_commands.describe(user="Who you want to settle debts with", amount=f"How many {CURRENCY_NAME} to settle")
+@bot.tree.command(name="settle")
+@app_commands.describe(user="Who you want to settle debts with", amount=f"How much to settle")
 async def settle(interaction: discord.Interaction, user: discord.User, amount: str):
+    config = get_config()
     debtor = interaction.user.id
     creditor = user.id
 
@@ -373,15 +388,15 @@ async def settle(interaction: discord.Interaction, user: discord.User, amount: s
     use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
 
     # Send confirmation message
-    settled_amount = currency_formatter(data["settled_amount"], use_unicode)
-    remaining_amount = currency_formatter(data["remaining_amount"], use_unicode)
+    settled_amount = currency_formatter(data["settled_amount"], config, use_unicode)
+    remaining_amount = currency_formatter(data["remaining_amount"], config, use_unicode)
     await send_success_message(
         interaction,
         title="Debt Settled Successfully",
         description=  f"Settled {settled_amount} with {user.mention}. Remaining debt: {remaining_amount}."
     )
 
-@bot.tree.command(name="set_unicode_preference", description="Set your default preference for using Unicode fractions.")
+@bot.tree.command(name="set_unicode_preference")
 @app_commands.describe(use_unicode="Set to True to use Unicode fractions, False otherwise.")
 async def set_unicode_preference(interaction: discord.Interaction, use_unicode: bool):
     await interaction.response.defer()
@@ -406,22 +421,26 @@ async def set_unicode_preference(interaction: discord.Interaction, use_unicode: 
         title="Preference Updated",
         description=data["message"])
 
-@bot.tree.command(name="settings", description="View the current bot settings.")
+@bot.tree.command(name="settings")
 @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot Settings.).")
-async def settings_command(interaction: discord.Interaction, table_format: bool = USE_TABLE_FORMAT_DEFAULT):
+async def settings_command(interaction: discord.Interaction, table_format: bool = None):
+    config = get_config()
+    if table_format is None:
+        table_format = config["USE_TABLE_FORMAT_DEFAULT"]
+    
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
 
     # Prepare the bot settings data
     bot_settings_data=[]
-    for key, value in CONFIG.items():
+    for key, value in get_config().items():
         bot_setting = {"Setting": key, "Value": value}
         bot_settings_data.append(bot_setting)
     
     # Send the bot settings as a one-column table
     await send_one_column_table_message(
         interaction,
-        title=f"Current {BOT_NAME} Setting (Customizable)",
+        title=f"Current {config["BOT_NAME"]} Setting (Customizable)",
         description="Here are the current Bot settings:",
         data=bot_settings_data,
         table_format=table_format
@@ -429,10 +448,10 @@ async def settings_command(interaction: discord.Interaction, table_format: bool 
 
     # Prepare the API settings data
     api_settings_data = [
-        {"Setting": "Maximum Debt Per Transaction", "Value": MAXIMUM_PER_DEBT},
-        {"Setting": "Smallest Unit Allowed (Quantization)", "Value": SMALLEST_UNIT},
-        {"Setting": "Maximum Debt Description Character Limit", "Value": MAXIMUM_DEBT_CHARACTER_LIMIT},
-        {"Setting": "Enforce Quantization when Settling Debts", "Value": QUANTIZE_SETTLING_DEBTS}
+        {"Setting": "Maximum Debt Per Transaction", "Value": config["MAXIMUM_PER_DEBT"]},
+        {"Setting": "Smallest Unit Allowed (Quantization)", "Value": config["SMALLEST_UNIT"]},
+        {"Setting": "Maximum Debt Description Character Limit", "Value": config["MAXIMUM_DEBT_CHARACTER_LIMIT"]},
+        {"Setting": "Enforce Quantization when Settling Debts", "Value": config["QUANTIZE_SETTLING_DEBTS"]}
     ]
 
     # Send the API settings as a one-column table
@@ -444,4 +463,8 @@ async def settings_command(interaction: discord.Interaction, table_format: bool 
         table_format=table_format
     )
 
-bot.run(BOT_TOKEN)
+def main():
+    bot.run(get_config()["BOT_TOKEN"])
+
+if __name__ == "__main__":
+    main()

@@ -1,26 +1,18 @@
 from fractions import Fraction
-from config import load_config
 from fraction_formatter import fraction_to_unicode
 
-# Load configuration from config.json
-CONFIG = load_config()
-
-CURRENCY_NAME = CONFIG["CURRENCY_NAME"]
-CURRENCY_NAME_PLURAL = CONFIG["CURRENCY_NAME_PLURAL"]
-USE_DECIMAL_OUTPUT = CONFIG["USE_DECIMAL_OUTPUT"]
-
 # Format pints
-def currency_formatter(amount, use_unicode=False) -> str:
+def currency_formatter(amount, config, use_unicode=False) -> str:
     # Convert pint_number to a Fraction
     fraction = Fraction(amount)
     
     # Check if the number is singular or plural
     if fraction > 0 and fraction <= 1:
-        currency = CURRENCY_NAME.lower()
+        currency = config["CURRENCY_NAME"].lower()
     else:
-        currency = CURRENCY_NAME_PLURAL.lower()
+        currency = config["CURRENCY_NAME_PLURAL"].lower()
     
-    if USE_DECIMAL_OUTPUT == True:
+    if config["USE_DECIMAL_OUTPUT"] == True:
         return f"{float(fraction)} {currency}"
     else:
         # Get the whole number part
