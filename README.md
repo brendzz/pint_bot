@@ -30,6 +30,18 @@ uvicorn API:app
 
 Both mixed numbers (`2 1/3`) and improper fractions (`7/3`) are supported, as well as decimals.
 
+## Testing
+
+Unit tests are written using **pytest**.
+
+### Running the tests
+
+Run all tests from the project root:
+
+```bash
+pytest
+```
+
 ## Customising
 - Customise the API by modifying the `.env` file in the API folder (e.g., how much debt to allow per transaction, the API endpoint names).
 - Customise the bot by modifying the `bot_config.json` file.
