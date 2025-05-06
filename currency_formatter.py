@@ -1,19 +1,13 @@
-import json
-from pathlib import Path
 from fractions import Fraction
+from config import load_config
 from fraction_formatter import fraction_to_unicode
 
 # Load configuration from config.json
-config_path = Path("Config/bot_config.json")
-if not config_path.exists():
-    raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
+CONFIG = load_config()
 
-with open(config_path, "r") as config_file:
-    config = json.load(config_file)
-
-CURRENCY_NAME = config.get("CURRENCY_NAME","Pint")
-CURRENCY_NAME_PLURAL = config.get("CURRENCY_NAME_PLURAL","Pints")
-USE_DECIMAL_OUTPUT = config.get("USE_DECIMAL_OUTPUT", False)
+CURRENCY_NAME = CONFIG["CURRENCY_NAME"]
+CURRENCY_NAME_PLURAL = CONFIG["CURRENCY_NAME_PLURAL"]
+USE_DECIMAL_OUTPUT = CONFIG["USE_DECIMAL_OUTPUT"]
 
 # Format pints
 def currency_formatter(amount, use_unicode=False) -> str:

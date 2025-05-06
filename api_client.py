@@ -1,19 +1,10 @@
 import requests
-import json
-from pathlib import Path
 from config import load_config
 
 CONFIG = load_config()
 GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
 GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
-
-config_path = Path("Config/bot_config.json")
-if not config_path.exists():
-    raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
-
-with open(config_path, "r") as config_file:
-    config = json.load(config_file)
-API_URL = config.get("API_URL", "http://127.0.0.1:8000")
+API_URL = CONFIG["API_URL"]
 
 def add_debt(payload: dict):
     response = requests.post(f"{API_URL}/owe", json=payload)

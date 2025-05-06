@@ -2,8 +2,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
-import os
-import json
 from config import load_config
 from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging

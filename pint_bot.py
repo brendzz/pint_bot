@@ -43,11 +43,11 @@ bot = commands.Bot("!",intents=intents)
 
 def format_error_message(text):
     return text.format(
-            CURRENCY=CONFIG["CURRENCY_NAME"],
-            CURRENCY_PLURAL=CONFIG["CURRENCY_NAME_PLURAL"],
-            MAX_DEBT=CONFIG["MAXIMUM_PER_DEBT"],
-            SMALLEST_UNIT=CONFIG["SMALLEST_UNIT"],
-            BOT_NAME=CONFIG["BOT_NAME"],
+            CURRENCY=CURRENCY_NAME,
+            CURRENCY_PLURAL=CURRENCY_NAME_PLURAL,
+            MAX_DEBT=MAXIMUM_PER_DEBT,
+            SMALLEST_UNIT=SMALLEST_UNIT,
+            BOT_NAME=BOT_NAME,
         )
 
 def get_error_message(error_code):
@@ -242,7 +242,7 @@ async def get_debts(interaction: discord.Interaction, show_percentages: bool = S
                 creditor_name = f"Unknown User ({creditor_id})"
             lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
             for entry in entries:
-                amount = currency_formatter(entry["amount"], use_unicode, CURRENCY_NAME, CURRENCY_NAME_PLURAL, USE_DECIMAL_OUTPUT)
+                amount = currency_formatter(entry["amount"], use_unicode)
                 if show_percentages:
                     amount+=f" ({(100*Fraction(entry['amount'])/total_owed_by_you):.{PERCENTAGE_DECIMAL_PLACES}f}%)"
                 reason = entry["reason"]
@@ -414,7 +414,7 @@ async def settings_command(interaction: discord.Interaction, table_format: bool 
 
     # Prepare the bot settings data
     bot_settings_data=[]
-    for key, value in config.items():
+    for key, value in CONFIG.items():
         bot_setting = {"Setting": key, "Value": value}
         bot_settings_data.append(bot_setting)
     

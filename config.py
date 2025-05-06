@@ -48,4 +48,5 @@ def load_config():
         "REACTION_EMOJI": config.get("REACTION_EMOJI", "🍺"),
         "TRANSFERABLE_ITEMS": config.get("TRANSFERABLE_ITEMS", []),
         "ECONOMY_HEALTH_MESSAGES": economy_messages,
+        "API_URL": config.get("API_URL", "http://127.0.0.1:8000"),
     }
