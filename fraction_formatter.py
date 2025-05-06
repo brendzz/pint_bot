@@ -47,3 +47,11 @@ def custom_unicode_fraction(fraction: Fraction) -> str:
     numerator = to_superscript(fraction.numerator)
     denominator = to_subscript(fraction.denominator)
     return f"{numerator}/{denominator}"
+
+def to_percentage(part, whole, config: dict[str,any]) -> str:
+    """
+    Divides two numbers and returns a percentage representation.
+    """
+    fraction = Fraction(part) / Fraction(whole)
+    percentage = fraction * 100
+    return f"{(percentage):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%"

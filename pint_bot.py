@@ -8,6 +8,7 @@ from currency_formatter import currency_formatter
 from API.models import OweRequest, SettleRequest, SetUnicodePreferenceRequest
 from error_messages import ERROR_MESSAGES
 import api_client
+from fraction_formatter import to_percentage
 from send_messages import send_error_message, send_success_message, send_info_message, send_one_column_table_message, send_two_column_table_message
 import requests
 from fractions import Fraction
@@ -264,7 +265,7 @@ def register_commands(bot, config: dict[str, any]):
                 for entry in entries:
                     amount = currency_formatter(entry["amount"], config, use_unicode)
                     if show_percentages:
-                        amount+=f" ({(100*Fraction(entry['amount'])/total_owed_by_you):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
+                        amount+=f" ({to_percentage(entry['amount'],total_owed_by_you,config)}%)"
                     reason = entry["reason"]
                     timestamp = entry["timestamp"]
                     lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -284,7 +285,7 @@ def register_commands(bot, config: dict[str, any]):
                 for entry in entries:
                     amount = currency_formatter(entry["amount"], config, use_unicode)
                     if show_percentages:
-                        amount+=f" ({(100*Fraction(entry['amount'])/total_owed_to_you):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
+                        amount+=f" ({to_percentage(entry['amount'],total_owed_to_you,config)}%)"
                     reason = entry["reason"]
                     timestamp = entry["timestamp"]
                     lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -338,8 +339,8 @@ def register_commands(bot, config: dict[str, any]):
             is_owed = currency_formatter(totals['is_owed'], config, use_unicode)
 
             if show_percentages:
-                owes += f" ({(100 * Fraction(totals['owes']) / total_in_circulation):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
-                is_owed += f" ({(100 * Fraction(totals['is_owed']) / total_in_circulation):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%)"
+                owes += f" ({to_percentage(totals['owes'],total_in_circulation,config)}%)"
+                is_owed += f" ({to_percentage(totals['is_owed'],total_in_circulation,config)}%)"
 
             table_data.append({
                 "name": user_name,
