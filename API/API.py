@@ -22,14 +22,16 @@ MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
 # Set up FastAPI
 app = FastAPI()
 
-# /owe to add pint debts
 @app.post("/owe")
 async def add_debt(request: OweRequest):
+    """
+    /owe to add pint debts between a pair of users
+    """
 
     data = load_data()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
-    #check if valid target to owe
+    # Check if valid target to owe
     if debtor_id == creditor_id:
         raise HTTPException(status_code=400, detail=f"CANNOT_OWE_SELF")
   
@@ -39,7 +41,7 @@ async def add_debt(request: OweRequest):
         raise HTTPException(status_code=400, detail=f"INVALID_AMOUNT")
     except (Exception):
         raise HTTPException(status_code=400, detail=f"BAD_REQUEST")
-    #check in range
+    # Check in range
     if amount < 0:
         raise HTTPException(status_code=400, detail=f"NEGATIVE_AMOUNT")
     elif amount == 0:
@@ -80,9 +82,11 @@ async def add_debt(request: OweRequest):
 
     return {"amount": str(amount), "reason": request.reason, "timestamp": datetime.now().strftime("%d-%m-%Y")}
 
-# /pints to see your current pint debts
 @app.get(f"/{GET_DEBTS_COMMAND}/{{user_id}}")
 async def get_debts(user_id: int):
+    """
+    /pints to see your current pint debts
+    """
     data = load_data()
     user_id_str = str(user_id)
     
@@ -144,6 +148,9 @@ async def get_debts(user_id: int):
 
 @app.get(f"/{GET_ALL_DEBTS_COMMAND}")
 async def get_all_debts():
+    """
+    To see all current debts between users
+    """
     data = load_data()
 
     result = {}
@@ -171,6 +178,9 @@ async def get_all_debts():
 
 @app.post("/settle")
 async def settle_debt(request: SettleRequest):
+    """
+    /settle to settle debt between a pair of users
+    """
     data = load_data()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
@@ -253,6 +263,9 @@ async def settle_debt(request: SettleRequest):
 
 @app.get("/get_unicode_preference/{user_id}")
 async def get_unicode_preference(user_id: int):
+    """
+    Get a user's preference on whether they want fractions to be displayed in Unicode format.
+    """
     data = load_data()
     user_id_str = str(user_id)
 
@@ -267,6 +280,9 @@ async def get_unicode_preference(user_id: int):
 
 @app.post("/set_unicode_preference")
 async def set_unicode_preference(request: SetUnicodePreferenceRequest):
+    """
+    Set a user's preference on whether they want fractions to be displayed in Unicode format.
+    """
     data = load_data()
     user_id_str = str(request.user_id)
     use_unicode = request.use_unicode
