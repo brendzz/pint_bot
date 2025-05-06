@@ -20,12 +20,18 @@ bot = commands.Bot("!",intents=intents)
 _config = None
 
 def get_config():
+    """
+    Returns the bot configuration. Loads it from a file if not already loaded.
+    """
     global _config
     if _config is None:
         _config = load_config()
     return _config
 
 def format_error_message(text):
+    """
+    Formats the error message with values from config.
+    """
     config = get_config()
     return text.format(
             CURRENCY=config["CURRENCY_NAME"],
@@ -36,7 +42,9 @@ def format_error_message(text):
         )
 
 def get_error_message(error_code):
-    #Retrieves and formats an error message from ERROR_MESSAGES
+    """
+    Retrieves and formats an error message from ERROR_MESSAGES
+    """
     error = ERROR_MESSAGES.get(error_code, ERROR_MESSAGES["UNKNOWN_ERROR"])
     return {
         "title": format_error_message(error["title"]),
@@ -44,6 +52,9 @@ def get_error_message(error_code):
     }
 
 def parse_api_error(e):
+    """
+    Parses the API error response and returns a formatted error message.
+    """
     try:
         # Extract the "detail" field from the response
         error_details = e.response.json().get("detail", "UNKNOWN_ERROR")
@@ -58,8 +69,10 @@ def parse_api_error(e):
     except Exception:
         return get_error_message("ERROR_PARSING_ERROR")
 
-async def handle_error(interaction, error=None, error_code=None, title=None):
-    # Handles errors and sends appropriate error messages.
+async def handle_error(interaction: discord.Interaction, error=None, error_code: str=None, title: str=None):
+    """
+    Handles errors and sends appropriate error messages.
+    """
     if error_code:
         error_message = get_error_message(error_code)
     elif isinstance(error, requests.exceptions.HTTPError):
@@ -85,6 +98,9 @@ async def fetch_unicode_preference(interaction, user_id):
 
 @bot.event
 async def on_ready():
+    """
+    Called when the bot is ready and connected to Discord.
+    """
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("------")
     config = get_config()
@@ -95,6 +111,9 @@ async def on_ready():
 
 @bot.event
 async def on_message(message: discord.Message):
+    """
+    Called when a message is sent in a channel the bot can see.
+    """
     config = get_config()
     
     # Ignore messages sent by the bot itself
@@ -126,6 +145,9 @@ async def on_message(message: discord.Message):
     await bot.process_commands(message)
 
 def register_commands(bot, config: dict[str, any]):
+    """
+    Registers the bot commands with the Discord API.
+    """
     @bot.tree.command(name="help", description="Get a list of available commands and their descriptions.")
     async def help_command(interaction: discord.Interaction):
         config = get_config()
@@ -453,6 +475,9 @@ def register_commands(bot, config: dict[str, any]):
         )
 
 def main():
+    """
+    Main function to run the bot.
+    """
     bot.run(get_config()["BOT_TOKEN"])
 
 if __name__ == "__main__":
