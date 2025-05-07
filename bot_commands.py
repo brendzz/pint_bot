@@ -176,15 +176,16 @@ def register_commands(bot, config: dict[str, any]):
 
         # Defer the interaction to avoid timeout
         await interaction.response.defer()
+
         # Call the external API to fetch all debts
         try:
             data = api_client.get_all_debts()
         except Exception as e:
             await handle_error(interaction, e, title=f"Error Fetching {config["CURRENCY_NAME"]} Debts")
             return
-
+        
         # Check if the API returned an empty response
-        if not data:
+        if data == {'total_in_circulation': '0'}:
             await handle_error(interaction, error_code="NO_DEBTS_IN_ECONOMY")
             return
         
