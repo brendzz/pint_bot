@@ -81,7 +81,7 @@ def register_commands(bot, config: dict[str, any]):
         await send_success_message(
                 interaction,
                 title=f"{config["CURRENCY_NAME"]} Debt Added - {config["CURRENCY_NAME"]} Economy Thriving",
-                description=  f"Added {currency_formatter(data['amount'], config, use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
+                description= f"Added {currency_formatter(data['amount'], config, use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
             )
 
     #See your own pint debts
@@ -275,7 +275,7 @@ def register_commands(bot, config: dict[str, any]):
         await send_success_message(
             interaction,
             title="Debt Settled Successfully",
-            description=  f"Settled {settled_amount} with {user.mention}. Remaining debt: {remaining_amount}."
+            description= f"Settled {settled_amount} with {user.mention}. Remaining debt: {remaining_amount}."
         )
 
     @bot.tree.command(name="set_unicode_preference", description="Set your default preference for using Unicode fractions.")
