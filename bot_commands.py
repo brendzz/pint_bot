@@ -3,7 +3,6 @@ import discord
 from discord import app_commands
 from API.models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
 import api_client
-from bot_config import get_config
 import currency_formatter
 from error_handling import handle_error
 from error_messages import ERROR_MESSAGES
@@ -23,7 +22,6 @@ def register_commands(bot, config: dict[str, any]):
     """
     @bot.tree.command(name="help", description="Get a list of available commands and their descriptions.")
     async def help_command(interaction: discord.Interaction):
-        config = get_config()
         # Defer the interaction to avoid timeout
         await interaction.response.defer()
         # Define the list of commands and their descriptions
@@ -55,7 +53,6 @@ def register_commands(bot, config: dict[str, any]):
     @bot.tree.command(name="owe", description=f"Add a number of {config['CURRENCY_NAME_PLURAL']} you owe someone.")
     @app_commands.describe(user="Who you owe", amount=f"How many {config['CURRENCY_NAME_PLURAL']} to owe", reason="Why you owe them (optional)")
     async def owe(interaction: discord.Interaction, user: discord.User, amount: str, *, reason: str = ""):
-        config = get_config()
         debtor = interaction.user.id
         creditor = user.id
 
@@ -95,7 +92,6 @@ def register_commands(bot, config: dict[str, any]):
     @bot.tree.command(name=config["GET_DEBTS_COMMAND"], description=f"See your current {config['CURRENCY_NAME']} debts.")
     @app_commands.describe(show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
     async def get_debts(interaction: discord.Interaction, show_percentages: bool = None):
-        config = get_config()
         if show_percentages is None:
             show_percentages = config["SHOW_PERCENTAGES_DEFAULT"]
 
@@ -175,7 +171,6 @@ def register_commands(bot, config: dict[str, any]):
     @bot.tree.command(name=config["GET_ALL_DEBTS_COMMAND"], description=f"See everyone's total {config['CURRENCY_NAME']} debts.")
     @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot settings).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
     async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
-        config = get_config()
         if table_format is None:
             table_format = config["USE_TABLE_FORMAT_DEFAULT"]
         if show_percentages is None:
@@ -238,7 +233,6 @@ def register_commands(bot, config: dict[str, any]):
     @bot.tree.command(name="settle", description=f"Settle {config['CURRENCY_NAME']} debts with someone, starting with the oldest debts.")
     @app_commands.describe(user="Who you want to settle debts with", amount=f"How much to settle")
     async def settle(interaction: discord.Interaction, user: discord.User, amount: str):
-        config = get_config()
         debtor = interaction.user.id
         creditor = user.id
 
@@ -308,7 +302,6 @@ def register_commands(bot, config: dict[str, any]):
     @bot.tree.command(name="settings", description="View the current bot settings.")
     @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot Settings.).")
     async def settings_command(interaction: discord.Interaction, table_format: bool = None):
-        config = get_config()
         if table_format is None:
             table_format = config["USE_TABLE_FORMAT_DEFAULT"]
         
@@ -317,7 +310,7 @@ def register_commands(bot, config: dict[str, any]):
 
         # Prepare the bot settings data
         bot_settings_data=[]
-        for key, value in get_config().items():
+        for key, value in config.items():
             bot_setting = {"Setting": key, "Value": value}
             bot_settings_data.append(bot_setting)
         
