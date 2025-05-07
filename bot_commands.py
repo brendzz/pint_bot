@@ -15,9 +15,7 @@ async def fetch_unicode_preference(interaction, user_id):
         return None
 
 def register_commands(bot, config: dict[str, any]):
-    """
-    Registers the bot commands with the Discord API.
-    """
+    """Registers the bot commands with the Discord API."""
     @bot.tree.command(name="help", description="Get a list of available commands and their descriptions.")
     async def help_command(interaction: discord.Interaction):
         # Defer the interaction to avoid timeout

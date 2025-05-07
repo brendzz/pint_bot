@@ -54,9 +54,7 @@ def load_config():
     }
 
 def get_config():
-    """
-    Returns the bot configuration. Loads it from a file if not already loaded.
-    """
+    """Returns the bot configuration. Loads it from a file if not already loaded."""
     global _config
     if _config is None:
         _config = load_config()

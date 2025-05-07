@@ -6,9 +6,7 @@ from error_messages import ERROR_MESSAGES
 from send_messages import send_error_message
 
 def format_error_message(error_message: str):
-    """
-    Formats the error message with values from config.
-    """
+    """Formats the error message with values from config."""
     config = get_config()
     return error_message.format(
             CURRENCY=config["CURRENCY_NAME"],
@@ -19,9 +17,7 @@ def format_error_message(error_message: str):
         )
 
 def get_error_message(error_code: str):
-    """
-    Retrieves and formats an error message from ERROR_MESSAGES
-    """
+    """Retrieves and formats an error message from ERROR_MESSAGES."""
     error = ERROR_MESSAGES.get(error_code, ERROR_MESSAGES["UNKNOWN_ERROR"])
     return {
         "title": format_error_message(error["title"]),
@@ -29,9 +25,7 @@ def get_error_message(error_code: str):
     }
 
 def parse_api_error(e: requests.exceptions.HTTPError):
-    """
-    Parses the API error response and returns a formatted error message.
-    """
+    """Parses the API error response and returns a formatted error message."""
     try:
         # Extract the "detail" field from the response
         error_details = e.response.json().get("detail", "UNKNOWN_ERROR")
@@ -47,9 +41,7 @@ def parse_api_error(e: requests.exceptions.HTTPError):
         return get_error_message("ERROR_PARSING_ERROR")
 
 async def handle_error(interaction: discord.Interaction, error=None, error_code: str=None, title: str=None):
-    """
-    Handles errors and sends appropriate error messages.
-    """
+    """Handles errors and sends appropriate error messages."""
     if error_code:
         error_message = get_error_message(error_code)
     elif isinstance(error, requests.exceptions.HTTPError):

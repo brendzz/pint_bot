@@ -1,9 +1,7 @@
 from fractions import Fraction
 
 def mixed_number_to_fraction(input_str: str) -> Fraction:
-    """
-    Function to convert a mixed number or fraction string to a Fraction object
-    """
+    """Function to convert a mixed number or fraction string to a Fraction object"""
     try:
         return Fraction(input_str)
     except ValueError:

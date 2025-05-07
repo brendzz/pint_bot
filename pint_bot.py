@@ -12,9 +12,7 @@ bot = commands.Bot("!",intents=intents)
 
 @bot.event
 async def on_ready():
-    """
-    Called when the bot is ready and connected to Discord.
-    """
+    """Called when the bot is ready and connected to Discord."""
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("--------------------------------------------------------------")
     config = get_config()
@@ -28,9 +26,7 @@ async def on_ready():
 
 @bot.event
 async def on_message(message: discord.Message):
-    """
-    Called when a message is sent in a channel the bot can see.
-    """
+    """Called when a message is sent in a channel the bot can see."""
     config = get_config()
     
     # Ignore messages sent by the bot itself
@@ -62,9 +58,7 @@ async def on_message(message: discord.Message):
     await bot.process_commands(message)
 
 def main():
-    """
-    Main function to run the bot.
-    """
+    """Main function to run the bot."""
     bot.run(get_config()["BOT_TOKEN"])
 
 if __name__ == "__main__":
