@@ -161,7 +161,8 @@ class TestOweCommand:
         "target_attr, error_code", [
             ("user", "CANNOT_OWE_SELF"),
             ("bot.user", "CANNOT_OWE_BOT"),
-        ]
+        ],
+        ids=["cant_owe_self", "cant_owe_bot"]
     )
     @pytest.mark.asyncio
     async def test_owe_errors(self, bot, target_attr, error_code):
@@ -193,7 +194,7 @@ class TestGetDebtsCommand:
             'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
             'total_owed_to_you': '2'
         }, 'Your Pint debts'),
-    ])
+    ], ids=["no_debts", "has_debts"])
     @pytest.mark.asyncio
     async def test_get_debts_various(self, bot, config, shared, response, expected_title):
         interaction = DummyInteraction(DummyUser(1), bot)
@@ -214,7 +215,8 @@ class TestGetAllDebtsCommand:
             '1': {'owes': '1', 'is_owed': '2'},
             '2': {'owes': '0', 'is_owed': '1'}
         }, False, 'Economy active'),
-    ])
+    ],
+    ids=["no_debts_in_economy", "debts_in_economy"])
     @pytest.mark.asyncio
     async def test_get_all_debts_various(self, bot, config, shared, response, expect_error, health_msg):
         interaction = DummyInteraction(DummyUser(1), bot)
@@ -236,7 +238,8 @@ class TestSettleCommand:
         "target_attr, error_code", [
             ("user", "CANNOT_SETTLE_SELF"),
             ("bot.user", "CANNOT_SETTLE_BOT"),
-        ]
+        ],
+        ids=["cant_settle_self", "cant_settle_bot"]
     )
     @pytest.mark.asyncio
     async def test_settle_errors(self, bot, target_attr, error_code):
