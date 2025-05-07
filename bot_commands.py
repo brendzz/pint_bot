@@ -3,10 +3,8 @@ import discord
 from discord import app_commands
 from API.models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
 import api_client
-import currency_formatter
 from error_handling import handle_error
-from error_messages import ERROR_MESSAGES
-from fraction_formatter import to_percentage
+from formatter import currency_formatter, to_percentage
 from send_messages import send_info_message, send_one_column_table_message, send_success_message, send_two_column_table_message
 
 async def fetch_unicode_preference(interaction, user_id):
