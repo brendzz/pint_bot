@@ -132,10 +132,6 @@ async def get_debts(user_id: int):
             # Convert amount to Fraction for summation
             result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id_str])
 
-    print("owed by you")
-    print(result["owed_by_you"])
-    print("owed to you")
-    print(result["owed_to_you"])
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
         return {"message": f"No debts found owed to or from this user."}
