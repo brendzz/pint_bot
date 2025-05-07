@@ -1,12 +1,6 @@
 import requests
-from bot_config import load_config
 
-_config = None
-def get_config():
-    global _config
-    if _config is None:
-        _config = load_config()
-    return _config
+from bot_config import get_config
 
 def get_api_url():
     return get_config()["API_URL"]

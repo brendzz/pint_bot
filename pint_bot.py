@@ -13,17 +13,6 @@ intents.message_content = True
 
 bot = commands.Bot("!",intents=intents)
 
-_config = None
-
-def get_config():
-    """
-    Returns the bot configuration. Loads it from a file if not already loaded.
-    """
-    global _config
-    if _config is None:
-        _config = load_config()
-    return _config
-
 def format_error_message(error_message: str):
     """
     Formats the error message with values from config.
