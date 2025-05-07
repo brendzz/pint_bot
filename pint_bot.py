@@ -1,3 +1,4 @@
+import time
 import discord
 from discord.ext import commands
 from bot_commands import register_commands
@@ -15,12 +16,15 @@ async def on_ready():
     Called when the bot is ready and connected to Discord.
     """
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
-    print("------")
+    print("--------------------------------------------------------------")
     config = get_config()
+    start_time = time.perf_counter()
     register_commands(bot, config)
     await bot.tree.sync()
-    print("Commands synced.")
-    print("------")
+    end_time = time.perf_counter()
+    elapsed = end_time - start_time
+    print(f"Commands registered and synced in {elapsed:.2f} seconds.")
+    print("--------------------------------------------------------------")
 
 @bot.event
 async def on_message(message: discord.Message):
