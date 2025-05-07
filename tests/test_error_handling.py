@@ -14,13 +14,13 @@ def mock_config():
         "BOT_NAME": "TestBot",
     }
 
-@patch("bot_config.get_config")
+@patch("error_handling.get_config")
 def test_format_error_message(mock_get_config, mock_config):
     mock_get_config.return_value = mock_config
     msg = format_error_message("You owe too much {CURRENCY}")
     assert msg == "You owe too much TestCoin"
 
-@patch("bot_config.get_config")
+@patch("error_handling.get_config")
 def test_get_error_message_known(mock_get_config, mock_config):
     mock_get_config.return_value = mock_config
     result = get_error_message("VALIDATION_ERROR")
