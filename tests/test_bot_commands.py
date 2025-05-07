@@ -134,178 +134,171 @@ def mocks(monkeypatch, shared, config):
         monkeypatch.setattr(commands, fn, make_stub(fn))
 
 # Tests
+class TestHelpCommand:
+    @pytest.mark.asyncio
+    async def test_help_command(self, bot):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands['help']
+        await cmd(interaction)
+        calls = interaction.send_info_message_calls
+        assert calls, "Expected send_info_message to be called"
+        kwargs = calls[0]['kwargs']
+        assert kwargs['title'] == 'PintBot Help'
+        assert '**/owe**' in kwargs['description']
+        assert '- Beer' in kwargs['description']
 
-@pytest.mark.asyncio
-async def test_help_command(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['help']
-    
-    await cmd(interaction)
-    calls = interaction.send_info_message_calls
-    assert calls, "Expected send_info_message to be called"
-    kwargs = calls[0]['kwargs']
-    assert kwargs['title'] == 'PintBot Help'
-    assert '**/owe**' in kwargs['description']
-    assert '- Beer' in kwargs['description']
+class TestOweCommand:
+    @pytest.mark.parametrize(
+        "target_attr, error_code", [
+            ("user", "CANNOT_OWE_SELF"),
+            ("bot.user", "CANNOT_OWE_BOT"),
+        ]
+    )
+    @pytest.mark.asyncio
+    async def test_owe_errors(self, bot, target_attr, error_code):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        # resolve target dynamically
+        target = getattr(interaction, target_attr) if '.' not in target_attr else eval(f"interaction.{target_attr}")
+        await bot.tree.commands['owe'](interaction, target, '1')
+        assert interaction.error['kwargs']['error_code'] == error_code
 
-@pytest.mark.asyncio
-async def test_owe_self_error(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['owe']
+    @pytest.mark.asyncio
+    async def test_owe_success(self, bot):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands['owe']
+        target = DummyUser(2)
+        await cmd(interaction, target, '3', reason='Test')
+        # verify API call payload
+        assert commands.api_client.calls['add_debt'] == {
+            'debtor': 1, 'creditor': 2, 'amount': '3', 'reason': 'Test'
+        }
+        calls = interaction.send_success_message_calls
+        assert calls, "Expected send_success_message to be called"
+        kwargs = calls[0]['kwargs']
+        assert kwargs['title'] == 'Pint Debt Added - Pint Economy Thriving'
+        assert '3' in kwargs['description']
 
-    # Self-owe error
-    await cmd(interaction, interaction.user, '1')
-    assert interaction.error['kwargs']['error_code'] == 'CANNOT_OWE_SELF'
+class TestGetDebtsCommand:
+    @pytest.mark.asyncio
+    async def test_get_debts_with_debts(self, bot, config, shared):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands[config['GET_DEBTS_COMMAND']]
 
-@pytest.mark.asyncio
-async def test_owe_bot_error(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['owe']
+        # With debts
+        shared.debts_response = {
+            'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '2025-01-01'}]},
+            'total_owed_by_you': '1',
+            'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
+            'total_owed_to_you': '2'
+        }
+        await cmd(interaction)
+        info_calls = interaction.send_info_message_calls
+        assert info_calls
+        title = info_calls[0]['kwargs']['title']
+        desc = info_calls[0]['kwargs']['description']
+        assert 'Your Pint debts' in title
+        assert '**User2**: 1' in desc
+        assert '- 1 for *Test* on 2025-01-01' in desc
+        assert '**User3**: 2' in desc
 
-    # Owe bot error
-    await cmd(interaction, bot.user, '1')
-    assert interaction.error['kwargs']['error_code'] == 'CANNOT_OWE_BOT'
+    @pytest.mark.asyncio
+    async def test_get_debts_no_debts(self, bot, config, shared):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands[config['GET_DEBTS_COMMAND']]
 
-@pytest.mark.asyncio
-async def test_owe_success(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['owe']
+        # No debts
+        shared.debts_response = {'message': 'No debts'}
+        await cmd(interaction)
+        info_calls = interaction.send_info_message_calls
+        assert info_calls
+        assert 'not currently contributing to the Pint economy' in info_calls[0]['kwargs']['title']
 
-    target = DummyUser(2)
-    await cmd(interaction, target, '3', reason='Test')
+class TestGetAllDebtsCommand:
+    @pytest.mark.asyncio
+    async def test_get_all_debts_success(self, bot, config, shared):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands[config['GET_ALL_DEBTS_COMMAND']]
 
-    # API was called with correct payload
-    assert commands.api_client.calls['add_debt'] == {
-        'debtor': 1, 'creditor': 2, 'amount': '3', 'reason': 'Test'
-    }
-    calls = interaction.send_success_message_calls
-    assert calls, "Expected send_success_message to be called"
-    kwargs = calls[0]['kwargs']
-    assert kwargs['title'] == 'Pint Debt Added - Pint Economy Thriving'
-    assert '3' in kwargs['description']
+        # With data
+        shared.all_debts_response = {
+            'total_in_circulation': '3',
+            '1': {'owes': '1', 'is_owed': '2'},
+            '2': {'owes': '0', 'is_owed': '1'}
+        }
+        await cmd(interaction)
+        table_calls = interaction.send_two_column_table_message_calls
+        assert table_calls
+        kwargs = table_calls[0]['kwargs']
+        assert kwargs['title'] == 'Pint Economy Overview'
+        assert 'Economy active' in kwargs['description']
+        assert '**Total Pints in circulation: 3**' in kwargs['description']
+        names = [row['name'] for row in kwargs['data']]
+        assert 'User1' in names and 'User2' in names
 
-@pytest.mark.asyncio
-async def test_get_debts_with_debts(bot, config, shared):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands[config['GET_DEBTS_COMMAND']]
+    @pytest.mark.asyncio
+    async def test_get_all_debts_no_debts_error(self, bot, config, shared):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands[config['GET_ALL_DEBTS_COMMAND']]
 
-    # With debts
-    shared.debts_response = {
-        'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '2025-01-01'}]},
-        'total_owed_by_you': '1',
-        'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
-        'total_owed_to_you': '2'
-    }
-    await cmd(interaction)
-    info_calls = interaction.send_info_message_calls
-    assert info_calls
-    title = info_calls[0]['kwargs']['title']
-    desc = info_calls[0]['kwargs']['description']
-    assert 'Your Pint debts' in title
-    assert '**User2**: 1' in desc
-    assert '- 1 for *Test* on 2025-01-01' in desc
-    assert '**User3**: 2' in desc
+        # Simulate no debts in the economy
+        shared.all_debts_response = {'total_in_circulation': '0'}
+        await cmd(interaction)
 
-@pytest.mark.asyncio
-async def test_get_debts_no_debts(bot, config, shared):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands[config['GET_DEBTS_COMMAND']]
+        # Expect handle_error to be invoked with NO_DEBTS_IN_ECONOMY
+        assert hasattr(interaction, 'error'), "Expected handle_error to be called for no debts"
+        assert interaction.error['kwargs']['error_code'] == 'NO_DEBTS_IN_ECONOMY'
+class TestSettleCommand:
+    @pytest.mark.parametrize(
+        "target_attr, error_code", [
+            ("user", "CANNOT_SETTLE_SELF"),
+            ("bot.user", "CANNOT_SETTLE_BOT"),
+        ]
+    )
+    @pytest.mark.asyncio
+    async def test_settle_errors(self, bot, target_attr, error_code):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        target = eval(f"interaction.{target_attr}")
+        await bot.tree.commands['settle'](interaction, target, '1')
+        assert interaction.error['kwargs']['error_code'] == error_code
 
-    # No debts
-    shared.debts_response = {'message': 'No debts'}
-    await cmd(interaction)
-    info_calls = interaction.send_info_message_calls
-    assert info_calls
-    assert 'not currently contributing to the Pint economy' in info_calls[0]['kwargs']['title']
+    @pytest.mark.asyncio
+    async def test_settle_success(self, bot):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands['settle']
 
-@pytest.mark.asyncio
-async def test_get_all_debts_success(bot, config, shared):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands[config['GET_ALL_DEBTS_COMMAND']]
+        # Success
+        target = DummyUser(2)
+        await cmd(interaction, target, '5')
+        assert commands.api_client.calls['settle_debt'] == {
+            'debtor': 1, 'creditor': 2, 'amount': '5'
+        }
+        calls = interaction.send_success_message_calls
+        assert calls
+        assert 'Settled 5 with <@2>' in calls[0]['kwargs']['description']
 
-    # With data
-    shared.all_debts_response = {
-        'total_in_circulation': '3',
-        '1': {'owes': '1', 'is_owed': '2'},
-        '2': {'owes': '0', 'is_owed': '1'}
-    }
-    await cmd(interaction)
-    table_calls = interaction.send_two_column_table_message_calls
-    assert table_calls
-    kwargs = table_calls[0]['kwargs']
-    assert kwargs['title'] == 'Pint Economy Overview'
-    assert 'Economy active' in kwargs['description']
-    assert '**Total Pints in circulation: 3**' in kwargs['description']
-    names = [row['name'] for row in kwargs['data']]
-    assert 'User1' in names and 'User2' in names
+class TestSetUnicodePreferenceCommand:
+    @pytest.mark.asyncio
+    async def test_set_unicode_preference(self, bot):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands['set_unicode_preference']
 
-@pytest.mark.asyncio
-async def test_get_all_debts_no_debts_error(bot, config, shared):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands[config['GET_ALL_DEBTS_COMMAND']]
+        await cmd(interaction, True)
+        assert commands.api_client.calls['set_unicode_preference'] == {'user_id': 1, 'use_unicode': True}
+        calls = interaction.send_success_message_calls
+        assert calls
+        assert calls[0]['kwargs']['title'] == 'Preference Updated'
+        assert calls[0]['kwargs']['description'] == 'Preference updated'
 
-    # Simulate no debts in the economy
-    shared.all_debts_response = {'total_in_circulation': '0'}
-    await cmd(interaction)
-
-    # Expect handle_error to be invoked with NO_DEBTS_IN_ECONOMY
-    assert hasattr(interaction, 'error'), "Expected handle_error to be called for no debts"
-    assert interaction.error['kwargs']['error_code'] == 'NO_DEBTS_IN_ECONOMY'
-
-@pytest.mark.asyncio
-async def test_settle_success(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['settle']
-
-    # Success
-    target = DummyUser(2)
-    await cmd(interaction, target, '5')
-    assert commands.api_client.calls['settle_debt'] == {
-        'debtor': 1, 'creditor': 2, 'amount': '5'
-    }
-    calls = interaction.send_success_message_calls
-    assert calls
-    assert 'Settled 5 with <@2>' in calls[0]['kwargs']['description']
-
-@pytest.mark.asyncio
-async def test_settle_self_errors(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['settle']
-
-    # Self-settle error
-    await cmd(interaction, interaction.user, '1')
-    assert interaction.error['kwargs']['error_code'] == 'CANNOT_SETTLE_SELF'
-
-@pytest.mark.asyncio
-async def test_settle_bot_errors(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['settle']
-
-    # Settle bot error
-    await cmd(interaction, bot.user, '1')
-    assert interaction.error['kwargs']['error_code'] == 'CANNOT_SETTLE_BOT'
-
-@pytest.mark.asyncio
-async def test_set_unicode_preference(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['set_unicode_preference']
-
-    await cmd(interaction, True)
-    assert commands.api_client.calls['set_unicode_preference'] == {'user_id': 1, 'use_unicode': True}
-    calls = interaction.send_success_message_calls
-    assert calls
-    assert calls[0]['kwargs']['title'] == 'Preference Updated'
-    assert calls[0]['kwargs']['description'] == 'Preference updated'
-
-@pytest.mark.asyncio
-async def test_settings_command(bot):
-    interaction = DummyInteraction(DummyUser(1), bot)
-    cmd = bot.tree.commands['settings']
-    
-    await cmd(interaction)
-    calls = interaction.send_one_column_table_message_calls
-    assert len(calls) == 2
-    bot_cfg = calls[0]['kwargs']['data']
-    api_cfg = calls[1]['kwargs']['data']
-    assert any(item['Setting'] == 'CURRENCY_NAME' for item in bot_cfg)
-    assert any(item['Setting'] == 'Maximum Debt Per Transaction' for item in api_cfg)
+class TestSettingsCommand:
+    @pytest.mark.asyncio
+    async def test_settings_command(self, bot):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands['settings']
+        
+        await cmd(interaction)
+        calls = interaction.send_one_column_table_message_calls
+        assert len(calls) == 2
+        bot_cfg = calls[0]['kwargs']['data']
+        api_cfg = calls[1]['kwargs']['data']
+        assert any(item['Setting'] == 'CURRENCY_NAME' for item in bot_cfg)
+        assert any(item['Setting'] == 'Maximum Debt Per Transaction' for item in api_cfg)
