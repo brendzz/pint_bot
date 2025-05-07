@@ -214,9 +214,16 @@ def register_commands(bot, config: dict[str, any]):
             })
 
         # Determine the economy health message
-        economy_health_message = next(
-            (health["message"] for health in config["ECONOMY_HEALTH_MESSAGES"] if total_in_circulation >= health["threshold"]),
-            "The economy is in an unknown state"
+        economy_health_message = (
+            max(
+                (
+                    health
+                    for health in config["ECONOMY_HEALTH_MESSAGES"]
+                    if total_in_circulation >= health["threshold"]
+                ),
+                key=lambda h: h["threshold"],
+                default={"message": "The economy is in an unknown state"}
+            )["message"]
         )
 
         # Call send_table_message to send the data as a table

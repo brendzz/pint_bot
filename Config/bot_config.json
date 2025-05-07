@@ -18,7 +18,7 @@
     "ECONOMY_HEALTH_MESSAGES": [
         {"threshold": 20, "message": "The {CURRENCY_NAME} economy is booming! Prosperity for all!"},
         {"threshold": 15, "message": "The {CURRENCY_NAME} economy is in great shape!"},
-        {"threshold": 10, "message": "The {CURRENCY_NAME}economy is stable."},
+        {"threshold": 10, "message": "The {CURRENCY_NAME} economy is stable."},
         {"threshold": 5, "message": "The {CURRENCY_NAME} economy is in terrible shape. Please add debts to avoid imminent financial crash!"},
         {"threshold": 0, "message": "The {CURRENCY_NAME} economy is in shambles! Financial Crash!"}
     ]
