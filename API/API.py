@@ -2,36 +2,36 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
-from dotenv import load_dotenv
-import os
-import json
+from api_config import load_config
 from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
-from models import PintEconomy, UserData, DebtEntry, OweRequest, UserPreferences, SettleRequest, SetUnicodePreferenceRequest
+from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 from data_manager import load_data, save_data
 
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
-load_dotenv(".env")
+CONFIG = load_config()
+
+SMALLEST_UNIT = CONFIG["SMALLEST_UNIT"]
+QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
+GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
+GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
+MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
+#QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
 
 # Set up FastAPI
 app = FastAPI()
 
-SMALLEST_UNIT = os.environ.get("SMALLEST_UNIT","1/6")
-QUANTIZE_SETTLING_DEBTS = os.environ.get("QUANTIZE_SETTLING_DEBTS",True)
-GET_DEBTS_COMMAND = os.environ.get("GET_DEBTS_COMMAND","pints")
-GET_ALL_DEBTS_COMMAND = os.environ.get("GET_ALL_DEBTS_COMMAND","all_pints")
-MAXMIMUM_PER_DEBT = int(os.environ.get("MAXIMUM_PER_DEBT", "10"))  # Set a maximum debt limit
-#QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
-
-# /owe to add pint debts
 @app.post("/owe")
 async def add_debt(request: OweRequest):
+    """
+    /owe to add pint debts between a pair of users
+    """
 
     data = load_data()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
-    #check if valid target to owe
+    # Check if valid target to owe
     if debtor_id == creditor_id:
         raise HTTPException(status_code=400, detail=f"CANNOT_OWE_SELF")
   
@@ -41,12 +41,12 @@ async def add_debt(request: OweRequest):
         raise HTTPException(status_code=400, detail=f"INVALID_AMOUNT")
     except (Exception):
         raise HTTPException(status_code=400, detail=f"BAD_REQUEST")
-    #check in range
+    # Check in range
     if amount < 0:
         raise HTTPException(status_code=400, detail=f"NEGATIVE_AMOUNT")
     elif amount == 0:
         raise HTTPException(status_code=400, detail=f"ZERO_AMOUNT")
-    elif amount > Fraction(MAXMIMUM_PER_DEBT):
+    elif amount > Fraction(MAXIMUM_PER_DEBT):
         raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
     
     # Check if the fraction is quantized to the smallest unit using modulo
@@ -82,9 +82,11 @@ async def add_debt(request: OweRequest):
 
     return {"amount": str(amount), "reason": request.reason, "timestamp": datetime.now().strftime("%d-%m-%Y")}
 
-# /pints to see your current pint debts
 @app.get(f"/{GET_DEBTS_COMMAND}/{{user_id}}")
 async def get_debts(user_id: int):
+    """
+    /pints to see your current pint debts
+    """
     data = load_data()
     user_id_str = str(user_id)
     
@@ -146,6 +148,9 @@ async def get_debts(user_id: int):
 
 @app.get(f"/{GET_ALL_DEBTS_COMMAND}")
 async def get_all_debts():
+    """
+    To see all current debts between users
+    """
     data = load_data()
 
     result = {}
@@ -173,6 +178,9 @@ async def get_all_debts():
 
 @app.post("/settle")
 async def settle_debt(request: SettleRequest):
+    """
+    /settle to settle debt between a pair of users
+    """
     data = load_data()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
@@ -255,6 +263,9 @@ async def settle_debt(request: SettleRequest):
 
 @app.get("/get_unicode_preference/{user_id}")
 async def get_unicode_preference(user_id: int):
+    """
+    Get a user's preference on whether they want fractions to be displayed in Unicode format.
+    """
     data = load_data()
     user_id_str = str(user_id)
 
@@ -269,6 +280,9 @@ async def get_unicode_preference(user_id: int):
 
 @app.post("/set_unicode_preference")
 async def set_unicode_preference(request: SetUnicodePreferenceRequest):
+    """
+    Set a user's preference on whether they want fractions to be displayed in Unicode format.
+    """
     data = load_data()
     user_id_str = str(request.user_id)
     use_unicode = request.use_unicode

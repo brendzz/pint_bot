@@ -1,47 +1,42 @@
 import requests
-from os import environ
-from dotenv import load_dotenv
-import json
-from pathlib import Path
+from bot_config import load_config
 
-load_dotenv("API/.env")
-GET_DEBTS_COMMAND = environ.get("GET_DEBTS_COMMAND")
-GET_ALL_DEBTS_COMMAND = environ.get("GET_ALL_DEBTS_COMMAND")
+_config = None
+def get_config():
+    global _config
+    if _config is None:
+        _config = load_config()
+    return _config
 
-config_path = Path("Config/bot_config.json")
-if not config_path.exists():
-    raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
-
-with open(config_path, "r") as config_file:
-    config = json.load(config_file)
-API_URL = config.get("API_URL", "http://127.0.0.1:8000")
+def get_api_url():
+    return get_config()["API_URL"]
 
 def add_debt(payload: dict):
-    response = requests.post(f"{API_URL}/owe", json=payload)
+    response = requests.post(f"{get_api_url()}/owe", json=payload)
     response.raise_for_status()
     return response.json()
 
 def get_debts(user_id: int):
-    response = requests.get(f"{API_URL}/{GET_DEBTS_COMMAND}/{user_id}")
+    response = requests.get(f"{get_api_url()}/{get_config()["GET_DEBTS_COMMAND"]}/{user_id}")
     response.raise_for_status()
     return response.json()
 
 def get_all_debts():
-    response = requests.get(f"{API_URL}/{GET_ALL_DEBTS_COMMAND}")
+    response = requests.get(f"{get_api_url()}/{get_config()["GET_ALL_DEBTS_COMMAND"]}")
     response.raise_for_status()
     return response.json()
 
 def settle_debt(payload: dict):
-    response = requests.post(f"{API_URL}/settle", json=payload)
+    response = requests.post(f"{get_api_url()}/settle", json=payload)
     response.raise_for_status()
     return response.json()
 
 def get_unicode_preference(user_id: int):
-    response = requests.get(f"{API_URL}/get_unicode_preference/{user_id}")
+    response = requests.get(f"{get_api_url()}/get_unicode_preference/{user_id}")
     response.raise_for_status()
     return response.json()
 
 def set_unicode_preference(payload: dict):
-    response = requests.post(f"{API_URL}/set_unicode_preference", json=payload)
+    response = requests.post(f"{get_api_url()}/set_unicode_preference", json=payload)
     response.raise_for_status()
     return response.json()

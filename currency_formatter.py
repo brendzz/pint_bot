@@ -2,20 +2,19 @@ from fractions import Fraction
 from fraction_formatter import fraction_to_unicode
 
 # Format pints
-def currency_formatter(amount, use_unicode=False, currency_name="Pint", currency_name_plural="Pints", use_decimal=False) -> str:
+def currency_formatter(amount, config: dict[str, any], use_unicode: bool=False) -> str:
     # Convert pint_number to a Fraction
     fraction = Fraction(amount)
     
     # Check if the number is singular or plural
     if fraction > 0 and fraction <= 1:
-        currency = currency_name.lower()
+        currency = config["CURRENCY_NAME"].lower()
     else:
-        currency = currency_name_plural.lower()
+        currency = config["CURRENCY_NAME_PLURAL"].lower()
     
-    if use_decimal == True:
+    if config["USE_DECIMAL_OUTPUT"] == True:
         return f"{float(fraction)} {currency}"
     else:
-         
         # Get the whole number part
         whole_number = fraction.numerator // fraction.denominator
         # Get the remainder (numerator of the fractional part)
