@@ -11,7 +11,7 @@ pip install -r dev-requirements.txt
 1. Set up a `.env` file in the API folder. See the `.env.example` file for reference.
 2. Run `api.py` to start the API:
 ```bash
-uvicorn api.api:app
+uvicorn api.main:app
 ```
 
 ### Bot
