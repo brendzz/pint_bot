@@ -284,7 +284,7 @@ def register_commands(bot, config: dict[str, any]):
     @app_commands.describe(use_unicode="Set to True to use Unicode fractions, False otherwise.")
     async def set_unicode_preference(interaction: discord.Interaction, use_unicode: bool):
         await interaction.response.defer()
-        user_id = interaction.user.id  # Get the user's ID
+        user_id = str(interaction.user.id)  # Get the user's ID
 
         # Call the external API to update the preference
         try:

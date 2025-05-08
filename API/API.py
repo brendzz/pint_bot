@@ -81,10 +81,9 @@ async def add_debt(request: OweRequest):
     return {"amount": str(amount), "reason": request.reason, "timestamp": datetime.now().strftime("%d-%m-%Y")}
 
 @app.get(f"/{GET_DEBTS_COMMAND}/{{user_id}}")
-async def get_debts(user_id: int):
+async def get_debts(user_id: str):
     """See your current pint debts."""
     data = load_data()
-    user_id_str = str(user_id)
     
      # Prepare the response
     result = {"owed_by_you": {},
@@ -94,8 +93,8 @@ async def get_debts(user_id: int):
       }  # Include the user's preference}
     
     # Check if the user exists in the data
-    if user_id_str in data.users:
-        user_data = data.users[user_id_str]
+    if user_id in data.users:
+        user_data = data.users[user_id]
 
         # Debts owed by the user
         for creditor_id, entries in user_data.debts.creditors.items():
@@ -114,7 +113,7 @@ async def get_debts(user_id: int):
 
     # Check if the user is a creditor in other users' debts
     for debtor_id, user in data.users.items():
-        if user_id_str in user.debts.creditors:
+        if user_id in user.debts.creditors:
             if debtor_id not in result["owed_to_you"]:
                 result["owed_to_you"][debtor_id] = []
             result["owed_to_you"][debtor_id].extend(
@@ -123,10 +122,10 @@ async def get_debts(user_id: int):
                     "reason": entry.reason,
                     "timestamp": entry.timestamp,
                 }
-                for entry in user.debts.creditors[user_id_str]
+                for entry in user.debts.creditors[user_id]
             )
             # Convert amount to Fraction for summation
-            result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id_str])
+            result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id])
 
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
@@ -250,17 +249,16 @@ async def settle_debt(request: SettleRequest):
     }
 
 @app.get("/get_unicode_preference/{user_id}")
-async def get_unicode_preference(user_id: int):
+async def get_unicode_preference(user_id: str):
     """Get a user's preference on whether they want fractions to be displayed in Unicode format."""
     data = load_data()
-    user_id_str = str(user_id)
 
     # Check if the user exists in the data
-    if user_id_str not in data.users:
+    if user_id not in data.users:
         return {"use_unicode": False}  # Default value if the user does not exist
 
     # Retrieve the user's Unicode preference or return the default value
-    use_unicode = getattr(data.users[user_id_str].preferences, "use_unicode", False)
+    use_unicode = getattr(data.users[user_id].preferences, "use_unicode", False)
 
     return {"use_unicode": use_unicode}
 
@@ -268,13 +266,13 @@ async def get_unicode_preference(user_id: int):
 async def set_unicode_preference(request: SetUnicodePreferenceRequest):
     """Set a user's preference on whether they want fractions to be displayed in Unicode format."""
     data = load_data()
-    user_id_str = str(request.user_id)
+    user_id = str(request.user_id)
     use_unicode = request.use_unicode
 
-    if user_id_str not in data.users:
-        data.users[user_id_str] = UserData()
+    if user_id not in data.users:
+        data.users[user_id] = UserData()
 
-    data.users[user_id_str].preferences.use_unicode = use_unicode
+    data.users[user_id].preferences.use_unicode = use_unicode
     save_data(data)
 
     return {"message": f"Preference for Unicode fractions set to {use_unicode}."}
