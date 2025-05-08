@@ -2,7 +2,7 @@
     "BOT_NAME": "Pint Bot",
     "CURRENCY_NAME": "Pint",
     "CURRENCY_NAME_PLURAL": "Pints",
-    "API_URL": "http://127.0.0.1:8000",
+    "API_URL": "http://api:8000",
     "USE_DECIMAL_OUTPUT": false,
     "USE_TABLE_FORMAT_DEFAULT": false,
     "SHOW_PERCENTAGES_DEFAULT": false,

@@ -1,0 +1,38 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+.mypy_cache/
+.pytest_cache/
+
+# Virtualenvs
+.venv/
+
+# Editor & OS files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.vs/
+
+# IDE/project files
+.classpath
+.project
+.settings
+.toolstarget
+*.*proj.user
+*.dbmdl
+*.jfm
+
+# Node/npm
+node_modules/
+npm-debug.log
+
+# Build output
+bin/
+obj/
+charts/
+
+# Secrets/config for dev only
+secrets.dev.yaml
+values.dev.yaml
