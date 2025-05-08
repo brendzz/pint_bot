@@ -237,7 +237,7 @@ def register_commands(bot, config: dict[str, any]):
         )
 
     @bot.tree.command(name="settle", description=f"Settle {config['CURRENCY_NAME']} debts with someone, starting with the oldest debts.")
-    @app_commands.describe(user="Who you want to settle debts with", amount=f"How much to settle")
+    @app_commands.describe(user="Who you want to settle debts with", amount=f"How many {config['CURRENCY_NAME_PLURAL']} to settle")
     async def settle(interaction: discord.Interaction, user: discord.User, amount: str):
         debtor = interaction.user.id
         creditor = user.id
@@ -340,7 +340,7 @@ def register_commands(bot, config: dict[str, any]):
         # Send the API settings as a one-column table
         await send_one_column_table_message(
             interaction,
-            title=f"Current API Settings",
+            title=f"Current {config["BOT_NAME"]} API Settings",
             description="Here are the current API settings:",
             data=api_settings_data,
             table_format=table_format
