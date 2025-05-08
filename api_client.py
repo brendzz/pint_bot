@@ -10,7 +10,7 @@ def add_debt(payload: dict):
     response.raise_for_status()
     return response.json()
 
-def get_debts(user_id: int):
+def get_debts(user_id: str):
     response = requests.get(f"{get_api_url()}/{get_config()["GET_DEBTS_COMMAND"]}/{user_id}")
     response.raise_for_status()
     return response.json()

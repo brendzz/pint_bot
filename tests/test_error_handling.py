@@ -30,7 +30,7 @@ class TestGetErrorMessage:
         assert "Doesn't Like Your Data" in result["title"]
 
     @patch("bot_config.get_config")
-    def test_get_error_message_unknown(mock_get_config, mock_config):
+    def test_get_error_message_unknown(self, mock_get_config, mock_config):
         mock_get_config.return_value = mock_config
         result = get_error_message("NON_EXISTENT_CODE")
         assert "Unknown Error" in result["title"]

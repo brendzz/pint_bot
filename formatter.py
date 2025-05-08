@@ -79,14 +79,7 @@ def currency_formatter(amount, config: dict[str, any], use_unicode: bool=False) 
         # Calculate the fractional part
         fractional_part = Fraction(remainder, fraction.denominator)
 
-        if whole_number == 0:
-                final_fraction = (
-                    fraction_to_unicode(fractional_part) if use_unicode else f"{remainder}/{fraction.denominator}"
-                )
-                return f"{final_fraction} {currency}"
-
-        # Otherwise, return the mixed number
-        final_fraction = (
-            fraction_to_unicode(fractional_part) if use_unicode else f"{remainder}/{fraction.denominator}"
-        )
-        return f"{whole_number} {final_fraction} {currency}"
+    final_fraction = fraction_to_unicode(str(fractional_part)) if use_unicode else f"{remainder}/{fraction.denominator}"
+    if whole_number == 0:
+        return f"{final_fraction} {currency}"
+    return f"{whole_number} {final_fraction} {currency}"
