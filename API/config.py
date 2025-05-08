@@ -6,7 +6,7 @@ from fractions import Fraction
 
 def load_config():
     # Load environment variables from .env file
-    load_dotenv("API/.env")
+    load_dotenv("api/.env")
 
     return {
         # Environment variables

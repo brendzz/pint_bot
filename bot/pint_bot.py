@@ -2,7 +2,7 @@ import time
 import discord
 from discord.ext import commands
 from bot_commands import register_commands
-from bot_config import get_config
+from bot.config import get_config
 
 intents = discord.Intents.default()
 intents.message_content = True

@@ -1,6 +1,6 @@
 import requests
 
-from bot_config import get_config
+from bot.config import get_config
 
 def get_api_url():
     """Get the API URL from the configuration."""

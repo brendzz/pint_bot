@@ -8,11 +8,11 @@ _config = None
 
 def load_config():
     # Load environment variables from .env files
-    load_dotenv("Config/.env")
-    load_dotenv("API/.env")
+    load_dotenv("bot/.env")
+    load_dotenv("api/.env")
 
     # Load values from config.json
-    config_path = Path("Config/bot_config.json")
+    config_path = Path("bot/config.json")
     if not config_path.exists():
         raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
 

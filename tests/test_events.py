@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock, PropertyMock
 from discord import Message, User
-from pint_bot import bot, on_message
+from bot.pint_bot import bot, on_message
 
 class TestOnMessage:
     @pytest.mark.asyncio
