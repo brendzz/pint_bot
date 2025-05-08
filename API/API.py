@@ -17,7 +17,6 @@ QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
 GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
 GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
 MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
-#QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
 
 # Set up FastAPI
 app = FastAPI()
@@ -31,21 +30,21 @@ async def add_debt(request: OweRequest):
     creditor_id = str(request.creditor)
     # Check if valid target to owe
     if debtor_id == creditor_id:
-        raise HTTPException(status_code=400, detail=f"CANNOT_OWE_SELF")
+        raise HTTPException(status_code=400, detail="CANNOT_OWE_SELF")
   
     try:
         amount = mixed_number_to_fraction(request.amount.strip())
     except (ValueError, ZeroDivisionError):
-        raise HTTPException(status_code=400, detail=f"INVALID_AMOUNT")
+        raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
     except (Exception):
-        raise HTTPException(status_code=400, detail=f"BAD_REQUEST")
+        raise HTTPException(status_code=400, detail="BAD_REQUEST")
     # Check in range
     if amount < 0:
-        raise HTTPException(status_code=400, detail=f"NEGATIVE_AMOUNT")
+        raise HTTPException(status_code=400, detail="NEGATIVE_AMOUNT")
     elif amount == 0:
-        raise HTTPException(status_code=400, detail=f"ZERO_AMOUNT")
+        raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
     elif amount > Fraction(MAXIMUM_PER_DEBT):
-        raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
+        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
     
     # Check if the fraction is quantized to the smallest unit using modulo
     smallest_unit = Fraction(SMALLEST_UNIT)
@@ -53,7 +52,7 @@ async def add_debt(request: OweRequest):
     if (amount % smallest_unit != 0):
         raise HTTPException(
             status_code=400,
-            detail=f"NOT_QUANTIZED"
+            detail="NOT_QUANTIZED"
         )
 
      # Get or create the debtor's data
@@ -73,8 +72,8 @@ async def add_debt(request: OweRequest):
         DebtEntry(amount=amount, reason=request.reason, timestamp=datetime.now().strftime("%d-%m-%Y"))
     )
         }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
     # Save the updated data
     save_data(data)
 
@@ -129,7 +128,7 @@ async def get_debts(user_id: str):
 
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
-        return {"message": f"No debts found owed to or from this user."}
+        return {"message": "No debts found owed to or from this user."}
 
     # Convert totals back to strings for the response
     result["total_owed_by_you"] = str(result["total_owed_by_you"])
@@ -190,14 +189,14 @@ async def settle_debt(request: SettleRequest):
     if QUANTIZE_SETTLING_DEBTS == True and (amount % smallest_unit != 0):
         raise HTTPException(
             status_code=400,
-            detail=f"NOT_QUANTIZED"
+            detail="NOT_QUANTIZED"
         )
     
     # Check if the debtor owes the creditor
     if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
         raise HTTPException(
             status_code=400,
-            detail=f"NO_DEBTS_FOUND"
+            detail="NO_DEBTS_FOUND"
         )
 
     # Settle debts starting with the oldest
