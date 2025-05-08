@@ -131,7 +131,7 @@ def register_commands(bot, config: dict[str, any]):
                 for entry in entries:
                     amount = currency_formatter(entry["amount"], config, use_unicode)
                     if show_percentages:
-                        amount+=f" ({to_percentage(entry['amount'],total_owed_by_you,config)}%)"
+                        amount+=f" {to_percentage(entry['amount'],total_owed_by_you,config)}"
                     reason = entry["reason"]
                     timestamp = entry["timestamp"]
                     lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -151,7 +151,7 @@ def register_commands(bot, config: dict[str, any]):
                 for entry in entries:
                     amount = currency_formatter(entry["amount"], config, use_unicode)
                     if show_percentages:
-                        amount+=f" ({to_percentage(entry['amount'],total_owed_to_you,config)}%)"
+                        amount+=f" {to_percentage(entry['amount'],total_owed_to_you,config)}"
                     reason = entry["reason"]
                     timestamp = entry["timestamp"]
                     lines.append(f"- {amount} for *{reason}* on {timestamp}")
@@ -205,8 +205,8 @@ def register_commands(bot, config: dict[str, any]):
             is_owed = currency_formatter(totals['is_owed'], config, use_unicode)
 
             if show_percentages:
-                owes += f" ({to_percentage(totals['owes'],total_in_circulation,config)}%)"
-                is_owed += f" ({to_percentage(totals['is_owed'],total_in_circulation,config)}%)"
+                owes += f" {to_percentage(totals['owes'],total_in_circulation,config)}"
+                is_owed += f" {to_percentage(totals['is_owed'],total_in_circulation,config)}"
 
             table_data.append({
                 "name": user_name,
