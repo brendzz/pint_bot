@@ -38,5 +38,5 @@ class SettleRequest(BaseModel):
     amount: str  # Fraction as a string
 
 class SetUnicodePreferenceRequest(BaseModel):
-    user_id: int
+    user_id: str
     use_unicode: bool

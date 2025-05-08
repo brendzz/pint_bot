@@ -4,6 +4,8 @@ from pathlib import Path
 from os import environ
 from fractions import Fraction
 
+_config = None
+
 def load_config():
     # Load environment variables from .env files
     load_dotenv("Config/.env")
@@ -50,3 +52,10 @@ def load_config():
         "ECONOMY_HEALTH_MESSAGES": economy_messages,
         "API_URL": config.get("API_URL", "http://127.0.0.1:8000"),
     }
+
+def get_config():
+    """Returns the bot configuration. Loads it from a file if not already loaded."""
+    global _config
+    if _config is None:
+        _config = load_config()
+    return _config

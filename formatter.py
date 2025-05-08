@@ -49,9 +49,37 @@ def custom_unicode_fraction(fraction: Fraction) -> str:
     return f"{numerator}/{denominator}"
 
 def to_percentage(part, whole, config: dict[str,any]) -> str:
-    """
-    Divides two numbers and returns a percentage representation.
-    """
+    """Divides two numbers and returns a percentage representation."""
     fraction = Fraction(part) / Fraction(whole)
     percentage = fraction * 100
     return f"{(percentage):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%"
+
+def currency_formatter(amount, config: dict[str, any], use_unicode: bool=False) -> str:
+    """Format the currency amount based on the configuration."""
+    fraction = Fraction(amount)
+    
+    # Check if the number is singular or plural
+    if fraction > 0 and fraction <= 1:
+        currency = config["CURRENCY_NAME"].lower()
+    else:
+        currency = config["CURRENCY_NAME_PLURAL"].lower()
+    
+    if config["USE_DECIMAL_OUTPUT"] == True:
+        return f"{float(fraction)} {currency}"
+    else:
+        # Get the whole number part
+        whole_number = fraction.numerator // fraction.denominator
+        # Get the remainder (numerator of the fractional part)
+        remainder = fraction.numerator % fraction.denominator
+
+        # If there's no fractional part, return the whole number
+        if remainder == 0:
+            return f"{whole_number} {currency}"
+
+        # Calculate the fractional part
+        fractional_part = Fraction(remainder, fraction.denominator)
+
+    final_fraction = fraction_to_unicode(str(fractional_part)) if use_unicode else f"{remainder}/{fraction.denominator}"
+    if whole_number == 0:
+        return f"{final_fraction} {currency}"
+    return f"{whole_number} {final_fraction} {currency}"

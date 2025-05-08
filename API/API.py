@@ -17,37 +17,34 @@ QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
 GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
 GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
 MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
-#QUANTIZED_FRACTIONS = calculate_allowed_denominators(SMALLEST_UNIT)
 
 # Set up FastAPI
 app = FastAPI()
 
 @app.post("/owe")
 async def add_debt(request: OweRequest):
-    """
-    /owe to add pint debts between a pair of users
-    """
+    """Add pint debts between a pair of users."""
 
     data = load_data()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
     # Check if valid target to owe
     if debtor_id == creditor_id:
-        raise HTTPException(status_code=400, detail=f"CANNOT_OWE_SELF")
+        raise HTTPException(status_code=400, detail="CANNOT_OWE_SELF")
   
     try:
         amount = mixed_number_to_fraction(request.amount.strip())
     except (ValueError, ZeroDivisionError):
-        raise HTTPException(status_code=400, detail=f"INVALID_AMOUNT")
+        raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
     except (Exception):
-        raise HTTPException(status_code=400, detail=f"BAD_REQUEST")
+        raise HTTPException(status_code=400, detail="BAD_REQUEST")
     # Check in range
     if amount < 0:
-        raise HTTPException(status_code=400, detail=f"NEGATIVE_AMOUNT")
+        raise HTTPException(status_code=400, detail="NEGATIVE_AMOUNT")
     elif amount == 0:
-        raise HTTPException(status_code=400, detail=f"ZERO_AMOUNT")
+        raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
     elif amount > Fraction(MAXIMUM_PER_DEBT):
-        raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
+        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
     
     # Check if the fraction is quantized to the smallest unit using modulo
     smallest_unit = Fraction(SMALLEST_UNIT)
@@ -55,7 +52,7 @@ async def add_debt(request: OweRequest):
     if (amount % smallest_unit != 0):
         raise HTTPException(
             status_code=400,
-            detail=f"NOT_QUANTIZED"
+            detail="NOT_QUANTIZED"
         )
 
      # Get or create the debtor's data
@@ -75,20 +72,17 @@ async def add_debt(request: OweRequest):
         DebtEntry(amount=amount, reason=request.reason, timestamp=datetime.now().strftime("%d-%m-%Y"))
     )
         }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"EXCEEDS_MAXIMUM")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
     # Save the updated data
     save_data(data)
 
     return {"amount": str(amount), "reason": request.reason, "timestamp": datetime.now().strftime("%d-%m-%Y")}
 
 @app.get(f"/{GET_DEBTS_COMMAND}/{{user_id}}")
-async def get_debts(user_id: int):
-    """
-    /pints to see your current pint debts
-    """
+async def get_debts(user_id: str):
+    """See your current pint debts."""
     data = load_data()
-    user_id_str = str(user_id)
     
      # Prepare the response
     result = {"owed_by_you": {},
@@ -98,8 +92,8 @@ async def get_debts(user_id: int):
       }  # Include the user's preference}
     
     # Check if the user exists in the data
-    if user_id_str in data.users:
-        user_data = data.users[user_id_str]
+    if user_id in data.users:
+        user_data = data.users[user_id]
 
         # Debts owed by the user
         for creditor_id, entries in user_data.debts.creditors.items():
@@ -118,7 +112,7 @@ async def get_debts(user_id: int):
 
     # Check if the user is a creditor in other users' debts
     for debtor_id, user in data.users.items():
-        if user_id_str in user.debts.creditors:
+        if user_id in user.debts.creditors:
             if debtor_id not in result["owed_to_you"]:
                 result["owed_to_you"][debtor_id] = []
             result["owed_to_you"][debtor_id].extend(
@@ -127,18 +121,14 @@ async def get_debts(user_id: int):
                     "reason": entry.reason,
                     "timestamp": entry.timestamp,
                 }
-                for entry in user.debts.creditors[user_id_str]
+                for entry in user.debts.creditors[user_id]
             )
             # Convert amount to Fraction for summation
-            result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id_str])
+            result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id])
 
-    print("owed by you")
-    print(result["owed_by_you"])
-    print("owed to you")
-    print(result["owed_to_you"])
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
-        return {"message": f"No debts found owed to or from this user."}
+        return {"message": "No debts found owed to or from this user."}
 
     # Convert totals back to strings for the response
     result["total_owed_by_you"] = str(result["total_owed_by_you"])
@@ -148,9 +138,7 @@ async def get_debts(user_id: int):
 
 @app.get(f"/{GET_ALL_DEBTS_COMMAND}")
 async def get_all_debts():
-    """
-    To see all current debts between users
-    """
+    """To see all current debts between users."""
     data = load_data()
 
     result = {}
@@ -178,9 +166,7 @@ async def get_all_debts():
 
 @app.post("/settle")
 async def settle_debt(request: SettleRequest):
-    """
-    /settle to settle debt between a pair of users
-    """
+    """Settle debt between a pair of users."""
     data = load_data()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
@@ -203,14 +189,14 @@ async def settle_debt(request: SettleRequest):
     if QUANTIZE_SETTLING_DEBTS == True and (amount % smallest_unit != 0):
         raise HTTPException(
             status_code=400,
-            detail=f"NOT_QUANTIZED"
+            detail="NOT_QUANTIZED"
         )
     
     # Check if the debtor owes the creditor
     if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
         raise HTTPException(
             status_code=400,
-            detail=f"NO_DEBTS_FOUND"
+            detail="NO_DEBTS_FOUND"
         )
 
     # Settle debts starting with the oldest
@@ -262,35 +248,30 @@ async def settle_debt(request: SettleRequest):
     }
 
 @app.get("/get_unicode_preference/{user_id}")
-async def get_unicode_preference(user_id: int):
-    """
-    Get a user's preference on whether they want fractions to be displayed in Unicode format.
-    """
+async def get_unicode_preference(user_id: str):
+    """Get a user's preference on whether they want fractions to be displayed in Unicode format."""
     data = load_data()
-    user_id_str = str(user_id)
 
     # Check if the user exists in the data
-    if user_id_str not in data.users:
+    if user_id not in data.users:
         return {"use_unicode": False}  # Default value if the user does not exist
 
     # Retrieve the user's Unicode preference or return the default value
-    use_unicode = getattr(data.users[user_id_str].preferences, "use_unicode", False)
+    use_unicode = getattr(data.users[user_id].preferences, "use_unicode", False)
 
     return {"use_unicode": use_unicode}
 
 @app.post("/set_unicode_preference")
 async def set_unicode_preference(request: SetUnicodePreferenceRequest):
-    """
-    Set a user's preference on whether they want fractions to be displayed in Unicode format.
-    """
+    """Set a user's preference on whether they want fractions to be displayed in Unicode format."""
     data = load_data()
-    user_id_str = str(request.user_id)
+    user_id = str(request.user_id)
     use_unicode = request.use_unicode
 
-    if user_id_str not in data.users:
-        data.users[user_id_str] = UserData()
+    if user_id not in data.users:
+        data.users[user_id] = UserData()
 
-    data.users[user_id_str].preferences.use_unicode = use_unicode
+    data.users[user_id].preferences.use_unicode = use_unicode
     save_data(data)
 
     return {"message": f"Preference for Unicode fractions set to {use_unicode}."}
