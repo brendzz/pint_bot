@@ -21,6 +21,10 @@ MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
 # Set up FastAPI
 app = FastAPI()
 
+@app.get("/health", status_code=200)
+async def health_check():
+    return {"status": "ok"}
+
 @app.post("/owe")
 async def add_debt(request: OweRequest):
     """Add pint debts between a pair of users."""
