@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import requests
-from error_handling import format_error_message, get_error_message, handle_error, parse_api_error
+from bot.error_handling import format_error_message, get_error_message, handle_error, parse_api_error
 
 # Patch config return
 @pytest.fixture
