@@ -1,0 +1,10 @@
+propcache==0.3.1
+py-cord==2.6.1
+pydantic==2.11.3
+python-dotenv==1.1.0
+requests==2.32.3
+fastapi==0.115.12
+uvicorn==0.34.1
+discord.py==2.5.2
+pytest
+pytest-asyncio
