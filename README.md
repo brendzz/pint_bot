@@ -1,19 +1,17 @@
-# pint_bot
-
+# Pint Bot
 pint_bot is a Discord bot used for tracking debts between users. By default, this is in the form of pints, but you can customise it to whatever you like. It uses an API that stores the debts in a JSON file.
 
 ## Installation
-
-Install the requirements from `requirements.txt`:
+Install the dev requirements from `dev-requirements.txt`:
 ```bash
-pip install -r requirements.txt
+pip install -r dev-requirements.txt
 ```
 
 ### API
 1. Set up a `.env` file in the API folder. See the `.env.example` file for reference.
 2. Run `api.py` to start the API:
 ```bash
-uvicorn api:app
+uvicorn api.api:app
 ```
 
 ### Bot
@@ -23,7 +21,7 @@ uvicorn api:app
 4. Add your API URL to the `config.json` file as `API_URL` (if running locally, this is likely `http://127.0.0.1:8000`). Customise the other settings if you wish, or leave them as defaults.
 5. Run `pint_bot.py` to start the bot:
 ```bash
-python pint_bot.py
+python -m bot.pint_bot
 ```
 
 ## Usage
@@ -34,11 +32,9 @@ python pint_bot.py
 Both mixed numbers (`2 1/3`) and improper fractions (`7/3`) are supported, as well as decimals.
 
 ## Testing
-
 Unit tests are written using **pytest**.
 
 ### Running the tests
-
 Run all tests from the project root:
 
 ```bash
