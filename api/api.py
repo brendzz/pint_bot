@@ -2,10 +2,10 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
-from api.config import load_config
-from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
-from data_manager import load_data, save_data
+from api.config import load_config
+from api.fraction_functions import mixed_number_to_fraction
+from api.data_manager import load_data, save_data
 from models.models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 
 # Setup 

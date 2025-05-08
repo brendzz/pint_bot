@@ -1,9 +1,9 @@
 from fractions import Fraction
 import discord 
 from discord import app_commands
-import api_client
-from error_handling import handle_error
-from formatter import currency_formatter, to_percentage
+from bot import api_client
+from bot.error_handling import handle_error
+from bot.formatter import currency_formatter, to_percentage
 from bot.send_messages import send_info_message, send_one_column_table_message, send_success_message, send_two_column_table_message
 from models.models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
 

@@ -1,5 +1,5 @@
 import pytest
-import bot_commands as commands
+import bot.bot_commands as commands
 
 # Dummy Discord objects for testing
 class DummyUser:

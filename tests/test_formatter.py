@@ -1,7 +1,7 @@
 from fractions import Fraction
 
 import pytest
-from formatter import currency_formatter, custom_unicode_fraction, fraction_to_unicode, to_percentage, to_subscript, to_superscript
+from bot.formatter import currency_formatter, custom_unicode_fraction, fraction_to_unicode, to_percentage, to_subscript, to_superscript
 
 
 MOCK_CONFIG = {

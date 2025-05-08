@@ -1,7 +1,7 @@
 import time
 import discord
 from discord.ext import commands
-from bot_commands import register_commands
+from bot.bot_commands import register_commands
 from bot.config import get_config
 
 intents = discord.Intents.default()

@@ -2,7 +2,7 @@ import discord
 from pydantic import ValidationError
 import requests
 from bot.config import get_config
-from error_messages import ERROR_MESSAGES
+from bot.error_messages import ERROR_MESSAGES
 from bot.send_messages import send_error_message
 
 def format_error_message(error_message: str):
