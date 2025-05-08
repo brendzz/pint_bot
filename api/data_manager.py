@@ -1,6 +1,6 @@
 import json
 import os
-from models import PintEconomy
+from models.models import PintEconomy
 
 DATA_FILE = os.environ.get("DATA_FILE","PintEconomy.json")
 

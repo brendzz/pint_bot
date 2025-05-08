@@ -5,8 +5,8 @@ from datetime import datetime
 from api.config import load_config
 from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
-from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 from data_manager import load_data, save_data
+from models.models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
