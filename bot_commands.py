@@ -7,12 +7,14 @@ from error_handling import handle_error
 from formatter import currency_formatter, to_percentage
 from send_messages import send_info_message, send_one_column_table_message, send_success_message, send_two_column_table_message
 
-async def fetch_unicode_preference(interaction, user_id):
+async def fetch_unicode_preference(interaction, user_id) -> bool:
+    """Fetch the user's Unicode preference from the API."""
     try:
-        return api_client.get_unicode_preference(user_id)
+        response = api_client.get_unicode_preference(user_id)
+        return response.get("use_unicode")
     except Exception as e:
         await handle_error(interaction, e, title="Error Fetching Unicode Preference")
-        return None
+        return False
 
 def register_commands(bot, config: dict[str, any]):
     """Registers the bot commands with the Discord API."""
