@@ -2,11 +2,11 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
-from api_config import load_config
-from fraction_functions import mixed_number_to_fraction #,calculate_allowed_denominators
 import logging
+from api.config import load_config
+from api.fraction_functions import mixed_number_to_fraction
+from api.data_manager import load_data, save_data
 from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
-from data_manager import load_data, save_data
 
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
@@ -20,6 +20,10 @@ MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
 
 # Set up FastAPI
 app = FastAPI()
+
+@app.get("/health", status_code=200)
+async def health_check():
+    return {"status": "ok"}
 
 @app.post("/owe")
 async def add_debt(request: OweRequest):

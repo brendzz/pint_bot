@@ -16,15 +16,3 @@ def mixed_number_to_fraction(input_str: str) -> Fraction:
             numerator, denominator = map(int, input_str.split("/"))
 
         return Fraction(whole * denominator + numerator, denominator)
-
-# Function to calculate the allowed denominators for Fractions based on the minimum allowed size 
-# E.g. [1, 2, 3, 6] for 1/6
-"""
-def calculate_allowed_denominators(minimum_unit: str) -> list:
-    min_unit = Fraction(minimum_unit)
-    denominator = min_unit.denominator
-
-    # Find all divisors of the denominator
-    allowed_denominators = [i for i in range(1, denominator + 1) if denominator % i == 0]
-    return allowed_denominators
-    """

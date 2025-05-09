@@ -13,7 +13,7 @@ def load_data() -> PintEconomy:
         with open(DATA_FILE, "r") as f:
             raw_data = json.load(f)
             return PintEconomy.model_validate(raw_data)
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError:
         print("Error: Malformed JSON in data file.")
         return PintEconomy()
 

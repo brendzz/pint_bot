@@ -1,0 +1,115 @@
+name: Build, Test & Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to deploy'
+        required: true
+        default: 'main'
+
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.event.inputs.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/dev-requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev-requirements.txt
+
+      - name: Run tests
+        run: pytest tests/ --maxfail=1 --disable-warnings -q
+
+  build-and-push:
+    name: Build & Push to GitHub Container Registry
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        service: [api, bot]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        name: Generate image metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/my-${{ matrix.service }}
+          tags: |
+            type=ref,event=manual
+            type=sha
+            type=cache
+
+      - name: Build & push ${{ matrix.service }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=${{ steps.meta.outputs.cache_tags }}
+          cache-to: type=registry,ref=${{ github.repository_owner }}/my-${{ matrix.service }}:cache,mode=max
+
+  deploy:
+    name: SSH & Deploy on Server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.SERVER_PROJECT_PATH }}"
+
+            export GITHUB_OWNER=${{ github.repository_owner }}
+            export REF=${{ github.event.inputs.ref }}
+
+            docker-compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml up -d --force-recreate
+            docker image prune -f

@@ -8,11 +8,11 @@ _config = None
 
 def load_config():
     # Load environment variables from .env files
-    load_dotenv("Config/.env")
-    load_dotenv("API/.env")
+    load_dotenv("bot/.env")
+    load_dotenv("api/.env")
 
     # Load values from config.json
-    config_path = Path("Config/bot_config.json")
+    config_path = Path("bot/config.json")
     if not config_path.exists():
         raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
 
@@ -48,9 +48,12 @@ def load_config():
         "PERCENTAGE_DECIMAL_PLACES": config.get("PERCENTAGE_DECIMAL_PLACES", 0),
         "REACT_TO_MESSAGES_MENTIONING_CURRENCY": config.get("REACT_TO_MESSAGES_MENTIONING_CURRENCY", False),
         "REACTION_EMOJI": config.get("REACTION_EMOJI", "🍺"),
+        "REACTION_EMOJI_RARE": config.get("REACTION_EMOJI_RARE", "🍻"),
+        "REACTION_ODDS": config.get("REACTION_ODDS", 0.5),
+        "REACTION_ODDS_RARE": config.get("REACTION_ODDS_RARE", 0.1),
         "TRANSFERABLE_ITEMS": config.get("TRANSFERABLE_ITEMS", []),
         "ECONOMY_HEALTH_MESSAGES": economy_messages,
-        "API_URL": config.get("API_URL", "http://127.0.0.1:8000"),
+        "API_URL": config.get("API_URL", "http://api:8000"),
     }
 
 def get_config():

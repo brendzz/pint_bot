@@ -1,5 +1,5 @@
 from fractions import Fraction
-from fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT
+from bot.fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT
 
 def fraction_to_unicode(fraction_str: str) -> str:
     """

@@ -1,29 +1,45 @@
-# pint_bot
-
+# Pint Bot
 pint_bot is a Discord bot used for tracking debts between users. By default, this is in the form of pints, but you can customise it to whatever you like. It uses an API that stores the debts in a JSON file.
 
 ## Installation
-
-Install the requirements from `requirements.txt`:
+Install the dev requirements from `dev-requirements.txt`:
 ```bash
-pip install -r requirements.txt
+pip install -r dev-requirements.txt
 ```
 
 ### API
 1. Set up a `.env` file in the API folder. See the `.env.example` file for reference.
-2. Run `API.py` to start the API:
+2. Run `main.py` to start the API:
 ```bash
-uvicorn API:app
+uvicorn api.main:app
 ```
 
 ### Bot
 1. Create a new Discord bot in the [Developer Portal](https://discord.com/developers/applications).
 2. Invite the bot to your server with the "application.commands" permission.
-3. Set up a `.env` file. See the `.env.example` file for reference. Add your Discord Bot Token from the Developer Portal as `BOT_TOKEN`.
-4. Add your API URL to the `bot_config.json` file as `API_URL` (if running locally, this is likely `http://127.0.0.1:8000`). Customise the other settings if you wish, or leave them as defaults.
+3. Set up a `.env` file in the bot folder. See the `.env.example` file for reference. Add your Discord Bot Token from the Developer Portal as `BOT_TOKEN`.
+4. Add your API URL to the `config.json` file as `API_URL` (if running locally, this is likely `http://127.0.0.1:8000`). Customise the other settings if you wish, or leave them as defaults.
 5. Run `pint_bot.py` to start the bot:
 ```bash
-python pint_bot.py
+python -m bot.pint_bot
+```
+
+## Docker
+> **Prerequisites:** [Docker Engine](https://docs.docker.com/engine/) & [Docker Compose](https://docs.docker.com/compose/)
+1. Set up a `.env` file in the API folder. See the `.env.example` file for reference.
+2. Set up a `.env` file in the bot folder. See the `.env.example` file for reference.
+3. To build and start both services:
+```bash
+docker-compose up --build -d
+```
+4. To verify, run this and you should see two running containers (api healthy, bot up):
+```bash
+docker-compose ps
+```
+
+5. To stop and remove:
+```bash
+docker-compose down
 ```
 
 ## Usage
@@ -34,11 +50,9 @@ python pint_bot.py
 Both mixed numbers (`2 1/3`) and improper fractions (`7/3`) are supported, as well as decimals.
 
 ## Testing
-
 Unit tests are written using **pytest**.
 
 ### Running the tests
-
 Run all tests from the project root:
 
 ```bash
@@ -47,10 +61,10 @@ pytest
 
 ## Customising
 - Customise the API by modifying the `.env` file in the API folder (e.g., how much debt to allow per transaction, the API endpoint names).
-- Customise the bot by modifying the `bot_config.json` file.
+- Customise the bot by modifying the `config.json` file.
 - Customise the way the bot sends messages in the `send_messages.py` file (by default it uses embeds).
 
-## bot_config.json
+## config.json
 - **BOT_NAME**: The name of the bot in Discord.
 - **API_URL**: The URL of your API for the economy.
 - **CURRENCY_NAME**: The name of the currency used in the economy.
@@ -61,6 +75,9 @@ pytest
 - **PERCENTAGE_DECIMAL_PLACES**: The number of decimal places to show for percentages if `SHOW_PERCENTAGES_DEFAULT` is `True`.
 - **REACT_TO_MESSAGES_MENTIONING_CURRENCY**: Set to `True` to automatically react to messages that mention the name of your currency.
 - **REACTION_EMOJI**: The emoji to use when reacting if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
+- **REACTION_EMOJI_RARE**: The emoji to use when reacting if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
+- **REACTION_ODDS**: The odds of a reaction from occurring if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
+- **REACTION_ODDS_RARE**: The odds of the rare reaction from occurring if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
 - **TRANSFERABLE_ITEMS**: A list of objects your currency can be transferred into.
 - **ECONOMY_HEALTH_MESSAGES**: A list of messages (in descending order) to show when using the `get_all_debts` command, based on the total debts owed in the economy.
 
