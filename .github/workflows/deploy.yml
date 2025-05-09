@@ -59,6 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.ref }}
+
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
@@ -75,9 +76,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/my-${{ matrix.service }}
           tags: |
-            type=ref,event=manual
+            type=ref,event=branch
+            type=ref,event=tag
             type=sha
-            type=cache
 
       - name: Build & push ${{ matrix.service }} image
         uses: docker/build-push-action@v6
@@ -86,8 +87,8 @@ jobs:
           file: ./${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=registry,ref=${{ steps.meta.outputs.cache_tags }}
-          cache-to: type=registry,ref=${{ github.repository_owner }}/my-${{ matrix.service }}:cache,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/my-${{ matrix.service }}:cache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/my-${{ matrix.service }}:cache,mode=max
 
   deploy:
     name: SSH & Deploy on Server
@@ -96,6 +97,21 @@ jobs:
     environment: production
 
     steps:
+      - name: Checkout code (to access compose + env files)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Upload docker-compose.prod.yml
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          source: docker-compose.prod.yml
+          target: "${{ secrets.SERVER_PROJECT_PATH }}/"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
@@ -106,10 +122,10 @@ jobs:
           script: |
             set -euo pipefail
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
-
+            
             export GITHUB_OWNER=${{ github.repository_owner }}
             export REF=${{ github.event.inputs.ref }}
-
+            
             docker-compose -f docker-compose.prod.yml pull
             docker-compose -f docker-compose.prod.yml up -d --force-recreate
             docker image prune -f
