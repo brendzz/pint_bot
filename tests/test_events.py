@@ -6,20 +6,20 @@ from bot.pint_bot import bot, on_message
 class TestOnMessage:
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "randint_side_effect, expected_reaction",
+        "random_side_effect, expected_reaction",
         [
-            ([2, 1], "🍺"),   # Common emoji triggered
-            ([1], "🍻"),      # Rare emoji triggered
-            ([2, 2], None),   # Neither triggered
+            ([0.1, 0.1], "🍻"),
+            ([0.1, 1.0], "🍺"),
+            ([1.0, 1.0], None),
         ],
-        ids=["common_emoji", "rare_emoji", "no_reaction"]
+        ids=["rare_reaction", "common_reaction","no_reaction"]
     )
     @patch("pint_bot.get_config")
-    @patch("pint_bot.random.randint")
+    @patch("pint_bot.random.random")
     async def test_on_message_reacts_to_currency(
-        self, mock_randint, mock_get_config, randint_side_effect, expected_reaction
+        self, mock_random, mock_get_config, random_side_effect, expected_reaction
     ):
-        mock_randint.side_effect = randint_side_effect
+        mock_random.side_effect = random_side_effect
 
         mock_get_config.return_value = {
             "REACT_TO_MESSAGES_MENTIONING_CURRENCY": True,
@@ -27,7 +27,8 @@ class TestOnMessage:
             "REACTION_EMOJI": "🍺",
             "REACTION_EMOJI_RARE": "🍻",
             "BOT_NAME": "Pint Bot",
-            "ODDS": 10
+            "REACTION_ODDS": 0.5,
+            "REACTION_ODDS_RARE": 0.1
         }
 
         mock_message = AsyncMock(spec=Message)

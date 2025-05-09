@@ -38,10 +38,11 @@ async def on_message(message: discord.Message):
     if config["REACT_TO_MESSAGES_MENTIONING_CURRENCY"]:
         if config["CURRENCY_NAME"].lower() in message.content.lower():
             try:
-                if random.randint(1, (config["ODDS"]*5)) == 1:
-                    await message.add_reaction(config["REACTION_EMOJI_RARE"])
-                elif random.randint(1, (config["ODDS"])) == 1:
-                    await message.add_reaction(config["REACTION_EMOJI"])
+                if random.random() <= config["REACTION_ODDS"]:
+                    if random.random() <= config["REACTION_ODDS_RARE"]:
+                        await message.add_reaction(config["REACTION_EMOJI_RARE"])
+                    else:
+                        await message.add_reaction(config["REACTION_EMOJI"])
             except discord.Forbidden:
                 print("Bot does not have permission to add reactions.")
             except discord.HTTPException as e:
