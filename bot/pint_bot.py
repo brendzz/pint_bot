@@ -1,3 +1,4 @@
+import random
 import time
 import discord
 from discord.ext import commands
@@ -37,7 +38,10 @@ async def on_message(message: discord.Message):
     if config["REACT_TO_MESSAGES_MENTIONING_CURRENCY"]:
         if config["CURRENCY_NAME"].lower() in message.content.lower():
             try:
-                await message.add_reaction(config["REACTION_EMOJI"])  # React with an emoji
+                if random.randint(1, (config["ODDS"]*5)) == 1:
+                    await message.add_reaction(config["REACTION_EMOJI_RARE"])
+                elif random.randint(1, (config["ODDS"])) == 1:
+                    await message.add_reaction(config["REACTION_EMOJI"])
             except discord.Forbidden:
                 print("Bot does not have permission to add reactions.")
             except discord.HTTPException as e:

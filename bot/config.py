@@ -48,6 +48,8 @@ def load_config():
         "PERCENTAGE_DECIMAL_PLACES": config.get("PERCENTAGE_DECIMAL_PLACES", 0),
         "REACT_TO_MESSAGES_MENTIONING_CURRENCY": config.get("REACT_TO_MESSAGES_MENTIONING_CURRENCY", False),
         "REACTION_EMOJI": config.get("REACTION_EMOJI", "🍺"),
+        "REACTION_EMOJI_RARE": config.get("REACTION_EMOJI_RARE", "🍻"),
+        "ODDS": config.get("ODDS", 1),
         "TRANSFERABLE_ITEMS": config.get("TRANSFERABLE_ITEMS", []),
         "ECONOMY_HEALTH_MESSAGES": economy_messages,
         "API_URL": config.get("API_URL", "http://api:8000"),

@@ -75,6 +75,8 @@ pytest
 - **PERCENTAGE_DECIMAL_PLACES**: The number of decimal places to show for percentages if `SHOW_PERCENTAGES_DEFAULT` is `True`.
 - **REACT_TO_MESSAGES_MENTIONING_CURRENCY**: Set to `True` to automatically react to messages that mention the name of your currency.
 - **REACTION_EMOJI**: The emoji to use when reacting if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
+- **REACTION_EMOJI_RARE**: The emoji to use when reacting if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
+- **ODDS**: The odds of the common reaction from occurring if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
 - **TRANSFERABLE_ITEMS**: A list of objects your currency can be transferred into.
 - **ECONOMY_HEALTH_MESSAGES**: A list of messages (in descending order) to show when using the `get_all_debts` command, based on the total debts owed in the economy.
 

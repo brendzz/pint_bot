@@ -9,6 +9,8 @@
     "PERCENTAGE_DECIMAL_PLACES": 1,
     "REACT_TO_MESSAGES_MENTIONING_CURRENCY":true,
     "REACTION_EMOJI":"🍺",
+    "REACTION_EMOJI_RARE":"🍻",
+    "ODDS": 2,
     "TRANSFERABLE_ITEMS": [
         "1 Pint of liquid from a pub",
         "£6 of board games from Thirsty Meeples (preferably ordered via Brendan's account so he can collect the Meeple Points)",
