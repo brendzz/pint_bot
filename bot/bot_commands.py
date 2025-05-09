@@ -6,7 +6,7 @@ from bot.command import Command
 from bot.error_handling import handle_error
 from bot.formatter import currency_formatter, to_percentage
 from bot.send_messages import send_info_message, send_one_column_table_message, send_success_message, send_two_column_table_message
-from models.models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
+from models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
 
 def define_command_details(config: dict[str, any]) -> None:
     Command._registry.clear()
