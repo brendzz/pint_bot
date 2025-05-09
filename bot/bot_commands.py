@@ -2,10 +2,56 @@ from fractions import Fraction
 import discord 
 from discord import app_commands
 from bot import api_client
+from bot.command import Command
 from bot.error_handling import handle_error
 from bot.formatter import currency_formatter, to_percentage
 from bot.send_messages import send_info_message, send_one_column_table_message, send_success_message, send_two_column_table_message
 from models.models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
+
+def define_command_details(config: dict[str, any]) -> None:
+    Command._registry.clear()
+    
+    Command(
+        key="help",
+        name="help",
+        description="Get a list of available commands and their descriptions.",
+    )
+
+    Command(
+        key="owe",
+        name="owe",
+        description=f"Add a number of {config['CURRENCY_NAME_PLURAL']} you owe someone.",
+    )
+    
+    Command(
+        key="get_debts",
+        name=config["GET_DEBTS_COMMAND"],
+        description=f"See your current {config['CURRENCY_NAME']} debts.",
+    )
+
+    Command(
+        key="get_all_debts",
+        name=config["GET_ALL_DEBTS_COMMAND"],
+        description=f"See everyone's total {config['CURRENCY_NAME']} debts.",
+    )
+
+    Command(
+        key="settle",
+        name="settle",
+        description=f"Settle {config['CURRENCY_NAME']} debts with someone, starting with the oldest debts."
+    )
+
+    Command(
+        key="set_unicode_preference",
+        name="set_unicode_preference",
+        description="Set your default preference for using Unicode fractions.",
+    )
+
+    Command(
+        key="settings",
+        name="settings",
+        description="View the current bot settings.",
+    )
 
 async def fetch_unicode_preference(interaction, user_id) -> bool:
     """Fetch the user's Unicode preference from the API."""
@@ -18,25 +64,24 @@ async def fetch_unicode_preference(interaction, user_id) -> bool:
 
 def register_commands(bot, config: dict[str, any]):
     """Registers the bot commands with the Discord API."""
-    @bot.tree.command(name="help", description="Get a list of available commands and their descriptions.")
+    define_command_details(config)
+
+    @bot.tree.command(name=Command.get("help").name, description=Command.get("help").description)
     async def help_command(interaction: discord.Interaction):
         # Defer the interaction to avoid timeout
         await interaction.response.defer()
-        # Define the list of commands and their descriptions
-        commands = [
-            {"name": "/help", "description": "Get a list of available commands and their descriptions."},
-            {"name": "/owe", "description": f"Add a number of {config["CURRENCY_NAME_PLURAL"]} you owe someone."},
-            {"name": f"/{config["GET_DEBTS_COMMAND"]}", "description": f"See your current {config["CURRENCY_NAME"]} debts."},
-            {"name": f"/{config["GET_ALL_DEBTS_COMMAND"]}", "description": f"See everyone's total {config["CURRENCY_NAME"]} debts."},
-            {"name": "/settle", "description": f"Settle {config["CURRENCY_NAME"]} debts with someone, starting with the oldest debts."},
-            {"name": "/set_unicode_preference", "description": "Set your preference on whether to use unicode formatted fractions or not."},
-            {"name": "/settings", "description": "See the current bot settings."},
-        ]
 
         # Format the response
-        help_message = f"I help to keep track of {config["CURRENCY_NAME"]} debts owed between users.\n__**{config["BOT_NAME"]} Commands:**__\n"
-        for command in commands:
-            help_message += f"**{command['name']}** - {command['description']}\n"
+        help_message = (
+            f"I help to keep track of {config["CURRENCY_NAME"]} debts owed between users.\n"
+            f"__**{config["BOT_NAME"]} Commands:**__\n"
+        )
+        for command in Command.all():
+            # Skip the help command itself
+            if command.key == "help":
+                continue
+            # Add the command name and description to the help message
+            help_message += f"**/{command.name}** — {command.description}\n"
 
         help_message += "\n__**What can you use your Pints for?**__\n"
         for item in config["TRANSFERABLE_ITEMS"]:
@@ -48,7 +93,7 @@ def register_commands(bot, config: dict[str, any]):
                                 description=help_message)
         
     #Add a debt
-    @bot.tree.command(name="owe", description=f"Add a number of {config['CURRENCY_NAME_PLURAL']} you owe someone.")
+    @bot.tree.command(name=Command.get("owe").name, description=Command.get("owe").description)
     @app_commands.describe(user="Who you owe", amount=f"How many {config['CURRENCY_NAME_PLURAL']} to owe", reason="Why you owe them (optional)")
     async def owe(interaction: discord.Interaction, user: discord.User, amount: str, *, reason: str = ""):
         debtor = interaction.user.id
@@ -87,7 +132,7 @@ def register_commands(bot, config: dict[str, any]):
             )
 
     #See your own pint debts
-    @bot.tree.command(name=config["GET_DEBTS_COMMAND"], description=f"See your current {config['CURRENCY_NAME']} debts.")
+    @bot.tree.command(name=Command.get("get_debts").name, description=Command.get("get_debts").description)
     @app_commands.describe(show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
     async def get_debts(interaction: discord.Interaction, show_percentages: bool = None):
         if show_percentages is None:
@@ -166,7 +211,7 @@ def register_commands(bot, config: dict[str, any]):
         # Send the formatted response
 
     #See everyone's pints
-    @bot.tree.command(name=config["GET_ALL_DEBTS_COMMAND"], description=f"See everyone's total {config['CURRENCY_NAME']} debts.")
+    @bot.tree.command(name=Command.get("get_all_debts").name, description=Command.get("get_all_debts").description)
     @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot settings).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
     async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
         if table_format is None:
@@ -236,7 +281,7 @@ def register_commands(bot, config: dict[str, any]):
             table_format=table_format
         )
 
-    @bot.tree.command(name="settle", description=f"Settle {config['CURRENCY_NAME']} debts with someone, starting with the oldest debts.")
+    @bot.tree.command(name=Command.get("settle").name, description=Command.get("settle").description)
     @app_commands.describe(user="Who you want to settle debts with", amount=f"How many {config['CURRENCY_NAME_PLURAL']} to settle")
     async def settle(interaction: discord.Interaction, user: discord.User, amount: str):
         debtor = interaction.user.id
@@ -280,7 +325,7 @@ def register_commands(bot, config: dict[str, any]):
             description= f"Settled {settled_amount} with {user.mention}. Remaining debt: {remaining_amount}."
         )
 
-    @bot.tree.command(name="set_unicode_preference", description="Set your default preference for using Unicode fractions.")
+    @bot.tree.command(name=Command.get("set_unicode_preference").name, description=Command.get("set_unicode_preference").description)
     @app_commands.describe(use_unicode="Set to True to use Unicode fractions, False otherwise.")
     async def set_unicode_preference(interaction: discord.Interaction, use_unicode: bool):
         await interaction.response.defer()
@@ -305,7 +350,7 @@ def register_commands(bot, config: dict[str, any]):
             title="Preference Updated",
             description=data["message"])
 
-    @bot.tree.command(name="settings", description="View the current bot settings.")
+    @bot.tree.command(name=Command.get("settings").name, description=Command.get("settings").description)
     @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot Settings.).")
     async def settings_command(interaction: discord.Interaction, table_format: bool = None):
         if table_format is None:

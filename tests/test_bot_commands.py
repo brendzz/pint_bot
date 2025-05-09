@@ -144,7 +144,7 @@ class TestRegistration:
 
 class TestHelpCommand:
     @pytest.mark.asyncio
-    async def test_help_command(self, bot):
+    async def test_help_command(self, bot, config):
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands['help']
         await cmd(interaction)
@@ -152,7 +152,7 @@ class TestHelpCommand:
         calls = interaction.send_info_message_calls
         assert calls
         kwargs = calls[0]['kwargs']
-        assert kwargs['title'] == 'PintBot Help'
+        assert kwargs["title"] == f"{config['BOT_NAME']} Help"
         for item in ['**/owe**', '- Beer', '- Wine']:
             assert item in kwargs['description']
 
