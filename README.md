@@ -9,7 +9,7 @@ pip install -r dev-requirements.txt
 
 ### API
 1. Set up a `.env` file in the API folder. See the `.env.example` file for reference.
-2. Run `api.py` to start the API:
+2. Run `main.py` to start the API:
 ```bash
 uvicorn api.main:app
 ```
