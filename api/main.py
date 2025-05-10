@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
 import logging
-from api.config import GET_ALL_DEBTS_COMMAND, GET_DEBTS_COMMAND, MAXIMUM_PER_DEBT, QUANTIZE_SETTLING_DEBTS, SMALLEST_UNIT, load_config
+import api.config as config
 from api.fraction_functions import mixed_number_to_fraction
 from api.data_manager import load_data, save_data
 from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
@@ -40,11 +40,11 @@ async def add_debt(request: OweRequest):
         raise HTTPException(status_code=400, detail="NEGATIVE_AMOUNT")
     elif amount == 0:
         raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
-    elif amount > Fraction(MAXIMUM_PER_DEBT):
+    elif amount > Fraction(config.MAXIMUM_PER_DEBT):
         raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
     
     # Check if the fraction is quantized to the smallest unit using modulo
-    smallest_unit = Fraction(SMALLEST_UNIT)
+    smallest_unit = config.SMALLEST_UNIT
 
     if (amount % smallest_unit != 0):
         raise HTTPException(
@@ -76,7 +76,7 @@ async def add_debt(request: OweRequest):
 
     return {"amount": str(amount), "reason": request.reason, "timestamp": datetime.now().strftime("%d-%m-%Y")}
 
-@app.get(f"/{GET_DEBTS_COMMAND}/{{user_id}}")
+@app.get(f"/{config.GET_DEBTS_COMMAND}/{{user_id}}")
 async def get_debts(user_id: str):
     """See your current pint debts."""
     data = load_data()
@@ -133,7 +133,7 @@ async def get_debts(user_id: str):
 
     return result
 
-@app.get(f"/{GET_ALL_DEBTS_COMMAND}")
+@app.get(f"/{config.GET_ALL_DEBTS_COMMAND}")
 async def get_all_debts():
     """To see all current debts between users."""
     data = load_data()
@@ -181,9 +181,9 @@ async def settle_debt(request: SettleRequest):
         raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
 
     # Check if the fraction is quantized to the smallest unit using modulo
-    smallest_unit = Fraction(SMALLEST_UNIT)
+    smallest_unit = config.SMALLEST_UNIT
 
-    if QUANTIZE_SETTLING_DEBTS == True and (amount % smallest_unit != 0):
+    if config.QUANTIZE_SETTLING_DEBTS == True and (amount % smallest_unit != 0):
         raise HTTPException(
             status_code=400,
             detail="NOT_QUANTIZED"
