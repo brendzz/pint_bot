@@ -112,7 +112,26 @@ jobs:
           source: docker-compose.prod.yml
           target: "${{ secrets.SERVER_PROJECT_PATH }}/"
 
-      - name: Deploy via SSH
+      - name: Create bot/.env file
+        run: |
+          if [ -z "${{ secrets.PROD_BOT_TOKEN }}" ]; then
+            echo "PROD_BOT_TOKEN secret is missing or empty."
+            exit 1
+          fi
+          echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" > bot.env
+      
+      - name: Upload bot.env
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          source: bot.env
+          target: "${{ secrets.SERVER_PROJECT_PATH }}/bot/"
+          strip_components: 1
+
+      - name: SSH and deploy
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -121,11 +140,19 @@ jobs:
           port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
             set -euo pipefail
+            echo "📂 Listing bot directory contents:"
+            ls -lR "${{ secrets.SERVER_PROJECT_PATH }}/bot"
+      
+            cd "${{ secrets.SERVER_PROJECT_PATH }}/bot"
+            mv bot.env .env
+      
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
-            
             export GITHUB_OWNER=${{ github.repository_owner }}
-            export REF=${{ github.event.inputs.ref }}
-            
+            export REF=${{ github.sha }}
+      
+            echo "🔁 Pulling latest docker images..."
             docker-compose -f docker-compose.prod.yml pull
+            echo "🚀 Starting containers..."
             docker-compose -f docker-compose.prod.yml up -d --force-recreate
+            echo "🧹 Pruning unused docker images..."
             docker image prune -f
