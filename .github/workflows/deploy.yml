@@ -129,7 +129,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           source: bot/.env
-          target: "${{ secrets.SERVER_PROJECT_PATH }}/bot/.env"
+          target: "${{ secrets.SERVER_PROJECT_PATH }}/bot/"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
