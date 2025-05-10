@@ -1,19 +1,18 @@
 import discord 
 from pydantic import ValidationError
 import requests
-from bot.config import get_config
+import bot.config as config
 from bot.error_messages import ERROR_MESSAGES
 from bot.send_messages import send_error_message
 
 def format_error_message(error_message: str):
     """Formats the error message with values from config."""
-    config = get_config()
     return error_message.format(
-            CURRENCY=config["CURRENCY_NAME"],
-            CURRENCY_PLURAL=config["CURRENCY_NAME_PLURAL"],
-            MAX_DEBT=config["MAXIMUM_PER_DEBT"],
-            SMALLEST_UNIT=config["SMALLEST_UNIT"],
-            BOT_NAME=config["BOT_NAME"],
+            CURRENCY=config.CURRENCY_NAME,
+            CURRENCY_PLURAL=config.CURRENCY_NAME_PLURAL,
+            MAX_DEBT=config.MAXIMUM_PER_DEBT,
+            SMALLEST_UNIT=config.SMALLEST_UNIT,
+            BOT_NAME=config.BOT_NAME,
         )
 
 def get_error_message(error_code: str):
