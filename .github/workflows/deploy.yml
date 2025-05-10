@@ -128,10 +128,10 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           source: bot.env
-          target: "${{ secrets.SERVER_PROJECT_PATH }}/bot/.env"
+          target: "${{ secrets.SERVER_PROJECT_PATH }}/bot/"
           strip_components: 0
 
-      - name: Deploy via SSH
+      - name: SSH and deploy
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -140,11 +140,13 @@ jobs:
           port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
             set -euo pipefail
+            cd "${{ secrets.SERVER_PROJECT_PATH }}/bot"
+            mv bot.env .env
+      
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
-
             export GITHUB_OWNER=${{ github.repository_owner }}
             export REF=${{ github.event.inputs.ref }}
-
+      
             docker-compose -f docker-compose.prod.yml pull
             docker-compose -f docker-compose.prod.yml up -d --force-recreate
             docker image prune -f
