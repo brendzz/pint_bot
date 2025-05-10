@@ -115,6 +115,10 @@ jobs:
       - name: Create bot/.env file
         run: |
           mkdir -p bot
+          if [ -z "${{ secrets.PROD_BOT_TOKEN }}" ]; then
+            echo "PROD_BOT_TOKEN secret is missing or empty."
+            exit 1
+          fi
           echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" > bot/.env
 
       - name: Verify .env file creation
