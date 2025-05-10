@@ -14,6 +14,14 @@ logging.basicConfig(level=logging.DEBUG)
 # Set up FastAPI
 app = FastAPI()
 
+def check_quantization(amount: Fraction):
+    """Check if the fraction is quantized to the smallest unit using modulo"""
+    if (amount % config.SMALLEST_UNIT != 0):
+        raise HTTPException(
+            status_code=400,
+            detail="NOT_QUANTIZED"
+        )
+
 @app.get("/health", status_code=200)
 async def health_check():
     return {"status": "ok"}
@@ -43,14 +51,7 @@ async def add_debt(request: OweRequest):
     elif amount > Fraction(config.MAXIMUM_PER_DEBT):
         raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
     
-    # Check if the fraction is quantized to the smallest unit using modulo
-    smallest_unit = config.SMALLEST_UNIT
-
-    if (amount % smallest_unit != 0):
-        raise HTTPException(
-            status_code=400,
-            detail="NOT_QUANTIZED"
-        )
+    check_quantization(amount)
 
      # Get or create the debtor's data
     if debtor_id not in data.users:
@@ -180,14 +181,8 @@ async def settle_debt(request: SettleRequest):
     elif amount == 0:
         raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
 
-    # Check if the fraction is quantized to the smallest unit using modulo
-    smallest_unit = config.SMALLEST_UNIT
-
-    if config.QUANTIZE_SETTLING_DEBTS == True and (amount % smallest_unit != 0):
-        raise HTTPException(
-            status_code=400,
-            detail="NOT_QUANTIZED"
-        )
+    if config.QUANTIZE_SETTLING_DEBTS == True:
+        check_quantization(amount)
     
     # Check if the debtor owes the creditor
     if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
