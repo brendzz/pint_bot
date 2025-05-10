@@ -117,6 +117,13 @@ jobs:
           mkdir -p bot
           echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" > bot/.env
 
+      - name: Verify .env file creation
+        run: |
+          if [ ! -f bot/.env ]; then
+            echo ".env file was not created. Please check the secrets configuration."
+            exit 1
+          fi
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
