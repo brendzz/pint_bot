@@ -113,7 +113,9 @@ jobs:
           target: "${{ secrets.SERVER_PROJECT_PATH }}/"
 
       - name: Create bot/.env file
-        run: echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" > bot/.env
+        run: |
+          mkdir -p bot
+          echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" > bot/.env
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
@@ -125,6 +127,9 @@ jobs:
           script: |
             set -euo pipefail
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
+
+            export GITHUB_OWNER=${{ github.repository_owner }}
+            export REF=${{ github.event.inputs.ref }}
 
             docker-compose -f docker-compose.prod.yml pull
             docker-compose -f docker-compose.prod.yml up -d --force-recreate
