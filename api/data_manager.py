@@ -1,8 +1,7 @@
 import json
 import os
+from api.config import DATA_FILE
 from models import PintEconomy
-
-DATA_FILE = os.environ.get("DATA_FILE","PintEconomy.json")
 
 def load_data() -> PintEconomy:
     """Load the PintEconomy data from a JSON file."""

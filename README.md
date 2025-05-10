@@ -8,8 +8,7 @@ pip install -r dev-requirements.txt
 ```
 
 ### API
-1. Set up a `.env` file in the API folder. See the `.env.example` file for reference.
-2. Run `main.py` to start the API:
+1. Run `main.py` to start the API:
 ```bash
 uvicorn api.main:app
 ```
@@ -26,18 +25,16 @@ python -m bot.pint_bot
 
 ## Docker
 > **Prerequisites:** [Docker Engine](https://docs.docker.com/engine/) & [Docker Compose](https://docs.docker.com/compose/)
-1. Set up a `.env` file in the API folder. See the `.env.example` file for reference.
-2. Set up a `.env` file in the bot folder. See the `.env.example` file for reference.
-3. To build and start both services:
+1. Set up a `.env` file in the bot folder. See the `.env.example` file for reference.
+2. To build and start both services:
 ```bash
 docker-compose up --build -d
 ```
-4. To verify, run this and you should see two running containers (api healthy, bot up):
+3. To verify, run this and you should see two running containers (api healthy, bot up):
 ```bash
 docker-compose ps
 ```
-
-5. To stop and remove:
+4. To stop and remove:
 ```bash
 docker-compose down
 ```
@@ -54,13 +51,12 @@ Unit tests are written using **pytest**.
 
 ### Running the tests
 Run all tests from the project root:
-
 ```bash
 pytest
 ```
 
 ## Customising
-- Customise the API by modifying the `.env` file in the API folder (e.g., how much debt to allow per transaction, the API endpoint names).
+- Customise the API by modifying the `config.py` file in the `api` folder (e.g., how much debt to allow per transaction, the API endpoint names).
 - Customise the bot by modifying the `config.json` file.
 - Customise the way the bot sends messages in the `send_messages.py` file (by default it uses embeds).
 

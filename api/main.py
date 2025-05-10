@@ -3,20 +3,13 @@ from fastapi import FastAPI, HTTPException, Depends
 from fractions import Fraction
 from datetime import datetime
 import logging
-from api.config import load_config
+from api.config import GET_ALL_DEBTS_COMMAND, GET_DEBTS_COMMAND, MAXIMUM_PER_DEBT, QUANTIZE_SETTLING_DEBTS, SMALLEST_UNIT, load_config
 from api.fraction_functions import mixed_number_to_fraction
 from api.data_manager import load_data, save_data
 from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 
 # Setup 
 logging.basicConfig(level=logging.DEBUG)
-CONFIG = load_config()
-
-SMALLEST_UNIT = CONFIG["SMALLEST_UNIT"]
-QUANTIZE_SETTLING_DEBTS = CONFIG["QUANTIZE_SETTLING_DEBTS"]
-GET_DEBTS_COMMAND = CONFIG["GET_DEBTS_COMMAND"]
-GET_ALL_DEBTS_COMMAND = CONFIG["GET_ALL_DEBTS_COMMAND"]
-MAXIMUM_PER_DEBT = CONFIG["MAXIMUM_PER_DEBT"]
 
 # Set up FastAPI
 app = FastAPI()

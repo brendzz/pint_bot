@@ -4,17 +4,28 @@ from pathlib import Path
 from os import environ
 from fractions import Fraction
 
-def load_config():
-    # Load environment variables from .env file
-    load_dotenv("api/.env")
+# The name of the file where the economy data is stored
+# This file should be in the same directory as the script
+DATA_FILE: str = "PintEconomy.json"
 
-    return {
-        # Environment variables
-        "DATA_FILE": environ.get("DATA_FILE", "PintEconomy.json"),
-        "SMALLEST_UNIT": Fraction(environ.get("SMALLEST_UNIT", "1/6")),
-        "QUANTIZE_SETTLING_DEBTS": environ.get("QUANTIZE_SETTLING_DEBTS", "True") == "True",
-        "GET_DEBTS_COMMAND": environ.get("GET_DEBTS_COMMAND", "pints"),
-        "GET_ALL_DEBTS_COMMAND": environ.get("GET_ALL_DEBTS_COMMAND", "all_pints"),
-        "MAXIMUM_PER_DEBT": int(environ.get("MAXIMUM_PER_DEBT", "10")),
-        "MAXIMUM_DEBT_CHARACTER_LIMIT": int(environ.get("MAXIMUM_DEBT_CHARACTER_LIMIT", "200")),
-    }
+# The API internally converts everything to Fractions so it can deal with fractional debts.
+# Set this to the allowed smallest fraction of the currency that can be used in the economy
+# If you would like to use whole numbers only, set this to 1
+SMALLEST_UNIT: Fraction = 1/6
+
+# Set to True to only allow Settling debts in quantities of the smallest unit
+QUANTIZE_SETTLING_DEBTS: bool = True
+
+# Set the name for the command used to get the debts of a user
+GET_DEBTS_COMMAND: str = "pints" 
+
+# Set the name for the command used to get the debts of ALL users
+GET_ALL_DEBTS_COMMAND: str = "all_pints"
+
+# Set the maximum amount of currency allowed in each individual debt
+# No single debt can be more than this amount
+# Users can still owe more than this, but will need to split it into multiple debts
+MAXIMUM_PER_DEBT: int = 10
+
+#Set the maximum character limit for the debt descriptions
+MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
