@@ -1,3 +1,5 @@
+from fractions import Fraction
+from unittest.mock import patch
 import pytest
 import bot.bot_commands as commands
 
@@ -38,27 +40,6 @@ class DummyBot:
         return DummyUser(user_id)
 
 @pytest.fixture
-def config():
-    return {
-        "CURRENCY_NAME": "Pint",
-        "CURRENCY_NAME_PLURAL": "Pints",
-        "GET_DEBTS_COMMAND": "get_debts",
-        "GET_ALL_DEBTS_COMMAND": "get_all_debts",
-        "BOT_NAME": "PintBot",
-        "TRANSFERABLE_ITEMS": ["Beer", "Wine"],
-        "SHOW_PERCENTAGES_DEFAULT": False,
-        "USE_TABLE_FORMAT_DEFAULT": True,
-        "ECONOMY_HEALTH_MESSAGES": [
-            {"threshold": 0, "message": "Economy is dead"},
-            {"threshold": 1, "message": "Economy active"}
-        ],
-        "MAXIMUM_PER_DEBT": 10,
-        "SMALLEST_UNIT": "0.01",
-        "MAXIMUM_DEBT_CHARACTER_LIMIT": 200,
-        "QUANTIZE_SETTLING_DEBTS": True
-    }
-
-@pytest.fixture
 def shared():
     class Shared: pass
     shared = Shared()
@@ -66,14 +47,8 @@ def shared():
     shared.all_debts_response = {}
     return shared
 
-@pytest.fixture
-def bot(config):
-    bot = DummyBot()
-    commands.register_commands(bot, config)
-    return bot
-
 @pytest.fixture(autouse=True)
-def mocks(monkeypatch, shared, config):
+def mocks(monkeypatch, shared):
     async def fake_fetch_unicode(interaction, user_id):
         return True
     monkeypatch.setattr(commands, 'fetch_unicode_preference', fake_fetch_unicode)
@@ -82,7 +57,7 @@ def mocks(monkeypatch, shared, config):
         interaction.error = {'args': args, 'kwargs': kwargs}
     monkeypatch.setattr(commands, 'handle_error', fake_handle_error)
 
-    monkeypatch.setattr(commands, 'currency_formatter', lambda amount, cfg, use_unicode: str(amount))
+    monkeypatch.setattr(commands, 'currency_formatter', lambda amount, use_unicode: str(amount))
     monkeypatch.setattr(commands, 'to_percentage', lambda amt, total, cfg: '50')
 
     class DummyModel:
@@ -110,8 +85,7 @@ def mocks(monkeypatch, shared, config):
         def set_unicode_preference(self, payload):
             self.calls['set_unicode_preference'] = payload
             return {'message': 'Preference updated'}
-    fake_api = FakeAPI(shared)
-    monkeypatch.setattr(commands, 'api_client', fake_api)
+    monkeypatch.setattr(commands, 'api_client', FakeAPI(shared))
 
     def make_stub(name):
         async def stub(interaction, *args, **kwargs):
@@ -127,15 +101,41 @@ def mocks(monkeypatch, shared, config):
     ]:
         monkeypatch.setattr(commands, fn, make_stub(fn))
 
+@pytest.fixture
+def bot():
+    with patch.multiple(
+        "config",
+        CURRENCY_NAME="TestCoin",
+        CURRENCY_NAME_PLURAL="TestCoins",
+        BOT_NAME="TestBot",
+        GET_DEBTS_COMMAND="get_debts",
+        GET_ALL_DEBTS_COMMAND="get_all_debts",
+        TRANSFERABLE_ITEMS=["Beer", "Wine"],
+        SHOW_PERCENTAGES_DEFAULT=False,
+        USE_TABLE_FORMAT_DEFAULT=True,
+        ECONOMY_HEALTH_MESSAGES=[
+            {"threshold": 0, "message": "Economy is dead"},
+            {"threshold": 1, "message": "Economy active"},
+        ],
+        MAXIMUM_PER_DEBT=10,
+        SMALLEST_UNIT=Fraction(1, 6),
+        MAXIMUM_DEBT_CHARACTER_LIMIT=200,
+        QUANTIZE_SETTLING_DEBTS=True,
+    ):
+        bot = DummyBot()
+        commands.register_commands(bot)
+        return bot
+
 # Tests
 
 class TestRegistration:
-    def test_commands_registered(self, bot, config):
+    def test_commands_registered(self, bot):
+        import bot.config as config
         expected = {
             'help',
             'owe',
-            config['GET_DEBTS_COMMAND'],
-            config['GET_ALL_DEBTS_COMMAND'],
+            config.GET_DEBTS_COMMAND,
+            config.GET_ALL_DEBTS_COMMAND,
             'settle',
             'set_unicode_preference',
             'settings',
@@ -144,7 +144,8 @@ class TestRegistration:
 
 class TestHelpCommand:
     @pytest.mark.asyncio
-    async def test_help_command(self, bot, config):
+    async def test_help_command(self, bot):
+        import bot.config as config
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands['help']
         await cmd(interaction)
@@ -152,8 +153,10 @@ class TestHelpCommand:
         calls = interaction.send_info_message_calls
         assert calls
         kwargs = calls[0]['kwargs']
-        assert kwargs["title"] == f"{config['BOT_NAME']} Help"
-        for item in ['**/owe**', '- Beer', '- Wine']:
+        assert kwargs["title"] == f"{config.BOT_NAME} Help"
+
+        expected_items = ['**/owe**'] + [f"- {item}" for item in config.TRANSFERABLE_ITEMS]
+        for item in expected_items:
             assert item in kwargs['description']
 
 class TestOweCommand:
@@ -196,10 +199,11 @@ class TestGetDebtsCommand:
         }, 'Your Pint debts'),
     ], ids=["no_debts", "has_debts"])
     @pytest.mark.asyncio
-    async def test_get_debts_various(self, bot, config, shared, response, expected_title):
+    async def test_get_debts_various(self, bot, shared, response, expected_title):
+        import bot.config as config
         interaction = DummyInteraction(DummyUser(1), bot)
         shared.debts_response = response
-        cmd = bot.tree.commands[config['GET_DEBTS_COMMAND']]
+        cmd = bot.tree.commands[config.GET_DEBTS_COMMAND]
         await cmd(interaction)
         assert interaction.response.deferred
         info_calls = interaction.send_info_message_calls
@@ -217,11 +221,19 @@ class TestGetAllDebtsCommand:
         }, False, 'Economy active'),
     ],
     ids=["no_debts_in_economy", "debts_in_economy"])
+    @patch.multiple(
+        "bot.config",
+        ECONOMY_HEALTH_MESSAGES=[
+            {"threshold": 0, "message": "Economy is dead"},
+            {"threshold": 1, "message": "Economy active"},
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_get_all_debts_various(self, bot, config, shared, response, expect_error, health_msg):
+    async def test_get_all_debts_various(self, bot, shared, response, expect_error, health_msg):
+        import bot.config as config
         interaction = DummyInteraction(DummyUser(1), bot)
         shared.all_debts_response = response
-        cmd = bot.tree.commands[config['GET_ALL_DEBTS_COMMAND']]
+        cmd = bot.tree.commands[config.GET_ALL_DEBTS_COMMAND]
         await cmd(interaction)
         assert interaction.response.deferred
         if expect_error:
@@ -278,8 +290,6 @@ class TestSettingsCommand:
         interaction = DummyInteraction(DummyUser(1), bot)
         await bot.tree.commands['settings'](interaction)
         calls = interaction.send_one_column_table_message_calls
-        assert len(calls) == 2
+        assert len(calls) == 1
         bot_cfg = calls[0]['kwargs']['data']
-        api_cfg = calls[1]['kwargs']['data']
-        assert any(item['Setting'] == 'CURRENCY_NAME' for item in bot_cfg)
-        assert any(item['Setting'] == 'Maximum Debt Per Transaction' for item in api_cfg)
+        assert any(item['Setting'] == 'Currency Name' for item in bot_cfg)
