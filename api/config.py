@@ -22,7 +22,7 @@ MAXIMUM_PER_DEBT: int = 10
 # The API internally converts everything to Fractions so it can deal with fractional debts.
 # Set this to the allowed smallest fraction of the currency that can be used in the economy
 # If you would like to use whole numbers only, set this to 1
-SMALLEST_UNIT: Fraction = 1/6
+SMALLEST_UNIT: Fraction = Fraction(1, 6)
 
 #Set the maximum character limit for the debt descriptions
 MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
