@@ -10,7 +10,7 @@ CURRENCY_NAME_PLURAL: str = "Pints"
 GET_DEBTS_COMMAND: str = "pints"
 GET_ALL_DEBTS_COMMAND: str = "all_pints"
 
-API_URL: str= "http://api:8000"
+API_URL: str= "http://localhost:8000"
 
 QUANTIZE_SETTLING_DEBTS:  bool = True
 USE_DECIMAL_OUTPUT: bool = False

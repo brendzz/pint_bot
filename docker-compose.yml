@@ -20,6 +20,8 @@ services:
       context: .
       dockerfile: bot/Dockerfile
     env_file: ./bot/.env
+    environment:
+    - API_BASE_URL=http://api:8000
     volumes:
       - .:/app
     depends_on:

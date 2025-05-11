@@ -1,19 +1,15 @@
 services:
   api:
     image: ghcr.io/${GITHUB_OWNER}/my-api:sha-${REF}
-    ports:
-      - "8000:8000"
     restart: unless-stopped
-    networks:
-      - pint_bot_default
+    network_mode: host
+    volumes:
+      - ./api:/app/api
 
   bot:
     image: ghcr.io/${GITHUB_OWNER}/my-bot:sha-${REF}
     env_file: ./bot/.env
     restart: unless-stopped
-    networks:
-      - pint_bot_default
-
-networks:
-  pint_bot_default:
-    external: true
+    network_mode: host
+    depends_on:
+      - api
