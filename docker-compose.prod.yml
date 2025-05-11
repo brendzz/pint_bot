@@ -4,8 +4,8 @@ services:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ./api:/app/api
-
+      - ./api/pint_economy.json:/app/api/pint_economy.json:rw,Z  
+  
   bot:
     image: ghcr.io/${GITHUB_OWNER}/my-bot:sha-${REF}
     env_file: ./bot/.env

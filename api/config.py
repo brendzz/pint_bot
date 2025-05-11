@@ -1,8 +1,10 @@
 from fractions import Fraction
+from pathlib import Path
 
 # The name of the file where the economy data is stored
 # This file should be in the same directory as the script
-DATA_FILE: str = "pint_economy.json"
+BASE = Path(__file__).parent
+DATA_FILE = BASE / "pint_economy.json"
 
 # Set the name for the command used to get the debts of a user
 GET_DEBTS_COMMAND: str = "pints"
