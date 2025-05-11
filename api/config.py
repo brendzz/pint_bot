@@ -1,15 +1,11 @@
-import json
-from dotenv import load_dotenv
-from pathlib import Path
-from os import environ
 from fractions import Fraction
 
 # The name of the file where the economy data is stored
 # This file should be in the same directory as the script
-DATA_FILE: str = "PintEconomy.json"
+DATA_FILE: str = "pint_economy.json"
 
 # Set the name for the command used to get the debts of a user
-GET_DEBTS_COMMAND: str = "pints" 
+GET_DEBTS_COMMAND: str = "pints"
 
 # Set the name for the command used to get the debts of ALL users
 GET_ALL_DEBTS_COMMAND: str = "all_pints"
