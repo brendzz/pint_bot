@@ -64,7 +64,10 @@ async def on_message(message: discord.Message):
 def main():
     """Main function to run the bot."""
     load_dotenv("bot/.env")
-    bot.run(environ.get("BOT_TOKEN"))
+    token = environ.get("BOT_TOKEN")
+    if not token:
+        raise RuntimeError("BOT_TOKEN is missing or not loaded from .env")
+    bot.run(token)
 
 if __name__ == "__main__":
     main()

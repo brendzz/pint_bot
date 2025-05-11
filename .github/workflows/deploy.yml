@@ -83,7 +83,7 @@ jobs:
       - name: Build & push ${{ matrix.service }} image
         uses: docker/build-push-action@v6
         with:
-          context: ./${{ matrix.service }}
+          context: .
           file: ./${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -300,6 +300,24 @@ jobs:
 
             echo "📄 Logs from pint_bot_bot_1:"
             podman logs pint_bot_bot_1 || echo "⚠️ Could not fetch logs for pint_bot_bot_1"
+
+            # 🚨 Check for container failures
+            echo "🔍 Checking container exit statuses..."
+            FAILED=0
+
+            for container in pint_bot_api_1 pint_bot_bot_1; do
+              EXIT_CODE=$(podman inspect "$container" --format '{{.State.ExitCode}}' || echo "999")
+              echo "🧪 $container exit code: $EXIT_CODE"
+              if [ "$EXIT_CODE" != "0" ]; then
+                echo "❌ $container failed with exit code $EXIT_CODE"
+                FAILED=1
+              fi
+            done
+
+            if [ "$FAILED" -ne 0 ]; then
+              echo "🚨 One or more containers failed to start. Exiting with error."
+              exit 1
+            fi
 
             # Final status
             echo "📊 Final status:"

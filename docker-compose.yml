@@ -1,6 +1,8 @@
 services:
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     volumes:
       - .:/app
     ports:
@@ -14,7 +16,9 @@ services:
     restart: unless-stopped
 
   bot:
-    build: ./bot
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
     env_file: ./bot/.env
     volumes:
       - .:/app

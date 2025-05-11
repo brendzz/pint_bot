@@ -8,10 +8,11 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
-COPY requirements.txt .
+COPY bot/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=appuser:appgroup . .
+COPY bot /app/bot
+COPY models /app/models
 
 USER appuser
 
