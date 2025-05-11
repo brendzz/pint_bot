@@ -1,4 +1,4 @@
-name: Test & Deploy
+name: Deploy
 
 on:
   workflow_dispatch:
@@ -17,35 +17,35 @@ permissions:
   packages: write
 
 jobs:
-  # test:
-  #   name: Run Tests
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: ${{ github.event.inputs.ref }}
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
 
-  #     - name: Set up python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: '3.12'
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-  #     - name: Cache pip
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: ~/.cache/pip
-  #         key: ${{ runner.os }}-pip-${{ hashFiles('**/dev-requirements.txt') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-pip-
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/dev-requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip install -r dev-requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev-requirements.txt
 
-  #     - name: Run tests
-  #       run: pytest tests/ --maxfail=1 --disable-warnings -q
+      - name: Run tests
+        run: pytest tests/ --maxfail=1 --disable-warnings -q
 
   build-and-push:
     name: Build & Push Images
@@ -63,7 +63,7 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -80,7 +80,7 @@ jobs:
             type=ref,event=tag
             type=sha
 
-      - name: Build & push ${{ matrix.service }} image
+      - name: Build & push ${{ matrix.service }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -88,7 +88,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/my-${{ matrix.service }}:cache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/my-${{ matrix.service }}:cache,mode=max
+          cache-to:   type=registry,ref=ghcr.io/${{ github.repository_owner }}/my-${{ matrix.service }}:cache,mode=max
 
   deploy:
     name: Deploy
@@ -98,12 +98,12 @@ jobs:
     timeout-minutes: 1
 
     steps:
-      - name: Checkout code (to access compose + env files)
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.ref }}
 
-      - name: Upload docker-compose.prod.yml
+      - name: Upload docker-compose
         uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -112,35 +112,6 @@ jobs:
           port: ${{ secrets.SERVER_SSH_PORT }}
           source: docker-compose.prod.yml
           target: "${{ secrets.SERVER_PROJECT_PATH }}/"
-
-      - name: Create .env file
-        run: |
-          if [ -z "${{ secrets.PROD_BOT_TOKEN }}" ]; then
-            echo "PROD_BOT_TOKEN secret is missing or empty."
-            exit 1
-          fi
-          echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" > .env
- 
-      - name: Delete existing .env on server (directory or file)
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_SSH_PORT }}
-          script: |
-            rm -rf "${{ secrets.SERVER_PROJECT_PATH }}/bot/.env"
-
-      - name: Upload .env file
-        uses: appleboy/scp-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_SSH_PORT }}
-          source: ./.env
-          target: ${{ secrets.SERVER_PROJECT_PATH }}/bot/
-          overwrite: true
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
@@ -153,176 +124,134 @@ jobs:
             set -euo pipefail
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
 
-            echo "📌 Starting deployment script at $(date)"
+            # Write bot env in place
+            echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" > bot/.env
+
+            echo "Starting deployment script at $(date)"
             export PATH="$HOME/.local/bin:$PATH"
 
             # Enable linger mode and Podman socket
-            echo "🔧 Enabling Podman linger mode for user"
+            echo "Enabling Podman linger mode for user"
             loginctl enable-linger "$USER"
 
-            echo "🔧 Starting Podman socket..."
+            echo "Starting Podman socket..."
             systemctl --user start podman.socket || true
             systemctl --user status podman.socket || true
 
-            # Log existing containers and pods
-            echo "📦 Existing containers before cleanup:"
-            podman ps -a || true
-            echo "📦 Existing pods before cleanup:"
-            podman pod ps || true
-
-            # Log systemd unit state
-            echo "📋 systemd --user podman services:"
-            systemctl --user list-units --type=service --all --no-pager | grep podman || echo "None"
-
-            echo "📋 Podman-related systemd unit files:"
-            systemctl --user list-unit-files | grep podman || echo "None"
-
             # Ensure podman-compose is installed
             if ! command -v podman-compose &>/dev/null; then
-              echo "🔧 Installing podman-compose..."
+              echo "Installing podman-compose..."
               pip install --user podman-compose
             fi
 
             # Clean stale locks
-            echo "🧹 Removing stale CNI lock..."
+            echo "Removing stale CNI lock..."
             rm -f ~/.config/cni/net.d/cni.lock || true
 
             # Free port 8000
-            echo "🧹 Killing processes on port 8000..."
+            echo "Killing processes on port 8000..."
             lsof -ti:8000 | xargs -r kill -9 || true
 
-            echo "⏳ Waiting for port 8000 to become free..."
+            echo "Waiting for port 8000 to become free..."
             for i in {1..10}; do
               if ! lsof -ti:8000 > /dev/null; then
-                echo "✅ Port 8000 is now free."
+                echo "Port 8000 is now free."
                 break
               fi
-              echo "⏳ Still in use, retrying ($i/10)..."
+              echo "Still in use, retrying ($i/10)..."
               sleep 1
             done
-
-            # Show docker-compose file
-            echo "📄 docker-compose.prod.yml:"
-            cat docker-compose.prod.yml || true
 
             # Set env vars for image tags
             export GITHUB_OWNER=${{ github.repository_owner }}
             export REF=$(echo "${{ github.sha }}" | cut -c1-7)
-            echo "📦 GITHUB_OWNER=$GITHUB_OWNER, REF=$REF"
+            echo "GITHUB_OWNER=$GITHUB_OWNER, REF=$REF"
 
             # Ensure external network
             if ! podman network exists pint_bot_default; then
-              echo "🔧 Creating network pint_bot_default..."
+              echo "Creating network pint_bot_default..."
               podman network create pint_bot_default
             else
-              echo "✅ Network pint_bot_default exists"
+              echo "Network pint_bot_default exists"
             fi
 
             # Patch incompatible CNI config
             CNI_FILE="$HOME/.config/cni/net.d/pint_bot_default.conflist"
             if [ -f "$CNI_FILE" ]; then
               if grep -q '"cniVersion": *"1.0.0"' "$CNI_FILE"; then
-                echo "🔧 Patching CNI config version in $CNI_FILE..."
+                echo "Patching CNI config version in $CNI_FILE..."
                 sed -i 's/"cniVersion": *"1.0.0"/"cniVersion": "0.4.0"/' "$CNI_FILE"
               else
-                echo "ℹ️ CNI config already uses a compatible version."
+                echo "CNI config already uses a compatible version."
               fi
             else
-              echo "⚠️ CNI config file not found — skipping patch."
+              echo "CNI config file not found — skipping patch."
             fi
 
             # Attempt graceful shutdown
-            echo "🛑 podman-compose down..."
+            echo "podman-compose down..."
             podman-compose -f docker-compose.prod.yml down || true
 
             # Extra container/pod cleanup
-            echo "🧨 Forcibly removing containers and pods..."
+            echo "Forcibly removing containers and pods..."
             podman ps -a -q | tee /tmp/containers.txt | xargs -r podman rm -f || echo "No containers to remove"
             podman pod ps -q | tee /tmp/pods.txt | xargs -r podman pod rm -f || echo "No pods to remove"
 
             # Deep port check again
-            echo "⏳ Double-checking port 8000..."
+            echo "Double-checking port 8000..."
             for i in {1..10}; do
               CONTAINERS_USING_PORT=$(podman ps --format '{{.ID}}: {{.Ports}}' | grep '8000/tcp' || true)
               if [ -z "$CONTAINERS_USING_PORT" ]; then
-                echo "✅ No containers using port 8000"
+                echo "No containers using port 8000"
                 break
               fi
-              echo "⏳ Still blocked: $CONTAINERS_USING_PORT"
+              echo "Still blocked: $CONTAINERS_USING_PORT"
               sleep 2
             done
 
-            # Remove transient systemd units
-            echo "🧹 Cleaning up systemd user services for Podman..."
-            for unit in $(systemctl --user list-units --type=service --all | grep podman | awk '{print $1}' | grep -v '^●$'); do
-              echo "🛑 Stopping $unit"
-              systemctl --user stop "$unit" || true
-              systemctl --user reset-failed "$unit" || true
-              systemctl --user disable "$unit" || true
-            done
-            rm -f ~/.config/systemd/user/podman-*.service
-
             # Pull and deploy
-            echo "⬇️ Pulling latest images..."
+            echo "Pulling latest images..."
             podman-compose -f docker-compose.prod.yml pull
 
-            echo "🧼 Pruning unused images..."
+            echo "Pruning unused images..."
             podman image prune -f || true
 
-            # 🧹 Cleaning up lingering container systemd units...
-            echo "🧹 Cleaning up lingering Podman container systemd service units..."
-            for unit in $(systemctl --user list-units --type=service --all --no-legend | awk '{print $1}' | grep -E '^[a-f0-9]{64}\.service$'); do
-              echo "🛑 Stopping lingering service unit: $unit"
-              systemctl --user stop "$unit" || true
-              systemctl --user reset-failed "$unit" || true
-            done
+            # Cleaning up lingering container systemd units...
+            echo "Cleaning up Podman user services and timers…"
+            systemctl --user stop           podman*  '*.timer' '*.service' || true
+            systemctl --user disable        podman*  '*.timer' '*.service' || true
+            systemctl --user reset-failed   podman*  '*.timer' '*.service' || true
 
-            echo "🧹 Cleaning up lingering Podman container systemd timer units..."
-            for unit in $(systemctl --user list-units --type=timer --all --no-legend | awk '{print $1}' | grep -E '^[a-f0-9]{64}\.timer$'); do
-              echo "🛑 Stopping lingering timer unit: $unit"
-              systemctl --user stop "$unit" || true
-              systemctl --user reset-failed "$unit" || true
-            done
-
-            echo "🔄 Reloading systemd user daemon to forget old units..."
+            echo "Reloading systemd user daemon to forget old units..."
             systemctl --user daemon-reexec || true
             systemctl --user daemon-reload || true
 
-            echo "📋 After cleanup: lingering Podman systemd units still present?"
-            systemctl --user list-units --type=service --all --no-pager | grep -E '^[a-f0-9]{64}\.service$' || echo "✅ No lingering services"
-            systemctl --user list-units --type=timer --all --no-pager | grep -E '^[a-f0-9]{64}\.timer$' || echo "✅ No lingering timers"
+            systemctl --user list-units --type=service --all --no-pager | grep -E '^[a-f0-9]{64}\.service$' || echo "No lingering services"
+            systemctl --user list-units --type=timer --all --no-pager | grep -E '^[a-f0-9]{64}\.timer$' || echo "No lingering timers"
 
-            echo "🚀 Starting containers..."
+            echo "Starting containers..."
             podman-compose -f docker-compose.prod.yml up -d
 
-            echo "📄 Logs from pint_bot_api_1:"
-            podman logs pint_bot_api_1 || echo "⚠️ Could not fetch logs for pint_bot_api_1"
-
-            echo "📄 Logs from pint_bot_bot_1:"
-            podman logs pint_bot_bot_1 || echo "⚠️ Could not fetch logs for pint_bot_bot_1"
-
-            # 🚨 Check for container failures
-            echo "🔍 Checking container exit statuses..."
+            # Check for container failures
+            echo "Checking container exit statuses..."
             FAILED=0
 
             for container in pint_bot_api_1 pint_bot_bot_1; do
               EXIT_CODE=$(podman inspect "$container" --format '{{.State.ExitCode}}' || echo "999")
-              echo "🧪 $container exit code: $EXIT_CODE"
+              echo "$container exit code: $EXIT_CODE"
               if [ "$EXIT_CODE" != "0" ]; then
-                echo "❌ $container failed with exit code $EXIT_CODE"
+                echo "$container failed with exit code $EXIT_CODE"
                 FAILED=1
               fi
             done
 
             if [ "$FAILED" -ne 0 ]; then
-              echo "🚨 One or more containers failed to start. Exiting with error."
+              echo "One or more containers failed to start. Exiting with error."
               exit 1
             fi
 
             # Final status
-            echo "📊 Final status:"
+            echo "Final status:"
             podman-compose -f docker-compose.prod.yml ps || true
-            podman network inspect pint_bot_default || true
-            podman info || true
 
-            echo "✅ Deployment finished at $(date)"
+            echo "Deployment finished at $(date)"
