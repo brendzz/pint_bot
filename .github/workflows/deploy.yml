@@ -175,19 +175,6 @@ jobs:
               echo "Network pint_bot_default exists"
             fi
 
-            # Patch incompatible CNI config
-            CNI_FILE="$HOME/.config/cni/net.d/pint_bot_default.conflist"
-            if [ -f "$CNI_FILE" ]; then
-              if grep -q '"cniVersion": *"1.0.0"' "$CNI_FILE"; then
-                echo "Patching CNI config version in $CNI_FILE..."
-                sed -i 's/"cniVersion": *"1.0.0"/"cniVersion": "0.4.0"/' "$CNI_FILE"
-              else
-                echo "CNI config already uses a compatible version."
-              fi
-            else
-              echo "CNI config file not found — skipping patch."
-            fi
-
             # Attempt graceful shutdown
             echo "podman-compose down..."
             podman-compose -f docker-compose.prod.yml down || true
