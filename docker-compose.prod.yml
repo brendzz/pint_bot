@@ -1,21 +1,15 @@
 services:
   api:
-    image: ghcr.io/${GITHUB_OWNER}/my-api:${REF}
-    env_file: ./api/.env
-    ports:
-      - "8000:8000"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval: 60s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+    image: ghcr.io/${GITHUB_OWNER}/my-api:sha-${REF}
     restart: unless-stopped
-
+    network_mode: host
+    volumes:
+      - ./api/pint_economy.json:/app/api/pint_economy.json:rw,Z  
+  
   bot:
-    image: ghcr.io/${GITHUB_OWNER}/my-bot:${REF}
+    image: ghcr.io/${GITHUB_OWNER}/my-bot:sha-${REF}
     env_file: ./bot/.env
-    depends_on:
-      api:
-        condition: service_healthy
     restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - api

@@ -14,22 +14,9 @@ class TestOnMessage:
         ],
         ids=["rare_reaction", "common_reaction","no_reaction"]
     )
-    @patch("pint_bot.get_config")
     @patch("pint_bot.random.random")
-    async def test_on_message_reacts_to_currency(
-        self, mock_random, mock_get_config, random_side_effect, expected_reaction
-    ):
+    async def test_on_message_reacts_to_currency(self, mock_random, random_side_effect, expected_reaction):
         mock_random.side_effect = random_side_effect
-
-        mock_get_config.return_value = {
-            "REACT_TO_MESSAGES_MENTIONING_CURRENCY": True,
-            "CURRENCY_NAME": "Pint",
-            "REACTION_EMOJI": "🍺",
-            "REACTION_EMOJI_RARE": "🍻",
-            "BOT_NAME": "Pint Bot",
-            "REACTION_ODDS": 0.5,
-            "REACTION_ODDS_RARE": 0.1
-        }
 
         mock_message = AsyncMock(spec=Message)
         mock_message.content = "I love pints!"

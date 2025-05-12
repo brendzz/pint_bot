@@ -1,64 +1,44 @@
-import json
 from dotenv import load_dotenv
-from pathlib import Path
 from os import environ
 from fractions import Fraction
 
-_config = None
+# Config for the bot
+BOT_NAME: str = "Pint Bot"
+CURRENCY_NAME: str = "Pint"
+CURRENCY_NAME_PLURAL: str = "Pints"
 
-def load_config():
-    # Load environment variables from .env files
-    load_dotenv("bot/.env")
-    load_dotenv("api/.env")
+GET_DEBTS_COMMAND: str = "pints"
+GET_ALL_DEBTS_COMMAND: str = "all_pints"
 
-    # Load values from config.json
-    config_path = Path("bot/config.json")
-    if not config_path.exists():
-        raise FileNotFoundError("The config.json file is missing. Please create it to configure the bot.")
+API_URL: str= "http://localhost:8000"
 
-    with open(file=config_path, mode="r", encoding="utf-8") as config_file:
-        config = json.load(config_file)
+QUANTIZE_SETTLING_DEBTS:  bool = True
+USE_DECIMAL_OUTPUT: bool = False
+USE_TABLE_FORMAT_DEFAULT: bool = False
+SHOW_PERCENTAGES_DEFAULT: bool = False
 
-    # Process ECONOMY_HEALTH_MESSAGES to inject config values and convert types
-    economy_messages = config.get("ECONOMY_HEALTH_MESSAGES", [])
-    for message in economy_messages:
-        message["threshold"] = Fraction(message["threshold"])
-        message["message"] = message["message"].replace(
-            "{CURRENCY_NAME}",
-            config.get("CURRENCY_NAME", "Pint")
-        )
+PERCENTAGE_DECIMAL_PLACES: int = 1
+MAXIMUM_PER_DEBT: int = 10
+SMALLEST_UNIT: Fraction = Fraction(1, 6)
+MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
 
-    return {
-        # Environment variables
-        "BOT_TOKEN": environ.get("BOT_TOKEN"),
-        "GET_DEBTS_COMMAND": environ.get("GET_DEBTS_COMMAND", "pints"),
-        "GET_ALL_DEBTS_COMMAND": environ.get("GET_ALL_DEBTS_COMMAND", "all_pints"),
-        "MAXIMUM_PER_DEBT": int(environ.get("MAXIMUM_PER_DEBT", "10")),
-        "SMALLEST_UNIT": Fraction(environ.get("SMALLEST_UNIT", "1/6")),
-        "MAXIMUM_DEBT_CHARACTER_LIMIT": int(environ.get("MAXIMUM_DEBT_CHARACTER_LIMIT", "200")),
-        "QUANTIZE_SETTLING_DEBTS": environ.get("QUANTIZE_SETTLING_DEBTS", "True") == "True",
+REACT_TO_MESSAGES_MENTIONING_CURRENCY: bool = True
+REACTION_EMOJI: str ="🍺"
+REACTION_EMOJI_RARE: str ="🍻"
+REACTION_ODDS: float = 0.5
+REACTION_ODDS_RARE: float = 0.1
 
-        # JSON config
-        "BOT_NAME": config.get("BOT_NAME", "Pint Bot"),
-        "CURRENCY_NAME": config.get("CURRENCY_NAME", "Pint"),
-        "CURRENCY_NAME_PLURAL": config.get("CURRENCY_NAME_PLURAL", "Pints"),
-        "USE_DECIMAL_OUTPUT": config.get("USE_DECIMAL_OUTPUT", False),
-        "USE_TABLE_FORMAT_DEFAULT": config.get("USE_TABLE_FORMAT_DEFAULT", False),
-        "SHOW_PERCENTAGES_DEFAULT": config.get("SHOW_PERCENTAGES_DEFAULT", False),
-        "PERCENTAGE_DECIMAL_PLACES": config.get("PERCENTAGE_DECIMAL_PLACES", 0),
-        "REACT_TO_MESSAGES_MENTIONING_CURRENCY": config.get("REACT_TO_MESSAGES_MENTIONING_CURRENCY", False),
-        "REACTION_EMOJI": config.get("REACTION_EMOJI", "🍺"),
-        "REACTION_EMOJI_RARE": config.get("REACTION_EMOJI_RARE", "🍻"),
-        "REACTION_ODDS": config.get("REACTION_ODDS", 0.5),
-        "REACTION_ODDS_RARE": config.get("REACTION_ODDS_RARE", 0.1),
-        "TRANSFERABLE_ITEMS": config.get("TRANSFERABLE_ITEMS", []),
-        "ECONOMY_HEALTH_MESSAGES": economy_messages,
-        "API_URL": config.get("API_URL", "http://api:8000"),
-    }
+TRANSFERABLE_ITEMS = [
+    "1 Pint of liquid from a pub",
+    "£6 of board games from Thirsty Meeples (preferably ordered via Brendan's account so he can collect the Meeple Points)",
+    "3 Scoops of Ice Cream/Gelato from G&Ds in Oxford",
+    "Other things if you can convince me"
+]
 
-def get_config():
-    """Returns the bot configuration. Loads it from a file if not already loaded."""
-    global _config
-    if _config is None:
-        _config = load_config()
-    return _config
+ECONOMY_HEALTH_MESSAGES: list[dict[str, str]] = [
+    {"threshold": 20, "message": f"The {CURRENCY_NAME} economy is booming! Prosperity for all!"},
+    {"threshold": 15, "message": f"The {CURRENCY_NAME} economy is in great shape!"},
+    {"threshold": 10, "message": f"The {CURRENCY_NAME} economy is stable."},
+    {"threshold": 5, "message": f"The {CURRENCY_NAME} economy is in terrible shape. Please add debts to avoid imminent financial crash!"},
+    {"threshold": 0, "message": f"The {CURRENCY_NAME} economy is in shambles! Financial Crash!"}
+]

@@ -1,37 +1,35 @@
-import pytest
 from unittest.mock import patch, MagicMock
+from fractions import Fraction
+import pytest
 import requests
 from bot.error_handling import format_error_message, get_error_message, handle_error, parse_api_error
 
 # Patch config return
 @pytest.fixture
 def mock_config():
-    return {
-        "CURRENCY_NAME": "TestCoin",
-        "CURRENCY_NAME_PLURAL": "TestCoins",
-        "MAXIMUM_PER_DEBT": 10,
-        "SMALLEST_UNIT": "1/6",
-        "BOT_NAME": "TestBot",
-    }
+    patches = patch.multiple(
+        "bot.config",
+        CURRENCY_NAME="TestCoin",
+        CURRENCY_NAME_PLURAL="TestCoins",
+        BOT_NAME="TestBot",
+        MAXIMUM_PER_DEBT=10,
+        SMALLEST_UNIT=Fraction(1, 6),
+    )
+    with patches:
+        yield  # Config values will be patched for the duration of the test
 
 class TestFormatErrorMessage:
-    @patch("bot.error_handling.get_config")
-    def test_format_error_message(self, mock_get_config, mock_config):
-        mock_get_config.return_value = mock_config
+    def test_format_error_message(self,mock_config):
         msg = format_error_message("You owe too much {CURRENCY}")
         assert msg == "You owe too much TestCoin"
 
 class TestGetErrorMessage:
-    @patch("bot.error_handling.get_config")
-    def test_get_error_message_known(self, mock_get_config, mock_config):
-        mock_get_config.return_value = mock_config
+    def test_get_error_message_known(self, mock_config):
         result = get_error_message("VALIDATION_ERROR")
         assert "TestBot" in result["title"]
         assert "Doesn't Like Your Data" in result["title"]
 
-    @patch("config.get_config")
-    def test_get_error_message_unknown(self, mock_get_config, mock_config):
-        mock_get_config.return_value = mock_config
+    def test_get_error_message_unknown(self, mock_config):
         result = get_error_message("NON_EXISTENT_CODE")
         assert "Unknown Error" in result["title"]
 

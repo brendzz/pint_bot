@@ -1,4 +1,5 @@
 from fractions import Fraction
+import bot.config as config
 from bot.fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT
 
 def fraction_to_unicode(fraction_str: str) -> str:
@@ -48,23 +49,23 @@ def custom_unicode_fraction(fraction: Fraction) -> str:
     denominator = to_subscript(fraction.denominator)
     return f"{numerator}/{denominator}"
 
-def to_percentage(part, whole, config: dict[str,any]) -> str:
+def to_percentage(part, whole, decimal_places) -> str:
     """Divides two numbers and returns a percentage representation."""
     fraction = Fraction(part) / Fraction(whole)
     percentage = fraction * 100
-    return f"{(percentage):.{config["PERCENTAGE_DECIMAL_PLACES"]}f}%"
+    return f"{(percentage):.{decimal_places}f}%"
 
-def currency_formatter(amount, config: dict[str, any], use_unicode: bool=False) -> str:
+def currency_formatter(amount, use_unicode: bool=False) -> str:
     """Format the currency amount based on the configuration."""
     fraction = Fraction(amount)
     
     # Check if the number is singular or plural
     if fraction > 0 and fraction <= 1:
-        currency = config["CURRENCY_NAME"].lower()
+        currency = config.CURRENCY_NAME.lower()
     else:
-        currency = config["CURRENCY_NAME_PLURAL"].lower()
+        currency = config.CURRENCY_NAME_PLURAL.lower()
     
-    if config["USE_DECIMAL_OUTPUT"] == True:
+    if config.USE_DECIMAL_OUTPUT == True:
         return f"{float(fraction)} {currency}"
     else:
         # Get the whole number part

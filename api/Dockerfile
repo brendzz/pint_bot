@@ -10,10 +10,11 @@ RUN apt-get update \
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-COPY requirements.txt .
+COPY api/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=appuser:appgroup . .
+COPY api /app/api
+COPY models /app/models
 
 USER appuser
 
