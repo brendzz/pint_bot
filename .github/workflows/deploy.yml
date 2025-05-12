@@ -196,6 +196,12 @@ jobs:
               sleep 2
             done
 
+            # Final check
+            if [ -n "$CONTAINERS_USING_PORT" ]; then
+              echo "Error: Port 8000 is still in use after 10 retries"
+              exit 1
+            fi
+
             # Pull and deploy
             echo "Pulling latest images..."
             podman-compose -f docker-compose.prod.yml pull
