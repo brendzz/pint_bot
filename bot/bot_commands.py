@@ -27,7 +27,7 @@ def define_command_details() -> None:
     Command(
         key="get_debts",
         name=config.GET_DEBTS_COMMAND,
-        description=f"See your current {config.CURRENCY_NAME} debts.",
+        description=f"See current {config.CURRENCY_NAME} debts for yourself or another user.",
     )
 
     Command(
@@ -132,14 +132,18 @@ def register_commands(bot):
                 description= f"Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
             )
 
-    #See your own pint debts
+    #See either your own pint debts or those of another user
     @bot.tree.command(name=Command.get("get_debts").name, description=Command.get("get_debts").description)
-    @app_commands.describe(show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
-    async def get_debts(interaction: discord.Interaction, show_percentages: bool = None):
+    @app_commands.describe(user="Another user to view debts for", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
+    async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_percentages: bool = None):
         if show_percentages is None:
             show_percentages = config.SHOW_PERCENTAGES_DEFAULT
 
-        user_id = str(interaction.user.id)
+        if user is None:
+            user_id = str(interaction.user.id)
+        else:
+            user_id = user.id
+
         # Defer the interaction to avoid timeout
         await interaction.response.defer()
         # Call the external API to fetch debts
@@ -153,8 +157,8 @@ def register_commands(bot):
         if "message" in data:
             await send_info_message(
                 interaction,
-                title=f"Looks like you're not currently contributing to the {config.CURRENCY_NAME} economy.",
-                description=f"No debts found owed to or from this user. That's kind of cringe, get some {config.CURRENCY_NAME} debt bro."
+                title=f"Looks like {"you're" if user is None else "they're"} not currently contributing to the {config.CURRENCY_NAME} economy.",
+                description=f"No debts found owed to or from this user. That's kind of cringe, {" " if user is None else "tell them to"} get some {config.CURRENCY_NAME} debt bro."
             )
             return
 
@@ -166,7 +170,7 @@ def register_commands(bot):
         # Debts owed by the user
         if data["owed_by_you"]:
             total_owed_by_you = Fraction(data['total_owed_by_you'])
-            lines.append(f"__**{config.CURRENCY_NAME} YOU OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}")
+            lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {"YOU" if user is None else "THEY"} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}")
             for creditor_id, entries in data["owed_by_you"].items():
                 try:
                     creditor = await bot.fetch_user(int(creditor_id))  # Fetch the creditor's username
@@ -185,7 +189,7 @@ def register_commands(bot):
         # Debts owed to the user
         if data["owed_to_you"]:
             total_owed_to_you = Fraction(data['total_owed_to_you'])
-            lines.append(f"\n__**{config.CURRENCY_NAME} OWED TO YOU:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}")
+            lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {"YOU" if user is None else "THEM"}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}")
             for debtor_id, entries in data["owed_to_you"].items():
                 try:
                     debtor = await bot.fetch_user(int(debtor_id))  # Fetch the debtor's username
@@ -206,7 +210,7 @@ def register_commands(bot):
         # Send the formatted response
         await send_info_message(
             interaction,
-            title=f"Your {config.CURRENCY_NAME} debts *{interaction.user.display_name}*, thanks for participating in the {config.CURRENCY_NAME} economy!", 
+            title=f"{"Your" if user is None else f"Here are {user}'s "} {config.CURRENCY_NAME} debts *{interaction.user.display_name}*, {"thanks" if user is None else "thank them"} for participating in the {config.CURRENCY_NAME} economy!",
             description="\n".join(lines)
             )
         # Send the formatted response
