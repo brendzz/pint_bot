@@ -27,6 +27,7 @@ PATCHED_CONFIG = {
     "SMALLEST_UNIT": Fraction(1, 6),
     "MAXIMUM_DEBT_CHARACTER_LIMIT": 200,
     "QUANTIZE_SETTLING_DEBTS": True,
+    "SHOW_DETAILS_DEFAULT": True,
 }
 
 @pytest.fixture(autouse=True, scope="session")
