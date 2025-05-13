@@ -26,15 +26,16 @@ python -m bot.pint_bot
 ## Docker
 > **Prerequisites:** [Docker Engine](https://docs.docker.com/engine/) & [Docker Compose](https://docs.docker.com/compose/)
 1. Set up a `.env` file in the bot folder. See the `.env.example` file for reference.
-2. To build and start both services:
+2. Add your API URL to the `config.py` file as `API_URL` (if running locally, this is `http://api:8000`).
+3. To build and start both services:
 ```bash
 docker-compose up --build -d
 ```
-3. To verify, run this and you should see two running containers (api healthy, bot up):
+4. To verify, run this and you should see two running containers (api healthy, bot up):
 ```bash
 docker-compose ps
 ```
-4. To stop and remove:
+5. To stop and remove:
 ```bash
 docker-compose down
 ```
@@ -60,7 +61,7 @@ pytest
 - Customise the bot by modifying the `config.py` file in the `bot` folder.
 - Customise the way the bot sends messages in the `send_messages.py` file (by default it uses embeds).
 
-## config.json
+## Configuration
 - **BOT_NAME**: The name of the bot in Discord.
 - **API_URL**: The URL of your API for the economy.
 - **CURRENCY_NAME**: The name of the currency used in the economy.
@@ -68,6 +69,7 @@ pytest
 - **USE_DECIMAL_OUTPUT**: Set to `True` to use decimal output, or `False` to use fraction output.
 - **USE_TABLE_FORMAT_DEFAULT**: Set to `True` to use a table format for output by default (looks good on desktop but doesn't make sense on mobile). Set to `False` for a more mobile-friendly output (recommended).
 - **SHOW_PERCENTAGES_DEFAULT**: Set to `True` to show percentages of the total owed by each person or the whole economy in commands that display debts.
+- **SHOW_DETAILS_DEFAULT**: Set to `True` to show the full details of debts in commands that display debts.
 - **PERCENTAGE_DECIMAL_PLACES**: The number of decimal places to show for percentages if `SHOW_PERCENTAGES_DEFAULT` is `True`.
 - **REACT_TO_MESSAGES_MENTIONING_CURRENCY**: Set to `True` to automatically react to messages that mention the name of your currency.
 - **REACTION_EMOJI**: The emoji to use when reacting if `REACT_TO_MESSAGES_MENTIONING_CURRENCY` is `True`.
