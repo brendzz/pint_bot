@@ -27,15 +27,15 @@ python -m bot.pint_bot
 > **Prerequisites:** [Docker Engine](https://docs.docker.com/engine/) & [Docker Compose](https://docs.docker.com/compose/)
 1. Set up a `.env` file in the bot folder. See the `.env.example` file for reference.
 2. Add your API URL to the `config.py` file as `API_URL` (if running locally, this is `http://api:8000`).
-2. To build and start both services:
+3. To build and start both services:
 ```bash
 docker-compose up --build -d
 ```
-3. To verify, run this and you should see two running containers (api healthy, bot up):
+4. To verify, run this and you should see two running containers (api healthy, bot up):
 ```bash
 docker-compose ps
 ```
-4. To stop and remove:
+5. To stop and remove:
 ```bash
 docker-compose down
 ```
