@@ -1,3 +1,4 @@
+"""A mapping of error codes to user friendly error messages and titles."""
 ERROR_MESSAGES = {
     "CANNOT_OWE_SELF": {
         "title": "Cannot Owe Yourself",

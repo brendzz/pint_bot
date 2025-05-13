@@ -1,3 +1,4 @@
+"""Module for defining the main bot functionality."""
 from os import environ
 import random
 import time

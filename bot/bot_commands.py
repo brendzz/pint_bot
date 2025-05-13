@@ -1,5 +1,6 @@
+"""Module for defining bot commands."""
 from fractions import Fraction
-import discord 
+import discord
 from discord import app_commands
 from bot import api_client
 from bot.command import Command
@@ -10,6 +11,7 @@ from bot.send_messages import send_info_message, send_one_column_table_message, 
 from models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
 
 def define_command_details() -> None:
+    """Define the command details for the bot."""
     Command._registry.clear()
     
     Command(

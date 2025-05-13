@@ -1,5 +1,5 @@
 # Imports
-from fastapi import FastAPI, HTTPException, Depends
+"""FastAPI for managing pint debts between users."""
 from fractions import Fraction
 from datetime import datetime
 import logging
@@ -24,6 +24,7 @@ def check_quantization(amount: Fraction):
 
 @app.get("/health", status_code=200)
 async def health_check():
+    """Health check endpoint."""
     return {"status": "ok"}
 
 @app.post("/owe")

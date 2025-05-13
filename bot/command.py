@@ -1,8 +1,16 @@
+"""Module for defining the command dataclass."""
 from dataclasses import dataclass
 from typing import ClassVar
 
 @dataclass(frozen=True)
 class Command:
+    """
+    Represents a command with its key, name, and description.
+    Attributes:
+        key (str): The unique key for the command.
+        name (str): The name of the command.
+        description (str): A brief description of the command.
+    """
     key: str
     name: str
     description: str
@@ -17,6 +25,7 @@ class Command:
 
     @classmethod
     def get(cls, key: str) -> "Command":
+        """Retrieves a command by its key."""
         try:
             return cls._registry[key]
         except KeyError:
@@ -24,5 +33,6 @@ class Command:
 
     @classmethod
     def all(cls) -> list["Command"]:
+        """Returns a list of all registered commands in the order they were added."""
         # returns in insertion order
         return list(cls._registry.values())

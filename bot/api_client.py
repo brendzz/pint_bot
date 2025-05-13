@@ -1,3 +1,4 @@
+"""Module for interacting with the API."""
 import requests
 
 import bot.config as config

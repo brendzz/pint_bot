@@ -1,3 +1,4 @@
+"""Formatter module for converting fractions and formatting currency."""
 from fractions import Fraction
 import bot.config as config
 from bot.fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT

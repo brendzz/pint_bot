@@ -1,4 +1,5 @@
-import discord 
+"""Error handling utilities for the bot."""
+import discord
 from pydantic import ValidationError
 import requests
 import bot.config as config
