@@ -17,13 +17,16 @@ def mixed_number_to_fraction(input_str: str) -> Fraction:
         input_str = input_str.strip()
 
         if " " in input_str:
+            # Handle mixed number format
             whole_str, fraction_str = input_str.split()
             whole = int(whole_str)
             numerator, denominator = map(int, fraction_str.split("/"))
         elif "/" in input_str:
+            # If there's no whole number, treat it as a simple fraction
             whole = 0
             numerator, denominator = map(int, input_str.split("/"))
         else:
+            # If there's no fraction, treat it as a whole number
             return Fraction(int(input_str))
 
         if denominator == 0:
