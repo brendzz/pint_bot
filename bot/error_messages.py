@@ -14,7 +14,7 @@ ERROR_MESSAGES = {
      },
     "CANNOT_SETTLE_BOT": {
         "title": "Cannot Owe Bot",
-        "description": "Due to {CURRENCY} Economy Financial Regulations, it is illegal to settle pints with {BOT_NAME} as it would be conflict of interest for {BOT_NAME} to run the {CURRENCY} economy and also participate in it."
+        "description": "Due to {CURRENCY} Economy Financial Regulations, it is illegal to settle {CURRENCY_PLURAL} with {BOT_NAME} as it would be conflict of interest for {BOT_NAME} to run the {CURRENCY} economy and also participate in it."
     },
     "NEGATIVE_AMOUNT": {
         "title": "Negative Amount Detected",

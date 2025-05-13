@@ -1,4 +1,3 @@
-from fractions import Fraction
 from unittest.mock import patch
 import pytest
 import bot.bot_commands as commands
@@ -9,6 +8,8 @@ class DummyUser:
         self.id = id
         self.display_name = display_name or f'User{self.id}'
         self.mention = f'<@{self.id}>'
+    def __str__(self):
+        return self.mention
 
 class DummyResponse:
     def __init__(self):
@@ -103,28 +104,9 @@ def mocks(monkeypatch, shared):
 
 @pytest.fixture
 def bot():
-    with patch.multiple(
-        "config",
-        CURRENCY_NAME="TestCoin",
-        CURRENCY_NAME_PLURAL="TestCoins",
-        BOT_NAME="TestBot",
-        GET_DEBTS_COMMAND="get_debts",
-        GET_ALL_DEBTS_COMMAND="get_all_debts",
-        TRANSFERABLE_ITEMS=["Beer", "Wine"],
-        SHOW_PERCENTAGES_DEFAULT=False,
-        USE_TABLE_FORMAT_DEFAULT=True,
-        ECONOMY_HEALTH_MESSAGES=[
-            {"threshold": 0, "message": "Economy is dead"},
-            {"threshold": 1, "message": "Economy active"},
-        ],
-        MAXIMUM_PER_DEBT=10,
-        SMALLEST_UNIT=Fraction(1, 6),
-        MAXIMUM_DEBT_CHARACTER_LIMIT=200,
-        QUANTIZE_SETTLING_DEBTS=True,
-    ):
-        bot = DummyBot()
-        commands.register_commands(bot)
-        return bot
+    bot = DummyBot()
+    commands.register_commands(bot)
+    return bot
 
 # Tests
 
@@ -190,21 +172,28 @@ class TestOweCommand:
 
 class TestGetDebtsCommand:
     @pytest.mark.parametrize("response, expected_title", [
-        ({'message': 'No debts'}, 'not currently contributing to the Pint economy'),
+        ({'message': 'No debts'}, "you're not currently contributing to the TestCoin economy"),
         ({
             'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '2025-01-01'}]},
             'total_owed_by_you': '1',
             'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
             'total_owed_to_you': '2'
-        }, 'Your Pint debts'),
-    ], ids=["no_debts", "has_debts"])
+        }, "Your TestCoin debts"),
+        ({'message': 'No debts'}, "they're not currently contributing to the TestCoin economy"),
+        ({
+            'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '2025-01-01'}]},
+            'total_owed_by_you': '1',
+            'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
+            'total_owed_to_you': '2'
+        }, "Here are <@123>'s TestCoin debts"),
+    ], ids=["self_no_debts", "self_with_debts", "other_no_debts", "other_with_debts"])
     @pytest.mark.asyncio
-    async def test_get_debts_various_economy_states(self, bot, shared, response, expected_title):
+    async def test_get_debts_titles(self, bot, shared, response, expected_title):
         import bot.config as config
-        interaction = DummyInteraction(DummyUser(1), bot)
         shared.debts_response = response
+        interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands[config.GET_DEBTS_COMMAND]
-        await cmd(interaction)
+        await cmd(interaction, user=None if 'you' in expected_title.lower() else DummyUser(123))
         assert interaction.response.deferred
         info_calls = interaction.send_info_message_calls
         assert info_calls
