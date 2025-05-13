@@ -1,5 +1,4 @@
-from dotenv import load_dotenv
-from os import environ
+"""Configuration for the bot."""
 from fractions import Fraction
 
 # Config for the bot

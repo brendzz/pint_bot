@@ -1,3 +1,4 @@
+"""Module for defining Unicode representations of fractions and superscripts."""
 SUPERSCRIPT = {
     '0': '⁰',
     '1': '¹',

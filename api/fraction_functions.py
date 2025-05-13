@@ -1,3 +1,4 @@
+"""Module for fraction conversion functions."""
 from fractions import Fraction
 
 def mixed_number_to_fraction(input_str: str) -> Fraction:
