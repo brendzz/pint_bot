@@ -14,7 +14,7 @@ async def send_info_message(interaction: discord.Interaction, title: str, descri
     """Sends an informational message to the user."""
     embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
     await interaction.followup.send(embed=embed)
-        
+
 async def send_one_column_table_message(interaction: discord.Interaction, title: str, description: str, data: list, table_format: bool):
     """Sends a one-column table message to the user."""
     # Split data into chunks of 25 rows (Discord's limit for embed fields)
@@ -27,7 +27,7 @@ async def send_one_column_table_message(interaction: discord.Interaction, title:
             description=description if i == 0 else None,  # Only include description in the first embed
             color=discord.Color.yellow()
         )
-        if (table_format == True):
+        if table_format is True:
             # Prepare the columns for the table
             settings = "\n".join([row["Setting"] for row in chunk])
             values = "\n".join([str(row["Value"]) for row in chunk])
@@ -64,7 +64,7 @@ async def send_two_column_table_message(interaction: discord.Interaction, title:
             description=description if i == 0 else None,  # Only include description in the first embed
             color=discord.Color.yellow()
         )
-        if (table_format == True):
+        if table_format is True:
             # Prepare the columns for the table
             names = "\n".join([row["name"] for row in chunk])
             owes = "\n".join([str(row["Owes"]) for row in chunk])
@@ -82,7 +82,7 @@ async def send_two_column_table_message(interaction: discord.Interaction, title:
                     f"**Is Owed:** {row['Is Owed']}"
                 )
                 embed.add_field(name=row["name"], value=user_data, inline=False)
-       
+
         # Send the embed
         if i == 0:
             # For the first embed, use followup.send

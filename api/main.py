@@ -3,12 +3,13 @@
 from fractions import Fraction
 from datetime import datetime
 import logging
+from fastapi import FastAPI, HTTPException
 import api.config as config
 from api.fraction_functions import mixed_number_to_fraction
 from api.data_manager import load_data, save_data
 from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 
-# Setup 
+# Setup
 logging.basicConfig(level=logging.DEBUG)
 
 # Set up FastAPI
@@ -16,7 +17,7 @@ app = FastAPI()
 
 def check_quantization(amount: Fraction):
     """Check if the fraction is quantized to the smallest unit using modulo"""
-    if (amount % config.SMALLEST_UNIT != 0):
+    if amount % config.SMALLEST_UNIT != 0:
         raise HTTPException(
             status_code=400,
             detail="NOT_QUANTIZED"
@@ -37,12 +38,12 @@ async def add_debt(request: OweRequest):
     # Check if valid target to owe
     if debtor_id == creditor_id:
         raise HTTPException(status_code=400, detail="CANNOT_OWE_SELF")
-  
+
     try:
         amount = mixed_number_to_fraction(request.amount.strip())
     except (ValueError, ZeroDivisionError):
         raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
-    except (Exception):
+    except Exception:
         raise HTTPException(status_code=400, detail="BAD_REQUEST")
     # Check in range
     if amount < 0:
@@ -51,7 +52,7 @@ async def add_debt(request: OweRequest):
         raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
     elif amount > Fraction(config.MAXIMUM_PER_DEBT):
         raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
-    
+
     check_quantization(amount)
 
      # Get or create the debtor's data
@@ -59,8 +60,7 @@ async def add_debt(request: OweRequest):
         data.users[debtor_id] = UserData()
 
     debtor_data = data.users[debtor_id]
-    
-  
+
    # Add the debt
     if creditor_id not in debtor_data.debts.creditors:
         debtor_data.debts.creditors[creditor_id] = []
@@ -82,14 +82,14 @@ async def add_debt(request: OweRequest):
 async def get_debts(user_id: str):
     """See your current pint debts."""
     data = load_data()
-    
+
      # Prepare the response
     result = {"owed_by_you": {},
               "total_owed_by_you": 0, 
               "owed_to_you": {}, 
               "total_owed_to_you": 0
       }  # Include the user's preference}
-    
+
     # Check if the user exists in the data
     if user_id in data.users:
         user_data = data.users[user_id]
@@ -184,7 +184,7 @@ async def settle_debt(request: SettleRequest):
 
     if config.QUANTIZE_SETTLING_DEBTS == True:
         check_quantization(amount)
-    
+
     # Check if the debtor owes the creditor
     if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
         raise HTTPException(
@@ -198,7 +198,7 @@ async def settle_debt(request: SettleRequest):
     remaining_to_settle = amount # Track amount left to settle in this transaction
     settled_amount = Fraction(0)
     updated_entries = []
-    
+
     for entry in creditor_entries:
         entry_amount = entry.amount
         if remaining_to_settle <= 0:

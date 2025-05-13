@@ -27,7 +27,7 @@ def fraction_to_unicode(fraction_str: str) -> str:
     except ValueError:
         # If the input is invalid, return it as-is
         return fraction_str
-    
+
 def to_superscript(number: int) -> str:
     """Convert a number to its superscript representation."""
     return ''.join(SUPERSCRIPT.get(char, char) for char in str(number))
@@ -59,14 +59,14 @@ def to_percentage(part, whole, decimal_places) -> str:
 def currency_formatter(amount, use_unicode: bool=False) -> str:
     """Format the currency amount based on the configuration."""
     fraction = Fraction(amount)
-    
+
     # Check if the number is singular or plural
     if fraction > 0 and fraction <= 1:
         currency = config.CURRENCY_NAME.lower()
     else:
         currency = config.CURRENCY_NAME_PLURAL.lower()
-    
-    if config.USE_DECIMAL_OUTPUT == True:
+
+    if config.USE_DECIMAL_OUTPUT is True:
         return f"{float(fraction)} {currency}"
     else:
         # Get the whole number part

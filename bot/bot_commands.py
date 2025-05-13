@@ -13,7 +13,7 @@ from models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
 def define_command_details() -> None:
     """Define the command details for the bot."""
     Command._registry.clear()
-    
+
     Command(
         key="help",
         name="help",
@@ -25,7 +25,7 @@ def define_command_details() -> None:
         name="owe",
         description=f"Add a number of {config.CURRENCY_NAME_PLURAL} you owe someone.",
     )
-    
+
     Command(
         key="get_debts",
         name=config.GET_DEBTS_COMMAND,
@@ -94,7 +94,7 @@ def register_commands(bot):
         await send_info_message(interaction,
                                 title=f"{config.BOT_NAME} Help",
                                 description=help_message)
-        
+
     #Add a debt
     @bot.tree.command(name=Command.get("owe").name, description=Command.get("owe").description)
     @app_commands.describe(user="Who you owe", amount=f"How many {config.CURRENCY_NAME_PLURAL} to owe", reason="Why you owe them (optional)")
@@ -104,7 +104,7 @@ def register_commands(bot):
 
         # Defer the response to avoid timeout
         await interaction.response.defer()
-        
+
         if debtor == creditor:
             await handle_error(interaction, error_code="CANNOT_OWE_SELF")
             return
@@ -125,9 +125,9 @@ def register_commands(bot):
         except Exception as e:
             await handle_error(interaction, e, title="Error Adding Debt")
             return
-        
+
         use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
-        
+
         await send_success_message(
                 interaction,
                 title=f"{config.CURRENCY_NAME} Debt Added - {config.CURRENCY_NAME} Economy Thriving",
@@ -150,7 +150,7 @@ def register_commands(bot):
         except Exception as e:
             await handle_error(interaction, e, title=f"Error Fetching {config.CURRENCY_NAME} Debts")
             return
-        
+
         # Check if the API returned a "message" field (no debts found)
         if "message" in data:
             await send_info_message(
@@ -208,7 +208,7 @@ def register_commands(bot):
         # Send the formatted response
         await send_info_message(
             interaction,
-            title=f"Your {config.CURRENCY_NAME} debts *{interaction.user.display_name}*, thanks for participating in the {config.CURRENCY_NAME} economy!", 
+            title=f"Your {config.CURRENCY_NAME} debts *{interaction.user.display_name}*, thanks for participating in the {config.CURRENCY_NAME} economy!",
             description="\n".join(lines)
             )
         # Send the formatted response
@@ -231,12 +231,12 @@ def register_commands(bot):
         except Exception as e:
             await handle_error(interaction, e, title=f"Error Fetching {config.CURRENCY_NAME} Debts")
             return
-        
+
         # Check if the API returned an empty response
         if data == {'total_in_circulation': '0'}:
             await handle_error(interaction, error_code="NO_DEBTS_IN_ECONOMY")
             return
-        
+
         use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
 
         # Prepare the data for the table
@@ -248,7 +248,7 @@ def register_commands(bot):
                 user_name = user.display_name
             except discord.NotFound:
                 user_name = f"Unknown User ({user_id})"
-            
+
             owes = currency_formatter(totals['owes'], use_unicode)
             is_owed = currency_formatter(totals['is_owed'], use_unicode)
 
@@ -296,7 +296,7 @@ def register_commands(bot):
         elif creditor == bot.user.id:
             await handle_error(interaction, error_code="CANNOT_SETTLE_BOT")
             return
-        
+
     # Defer the response to avoid timeout
         await interaction.response.defer()
 
@@ -358,7 +358,7 @@ def register_commands(bot):
     async def settings_command(interaction: discord.Interaction, table_format: bool = None):
         if table_format is None:
             table_format = config.USE_TABLE_FORMAT_DEFAULT
-        
+
         # Defer the interaction to avoid timeout
         await interaction.response.defer()
 

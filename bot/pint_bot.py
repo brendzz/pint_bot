@@ -11,7 +11,7 @@ import bot.config as config
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot("!",intents=intents)
+bot = commands.Bot("!", intents=intents)
 
 
 @bot.event
