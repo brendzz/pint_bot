@@ -151,7 +151,7 @@ def register_commands(bot):
         if user is None:
             user_id = str(interaction.user.id)
         else:
-            user_id = user.id
+            user_id = str(user.id)
 
         # Defer the interaction to avoid timeout
         await interaction.response.defer()
