@@ -139,7 +139,7 @@ def register_commands(bot):
     @app_commands.describe(
         user="Another user to view debts for",
         show_details=f"Show details of each individual debt (Default:{config.SHOW_DETAILS_DEFAULT})",
-        show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)"
+        show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})"
     )
     async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None):
         if show_details is None:
