@@ -144,7 +144,7 @@ def register_commands(bot):
     async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None):
         if show_details is None:
             show_details = config.SHOW_DETAILS_DEFAULT
-        
+
         if show_percentages is None:
             show_percentages = config.SHOW_PERCENTAGES_DEFAULT
 
