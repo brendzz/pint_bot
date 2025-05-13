@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 from fastapi import FastAPI, HTTPException
 import api.config as config
-from api.fraction_functions import mixed_number_to_fraction
+import api.fraction_functions as fractions
 from api.data_manager import load_data, save_data
 from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
 
@@ -14,14 +14,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Set up FastAPI
 app = FastAPI()
-
-def check_quantization(amount: Fraction):
-    """Check if the fraction is quantized to the smallest unit using modulo"""
-    if amount % config.SMALLEST_UNIT != 0:
-        raise HTTPException(
-            status_code=400,
-            detail="NOT_QUANTIZED"
-        )
 
 @app.get("/health", status_code=200)
 async def health_check():
@@ -39,44 +31,42 @@ async def add_debt(request: OweRequest):
     if debtor_id == creditor_id:
         raise HTTPException(status_code=400, detail="CANNOT_OWE_SELF")
 
-    try:
-        amount = mixed_number_to_fraction(request.amount.strip())
-    except (ValueError, ZeroDivisionError):
-        raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
-    except Exception:
-        raise HTTPException(status_code=400, detail="BAD_REQUEST")
-    # Check in range
-    if amount < 0:
-        raise HTTPException(status_code=400, detail="NEGATIVE_AMOUNT")
-    elif amount == 0:
-        raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
-    elif amount > Fraction(config.MAXIMUM_PER_DEBT):
-        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
+    amount = fractions.mixed_number_to_fraction(request.amount.strip())
 
-    check_quantization(amount)
+    # Checks
+    fractions.check_in_range(amount, settling=False)
+    fractions.check_quantization(amount)
 
-     # Get or create the debtor's data
+    # Get or create the debtor's data
     if debtor_id not in data.users:
         data.users[debtor_id] = UserData()
 
     debtor_data = data.users[debtor_id]
 
-   # Add the debt
+    # Add the debt
     if creditor_id not in debtor_data.debts.creditors:
         debtor_data.debts.creditors[creditor_id] = []
 
     try:
         {
-    debtor_data.debts.creditors[creditor_id].append(
-        DebtEntry(amount=amount, reason=request.reason, timestamp=datetime.now().strftime("%d-%m-%Y"))
-    )
+            debtor_data.debts.creditors[creditor_id].append(
+                DebtEntry(
+                    amount=amount,
+                    reason=request.reason,
+                    timestamp=datetime.now().strftime("%d-%m-%Y")
+                )
+            )
         }
-    except ValueError:
-        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM") from exc
     # Save the updated data
     save_data(data)
 
-    return {"amount": str(amount), "reason": request.reason, "timestamp": datetime.now().strftime("%d-%m-%Y")}
+    return {
+        "amount": str(amount),
+        "reason": request.reason,
+        "timestamp": datetime.now().strftime("%d-%m-%Y")
+    }
 
 @app.get(f"/{config.GET_DEBTS_COMMAND}/{{user_id}}")
 async def get_debts(user_id: str):
@@ -171,21 +161,13 @@ async def settle_debt(request: SettleRequest):
     creditor_id = str(request.creditor)
 
     # Validate and parse the pint number
-    try:
-        amount = mixed_number_to_fraction(request.amount.strip())
-    except (ValueError, ZeroDivisionError):
-        raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
-    except (Exception):
-        raise HTTPException(status_code=400, detail="BAD_REQUEST")
+    amount = fractions.mixed_number_to_fraction(request.amount.strip())
 
     # Validate pint number constraints
-    if amount < 0:
-        raise HTTPException(status_code=400, detail="NEGATIVE_AMOUNT")
-    elif amount == 0:
-        raise HTTPException(status_code=400, detail="ZERO_AMOUNT")
+    fractions.check_in_range(amount, settling=True)
 
-    if config.QUANTIZE_SETTLING_DEBTS == True:
-        check_quantization(amount)
+    if config.QUANTIZE_SETTLING_DEBTS is True:
+        fractions.check_quantization(amount)
 
     # Check if the debtor owes the creditor
     if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
