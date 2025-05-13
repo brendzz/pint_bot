@@ -218,7 +218,8 @@ def register_commands(bot):
 
     #See a summary of everyone's debts
     @bot.tree.command(name=Command.get("get_all_debts").name, description=Command.get("get_all_debts").description)
-    @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot settings).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
+    @app_commands.describe(table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).", 
+                           show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})")
     async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
         if table_format is None:
             table_format = config.USE_TABLE_FORMAT_DEFAULT
@@ -357,7 +358,7 @@ def register_commands(bot):
             description=data["message"])
 
     @bot.tree.command(name=Command.get("settings").name, description=Command.get("settings").description)
-    @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot Settings.).")
+    @app_commands.describe(table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).")
     async def settings_command(interaction: discord.Interaction, table_format: bool = None):
         if table_format is None:
             table_format = config.USE_TABLE_FORMAT_DEFAULT
