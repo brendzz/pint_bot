@@ -84,7 +84,7 @@ def register_commands(bot):
             # Add the command name and description to the help message
             help_message += f"**/{command.name}** — {command.description}\n"
 
-        help_message += "\n__**What can you use your Pints for?**__\n"
+        help_message += f"\n__**What can you use your {config.CURRENCY_NAME_PLURAL} for?**__\n"
         for item in config.TRANSFERABLE_ITEMS:
             help_message += f"- {item}\n"
 
@@ -132,7 +132,7 @@ def register_commands(bot):
                 description= f"Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
             )
 
-    #See either your own pint debts or those of another user
+    #See either your own debts or those of another user
     @bot.tree.command(name=Command.get("get_debts").name, description=Command.get("get_debts").description)
     @app_commands.describe(user="Another user to view debts for", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
     async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_percentages: bool = None):
@@ -215,7 +215,7 @@ def register_commands(bot):
             )
         # Send the formatted response
 
-    #See everyone's pints
+    #See everyone's debts
     @bot.tree.command(name=Command.get("get_all_debts").name, description=Command.get("get_all_debts").description)
     @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot settings).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
     async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
