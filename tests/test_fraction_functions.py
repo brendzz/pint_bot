@@ -26,6 +26,9 @@ class TestMixedNumberToFraction:
     def test_fraction_with_spaces(self):
         assert fractions.mixed_number_to_fraction("  1/3 ") == Fraction(1, 3)
 
+    def test_mixed_number_missing_fraction(self):
+        assert fractions.mixed_number_to_fraction("2 ") == Fraction(2)
+
     def test_zero_division(self):
         with pytest.raises(HTTPException) as e:
             fractions.mixed_number_to_fraction("1/0")
@@ -50,3 +53,13 @@ class TestMixedNumberToFraction:
         with pytest.raises(HTTPException) as e:
             fractions.mixed_number_to_fraction(None)
         assert e.value.detail == "VALIDATION_ERROR"
+
+    def test_empty_string(self):
+        with pytest.raises(HTTPException) as e:
+            fractions.mixed_number_to_fraction("")
+        assert e.value.detail == "INVALID_AMOUNT"
+
+    def test_whitespace_only(self):
+        with pytest.raises(HTTPException) as e:
+            fractions.mixed_number_to_fraction("   ")
+        assert e.value.detail == "INVALID_AMOUNT"
