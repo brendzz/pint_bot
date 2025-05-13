@@ -134,8 +134,15 @@ def register_commands(bot):
 
     #See either your own debts or those of another user
     @bot.tree.command(name=Command.get("get_debts").name, description=Command.get("get_debts").description)
-    @app_commands.describe(user="Another user to view debts for", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
-    async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_percentages: bool = None):
+    @app_commands.describe(
+        user="Another user to view debts for",
+        show_details=f"Show details of each individual debt (Default:{config.SHOW_DETAILS_DEFAULT})",
+        show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)"
+    )
+    async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None):
+        if show_details is None:
+            show_details = config.SHOW_DETAILS_DEFAULT
+        
         if show_percentages is None:
             show_percentages = config.SHOW_PERCENTAGES_DEFAULT
 
@@ -178,13 +185,14 @@ def register_commands(bot):
                 except discord.NotFound:
                     creditor_name = f"Unknown User ({creditor_id})"
                 lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
-                for entry in entries:
-                    amount = currency_formatter(entry["amount"], use_unicode)
-                    if show_percentages:
-                        amount+=f" {to_percentage(entry['amount'],total_owed_by_you, config.PERCENTAGE_DECIMAL_PLACES)}"
-                    reason = entry["reason"]
-                    timestamp = entry["timestamp"]
-                    lines.append(f"- {amount} for *{reason}* on {timestamp}")
+                if show_details:
+                    for entry in entries:
+                        amount = currency_formatter(entry["amount"], use_unicode)
+                        if show_percentages:
+                            amount+=f" {to_percentage(entry['amount'],total_owed_by_you, config.PERCENTAGE_DECIMAL_PLACES)}"
+                        reason = entry["reason"]
+                        timestamp = entry["timestamp"]
+                        lines.append(f"- {amount} for *{reason}* on {timestamp}")
 
         # Debts owed to the user
         if data["owed_to_you"]:
@@ -198,13 +206,14 @@ def register_commands(bot):
                     debtor_name = f"Unknown User ({debtor_id})"
 
                 lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
-                for entry in entries:
-                    amount = currency_formatter(entry["amount"], use_unicode)
-                    if show_percentages:
-                        amount+=f" {to_percentage(entry['amount'],total_owed_to_you, config.PERCENTAGE_DECIMAL_PLACES)}"
-                    reason = entry["reason"]
-                    timestamp = entry["timestamp"]
-                    lines.append(f"- {amount} for *{reason}* on {timestamp}")
+                if show_details:
+                    for entry in entries:
+                        amount = currency_formatter(entry["amount"], use_unicode)
+                        if show_percentages:
+                            amount+=f" {to_percentage(entry['amount'],total_owed_to_you, config.PERCENTAGE_DECIMAL_PLACES)}"
+                        reason = entry["reason"]
+                        timestamp = entry["timestamp"]
+                        lines.append(f"- {amount} for *{reason}* on {timestamp}")
 
         # If no debts are found, return a message
         # Send the formatted response
@@ -216,10 +225,14 @@ def register_commands(bot):
             )
         # Send the formatted response
 
-    #See everyone's debts
+    #See a summary of everyone's debts
     @bot.tree.command(name=Command.get("get_all_debts").name, description=Command.get("get_all_debts").description)
-    @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot settings).", show_percentages="Display percentages of how much of the economy each person owes/is owed (Default: In Bot settings)")
-    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
+    @app_commands.describe(
+        table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).",
+        show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})",
+        show_details=f"Show details of each individual debt (Default: {config.SHOW_DETAILS_DEFAULT})"
+    )
+    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_details: bool = None):
         if table_format is None:
             table_format = config.USE_TABLE_FORMAT_DEFAULT
         if show_percentages is None:
@@ -357,7 +370,7 @@ def register_commands(bot):
             description=data["message"])
 
     @bot.tree.command(name=Command.get("settings").name, description=Command.get("settings").description)
-    @app_commands.describe(table_format="Display in table format (not recommended for mobile, Default: In Bot Settings.).")
+    @app_commands.describe(table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).")
     async def settings_command(interaction: discord.Interaction, table_format: bool = None):
         if table_format is None:
             table_format = config.USE_TABLE_FORMAT_DEFAULT
@@ -381,6 +394,7 @@ def register_commands(bot):
             {"Setting": "Maximum Debt Description Character Limit", "Value": config.MAXIMUM_DEBT_CHARACTER_LIMIT},
             {"Setting": "Enforce Quantization when Settling Debts", "Value": config.QUANTIZE_SETTLING_DEBTS},
             {"Setting": "Show Percentages by Default", "Value": config.SHOW_PERCENTAGES_DEFAULT},
+            {"Setting": "Show All Debt Details by Default", "Value": config.SHOW_DETAILS_DEFAULT},
             {"Setting": "Percentage Decimal Places", "Value": config.PERCENTAGE_DECIMAL_PLACES},
             {"Setting": "Get Debts Command", "Value": config.GET_DEBTS_COMMAND},
             {"Setting": "Get All Debts Command", "Value": config.GET_ALL_DEBTS_COMMAND},

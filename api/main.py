@@ -171,9 +171,11 @@ async def settle_debt(request: SettleRequest):
 
     # Validate and parse the pint number
     try:
-        amount = Fraction(request.amount.strip())
-    except ValueError:
+        amount = mixed_number_to_fraction(request.amount.strip())
+    except (ValueError, ZeroDivisionError):
         raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
+    except (Exception):
+        raise HTTPException(status_code=400, detail="BAD_REQUEST")
 
     # Validate pint number constraints
     if amount < 0:
