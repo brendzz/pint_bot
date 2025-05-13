@@ -1,3 +1,4 @@
+"""Configuration for the API."""
 from fractions import Fraction
 from pathlib import Path
 
