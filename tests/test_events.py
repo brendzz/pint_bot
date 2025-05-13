@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import patch, AsyncMock, MagicMock, PropertyMock
-from discord import Message, User
+import pytest
+from discord import Message
 from bot.pint_bot import bot, on_message
 
 class TestOnMessage:
@@ -19,7 +19,7 @@ class TestOnMessage:
         mock_random.side_effect = random_side_effect
 
         mock_message = AsyncMock(spec=Message)
-        mock_message.content = "I love pints!"
+        mock_message.content = "I love testcoin!"
         mock_message.add_reaction = AsyncMock()
 
         with patch.object(type(bot), 'user', new_callable=PropertyMock) as mock_user:

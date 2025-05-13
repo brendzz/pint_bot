@@ -4,20 +4,18 @@ from unittest.mock import patch
 import pytest
 from bot.formatter import currency_formatter, custom_unicode_fraction, fraction_to_unicode, to_percentage, to_subscript, to_superscript
 
-
-
 class TestCurrencyFormatter:
     def test_singular_fraction(self):
-        assert currency_formatter("1") == "1 pint"
+        assert currency_formatter("1") == "1 testcoin"
 
     def test_plural_whole_number(self):
-        assert currency_formatter("2") == "2 pints"
+        assert currency_formatter("2") == "2 testcoins"
 
     def test_simple_fraction(self):
-        assert currency_formatter("1/2") == "1/2 pint"
+        assert currency_formatter("1/2") == "1/2 testcoin"
 
     def test_mixed_fraction(self):
-        assert currency_formatter("5/2") == "2 1/2 pints"
+        assert currency_formatter("5/2") == "2 1/2 testcoins"
 
     def test_unicode_fraction(self):
         result = currency_formatter("3/2", True)
@@ -28,12 +26,12 @@ class TestCurrencyFormatter:
         assert "¼" in result
 
     def test_zero_value(self):
-        assert currency_formatter("0") == "0 pints"
+        assert currency_formatter("0") == "0 testcoins"
 
     @patch("bot.config.USE_DECIMAL_OUTPUT", True)
     def test_decimal_output(self):
-        assert currency_formatter("3/2") == "1.5 pints"
-        assert currency_formatter("1") == "1.0 pint"
+        assert currency_formatter("3/2") == "1.5 testcoins"
+        assert currency_formatter("1") == "1.0 testcoin"
 
 class TestFractionToUnicode:
     def test_fraction_to_unicode_known_fraction(self):

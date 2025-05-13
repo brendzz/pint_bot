@@ -1,4 +1,3 @@
-from fractions import Fraction
 from unittest.mock import patch
 import pytest
 import bot.bot_commands as commands
@@ -103,25 +102,6 @@ def mocks(monkeypatch, shared):
 
 @pytest.fixture
 def bot():
-    with patch.multiple(
-        "config",
-        CURRENCY_NAME="TestCoin",
-        CURRENCY_NAME_PLURAL="TestCoins",
-        BOT_NAME="TestBot",
-        GET_DEBTS_COMMAND="get_debts",
-        GET_ALL_DEBTS_COMMAND="get_all_debts",
-        TRANSFERABLE_ITEMS=["Beer", "Wine"],
-        SHOW_PERCENTAGES_DEFAULT=False,
-        USE_TABLE_FORMAT_DEFAULT=True,
-        ECONOMY_HEALTH_MESSAGES=[
-            {"threshold": 0, "message": "Economy is dead"},
-            {"threshold": 1, "message": "Economy active"},
-        ],
-        MAXIMUM_PER_DEBT=10,
-        SMALLEST_UNIT=Fraction(1, 6),
-        MAXIMUM_DEBT_CHARACTER_LIMIT=200,
-        QUANTIZE_SETTLING_DEBTS=True,
-    ):
         bot = DummyBot()
         commands.register_commands(bot)
         return bot
