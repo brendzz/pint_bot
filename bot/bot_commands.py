@@ -219,12 +219,14 @@ def register_commands(bot):
 
         # If no debts are found, return a message
         # Send the formatted response
-        title_beginning = "Your" if user is None else f"Here are {user}'s"
+        title_beginning = "Your" if user is None else f"Here are {user.display_name}'s"
         await send_info_message(
             interaction,
-            title=f"{title_beginning} {config.CURRENCY_NAME} debts *{interaction.user.display_name}*, {"thanks" if user is None else "thank them"} for participating in the {config.CURRENCY_NAME} economy!",
+            title=
+                f"{title_beginning} {config.CURRENCY_NAME} debts *{interaction.user.display_name}*, "
+                f"{'thanks' if user is None else 'thank them'} for participating in the {config.CURRENCY_NAME} economy!",
             description="\n".join(lines)
-            )
+        )
         # Send the formatted response
 
     #See a summary of everyone's debts
