@@ -38,8 +38,8 @@ def define_command_details() -> None:
 
     Command(
         key="debts_with_user",
-        name=f"{config.CURRENCY_NAME_PLURAL.lower()}_with_user",
-        description=f"See current {config.CURRENCY_NAME} debts for yourself or another user.",
+        name=config.DEBTS_WITH_USER_COMMAND,
+        description=f"See current {config.CURRENCY_NAME} debts between yourself and another user.",
     )
 
     Command(
