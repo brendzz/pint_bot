@@ -22,6 +22,11 @@ class DummyInteraction:
         self.user = user
         self.bot = bot
         self.response = DummyResponse()
+        self.error = None
+        self.send_info_message_calls = []
+        self.send_success_message_calls = []
+        self.send_two_column_table_message_calls = []
+        self.send_one_column_table_message_calls = []
 
 class DummyTree:
     def __init__(self):
