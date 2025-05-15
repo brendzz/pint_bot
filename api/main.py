@@ -7,7 +7,14 @@ from fastapi import FastAPI, HTTPException
 import api.config as config
 import api.fraction_functions as fractions
 from api.data_manager import load_data, save_data
-from models import UserData, DebtEntry, OweRequest, SettleRequest, SetUnicodePreferenceRequest
+from models import (
+    UserData,
+    DebtEntry,
+    OweRequest,
+    SettleRequest,
+    SetUnicodePreferenceRequest,
+    DebtsWithUser
+)
 
 # Setup
 logging.basicConfig(level=logging.DEBUG)
@@ -151,6 +158,68 @@ async def get_all_debts():
                     Fraction(result[creditor_id]["is_owed"]) + total_owed_to
                 )
     result["total_in_circulation"] = str(total_in_circulation)
+    return result
+
+@app.get("/debts_with_user")
+async def debts_with_user(request: DebtsWithUser):
+    """See your current debts with one other user."""
+    data = load_data()
+    user_id = str(request.user_id)
+    other_user_id = str(request.other_user_id)
+
+     # Prepare the response
+    result = {"owed_by_you": [],
+              "total_owed_by_you": 0, 
+              "owed_to_you": [], 
+              "total_owed_to_you": 0
+      }  # Include the user's preference}
+
+    # Check if the user exists in the data
+    if user_id in data.users:
+        users_debts = data.users[user_id].debts.creditors
+        if other_user_id in users_debts:
+            # Debts owed by the user
+            debts = users_debts[other_user_id]
+            if not isinstance(debts, list):
+                raise TypeError(f"Expected 'debts' to be a list, but got {type(debts)}")
+            result["owed_by_you"] = [
+                {
+                    "amount": str(debt.amount),
+                    "reason": debt.reason,
+                    "timestamp": debt.timestamp,
+                }
+                for debt in debts
+            ]
+            # Convert amount to Fraction for summation
+            result["total_owed_by_you"] += sum(Fraction(debt.amount) for debt in debts)
+
+    # Check if the user is a creditor in other users' debts
+    if other_user_id in data.users:
+        other_users_debts = data.users[other_user_id].debts.creditors
+        if user_id in other_users_debts:
+            # Debts owed by the other user
+            debts = other_users_debts[user_id]
+            if not isinstance(debts, list):
+                raise TypeError(f"Expected 'debts' to be a list, but got {type(debts)}")
+            result["owed_to_you"] = [
+                {
+                    "amount": str(debt.amount),
+                    "reason": debt.reason,
+                    "timestamp": debt.timestamp,
+                }
+                for debt in debts
+            ]
+            # Convert amount to Fraction for summation
+            result["total_owed_to_you"] += sum(Fraction(debt.amount) for debt in debts)
+
+    # If no debts are found, return an empty response
+    if not result["owed_by_you"] and not result["owed_to_you"]:
+        return {"message": "No debts found owed to or from this user."}
+
+    # Convert totals back to strings for the response
+    result["total_owed_by_you"] = str(result["total_owed_by_you"])
+    result["total_owed_to_you"] = str(result["total_owed_to_you"])
+
     return result
 
 @app.post("/settle")

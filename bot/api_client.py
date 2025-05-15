@@ -1,6 +1,5 @@
 """Module for interacting with the API."""
 import requests
-
 import bot.config as config
 
 def add_debt(payload: dict):
@@ -18,6 +17,12 @@ def get_debts(user_id: str):
 def get_all_debts():
     """Get all debts from the API."""
     response = requests.get(f"{config.API_URL}/{config.GET_ALL_DEBTS_COMMAND}")
+    response.raise_for_status()
+    return response.json()
+
+def debts_with_user(payload: dict):
+    """Get all debts between two users from the API."""
+    response = requests.get(f"{config.API_URL}/debts_with_user", json=payload)
     response.raise_for_status()
     return response.json()
 

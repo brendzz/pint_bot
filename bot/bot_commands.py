@@ -7,8 +7,18 @@ from bot.command import Command
 import bot.config as config
 from bot.error_handling import handle_error
 from bot.formatter import currency_formatter, to_percentage
-from bot.send_messages import send_info_message, send_one_column_table_message, send_success_message, send_two_column_table_message
-from models import OweRequest, SetUnicodePreferenceRequest, SettleRequest
+from bot.send_messages import (
+    send_info_message,
+    send_one_column_table_message,
+    send_success_message,
+    send_two_column_table_message
+)
+from models import (
+    OweRequest,
+    SetUnicodePreferenceRequest,
+    SettleRequest,
+    DebtsWithUser
+)
 
 def define_command_details() -> None:
     """Define the command details for the bot."""
@@ -24,6 +34,12 @@ def define_command_details() -> None:
         key="owe",
         name="owe",
         description=f"Add a number of {config.CURRENCY_NAME_PLURAL} you owe someone.",
+    )
+
+    Command(
+        key="debts_with_user",
+        name=config.DEBTS_WITH_USER_COMMAND,
+        description=f"See current {config.CURRENCY_NAME} debts between yourself and another user.",
     )
 
     Command(
@@ -303,6 +319,110 @@ def register_commands(bot):
             data=table_data,
             table_format=table_format
         )
+
+    #See your debts with one other user
+    @bot.tree.command(
+        name=Command.get("debts_with_user").name,
+        description=Command.get("debts_with_user").description
+    )
+    @app_commands.describe(
+        user="The user to view your debts with",
+        show_details=f"Show details of each debt (Default:{config.SHOW_DETAILS_DEFAULT})",
+        show_percentages=(
+            f"Display percentages of how much each person owes/is owed "
+            f"(Default: {config.SHOW_PERCENTAGES_DEFAULT})"
+        )
+    )
+    async def debts_with_user(
+        interaction: discord.Interaction,
+        user: discord.User,
+        show_details: bool = None,
+        show_percentages: bool = None
+    ):
+        if show_details is None:
+            show_details = config.SHOW_DETAILS_DEFAULT
+
+        if show_percentages is None:
+            show_percentages = config.SHOW_PERCENTAGES_DEFAULT
+
+        user_id = str(user.id)
+
+        # Defer the interaction to avoid timeout
+        await interaction.response.defer()
+
+        # Call the external API to fetch debts
+        try:
+            debts_with_user_request = DebtsWithUser(
+                user_id=str(interaction.user.id),
+                other_user_id=user_id
+            )
+            payload = debts_with_user_request.model_dump()
+            data = api_client.debts_with_user(payload)
+        except Exception as e:
+            await handle_error(interaction, e, title=f"Error Fetching {config.CURRENCY_NAME} Debts")
+            return
+
+        # Check if the API returned a "message" field (no debts found)
+        if "message" in data:
+            await send_info_message(
+                interaction,
+                title=f"Looks like there are no {config.CURRENCY_NAME} debts between you two.",
+                description=(
+                    f"No {config.CURRENCY_NAME} debts found owed to or from this user. "
+                    f"That's kind of cringe, get more involved bro."
+                )
+            )
+            return
+
+        use_unicode = await fetch_unicode_preference(interaction, user_id)
+
+        # Format the response
+        lines = []
+
+        # Debts owed by the user
+        if data["owed_by_you"]:
+            total_owed_by_you = Fraction(data['total_owed_by_you'])
+            lines.append(
+                f"__**{config.CURRENCY_NAME_PLURAL} YOU OWE THEM:**__ "
+                f"{currency_formatter(total_owed_by_you, use_unicode).upper()}"
+            )
+            for debt in data["owed_by_you"]:
+                if show_details:
+                    amount = currency_formatter(debt["amount"], use_unicode)
+                    if show_percentages:
+                        amount += f" {to_percentage(debt['amount'], total_owed_by_you, config.PERCENTAGE_DECIMAL_PLACES)}"
+                    reason = debt["reason"]
+                    timestamp = debt["timestamp"]
+                    lines.append(f"- {amount} for *{reason}* on {timestamp}")
+
+        # Debts owed to the user
+        if data["owed_to_you"]:
+            total_owed_to_you = Fraction(data['total_owed_to_you'])
+            lines.append(
+                f"__**{config.CURRENCY_NAME_PLURAL} THEY OWE YOU:**__ "
+                f"{currency_formatter(total_owed_to_you, use_unicode).upper()}"
+            )
+            for debt in data["owed_to_you"]:
+                if show_details:
+                    amount = currency_formatter(debt["amount"], use_unicode)
+                    if show_percentages:
+                        amount += f" {to_percentage(debt['amount'], total_owed_to_you, config.PERCENTAGE_DECIMAL_PLACES)}"
+                    reason = debt["reason"]
+                    timestamp = debt["timestamp"]
+                    lines.append(f"- {amount} for *{reason}* on {timestamp}")
+
+        # If no debts are found, return a message
+        # Send the formatted response
+        await send_info_message(
+            interaction,
+            title=(
+                f"Here are the {config.CURRENCY_NAME} debts between "
+                f"*{interaction.user.display_name}* and *{user.display_name}*, "
+                f"thank you for participating in the {config.CURRENCY_NAME} economy!"
+            ),
+            description="\n".join(lines)
+        )
+        # Send the formatted response
 
     @bot.tree.command(name=Command.get("settle").name, description=Command.get("settle").description)
     @app_commands.describe(user="Who you want to settle debts with", amount=f"How many {config.CURRENCY_NAME_PLURAL} to settle")

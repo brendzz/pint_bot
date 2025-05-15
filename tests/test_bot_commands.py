@@ -22,6 +22,11 @@ class DummyInteraction:
         self.user = user
         self.bot = bot
         self.response = DummyResponse()
+        self.error = None
+        self.send_info_message_calls = []
+        self.send_success_message_calls = []
+        self.send_two_column_table_message_calls = []
+        self.send_one_column_table_message_calls = []
 
 class DummyTree:
     def __init__(self):
@@ -66,7 +71,7 @@ def mocks(monkeypatch, shared):
             self.kwargs = kwargs
         def model_dump(self):
             return self.kwargs
-    for model in ['OweRequest', 'SettleRequest', 'SetUnicodePreferenceRequest']:
+    for model in ['OweRequest', 'SettleRequest', 'SetUnicodePreferenceRequest', 'DebtsWithUser']:
         monkeypatch.setattr(commands, model, DummyModel)
 
     class FakeAPI:
@@ -80,6 +85,9 @@ def mocks(monkeypatch, shared):
             return self.shared.debts_response
         def get_all_debts(self):
             return self.shared.all_debts_response
+        def debts_with_user(self, payload):
+            self.calls['debts_with_user'] = payload
+            return self.shared.debts_response
         def settle_debt(self, payload):
             self.calls['settle_debt'] = payload
             return {'settled_amount': payload['amount'], 'remaining_amount': '0'}
@@ -118,6 +126,7 @@ class TestRegistration:
             'owe',
             config.GET_DEBTS_COMMAND,
             config.GET_ALL_DEBTS_COMMAND,
+            config.DEBTS_WITH_USER_COMMAND,
             'settle',
             'set_unicode_preference',
             'settings',
@@ -279,6 +288,75 @@ class TestGetAllDebtsCommand:
             assert table_calls
             description = table_calls[0]['kwargs']['description']
             assert health_msg in description
+
+class TestDebtsWithUserCommand:
+    @pytest.mark.asyncio
+    async def test_no_debts_message(self, bot, shared):
+        import bot.config as config
+        shared.api_response = {"message": "No debts"}
+        shared.debts_response = shared.api_response
+
+        interaction = DummyInteraction(DummyUser(1), bot)
+        other_user = DummyUser(2)
+        await bot.tree.commands[config.DEBTS_WITH_USER_COMMAND](interaction, user=other_user)
+
+        assert interaction.response.deferred
+        calls = interaction.send_info_message_calls
+        assert calls
+        kwargs = calls[0]['kwargs']
+        assert f"no {config.CURRENCY_NAME} debts" in kwargs["title"]
+        assert "kind of cringe" in kwargs["description"]
+
+    @pytest.mark.asyncio
+    async def test_debts_with_user_with_details_and_percentages(self, bot, shared):
+        import bot.config as config
+        shared.api_response = {
+            'owed_by_you': [
+                {'amount': '1', 'reason': 'being silly', 'timestamp': '2025-01-01'}
+            ],
+            'total_owed_by_you': '1',
+            'owed_to_you': [
+                {'amount': '2', 'reason': 'for passing exams', 'timestamp': '2025-01-02'}
+            ],
+            'total_owed_to_you': '2',
+        }
+        shared.debts_response = shared.api_response
+
+        interaction = DummyInteraction(DummyUser(1, display_name="Alice"), bot)
+        other_user = DummyUser(2, display_name="Bob")
+        await bot.tree.commands[config.DEBTS_WITH_USER_COMMAND](
+            interaction,
+            user=other_user,
+            show_details=True,
+            show_percentages=True
+        )
+
+        assert interaction.response.deferred
+        calls = interaction.send_info_message_calls
+        assert calls
+        kwargs = calls[0]['kwargs']
+        assert "Alice" in kwargs["title"]
+        assert "Bob" in kwargs["title"]
+        description = kwargs["description"]
+        assert "1" in description and "being silly" in description
+        assert "2" in description and "for passing exams" in description
+        assert "50" in description  # mocked percentage
+
+    @pytest.mark.asyncio
+    async def test_error_handling(self, bot, monkeypatch):
+        import bot.config as config
+        def broken_api_call(_):
+            raise Exception("Boom")
+
+        monkeypatch.setattr(commands.api_client, "debts_with_user", broken_api_call)
+
+        interaction = DummyInteraction(DummyUser(1), bot)
+        other_user = DummyUser(2)
+        await bot.tree.commands[config.DEBTS_WITH_USER_COMMAND](interaction, user=other_user)
+
+        assert interaction.response.deferred
+        assert hasattr(interaction, 'error')
+        assert "Boom" in str(interaction.error['args'][0])
 
 class TestSettleCommand:
     @pytest.mark.parametrize(

@@ -8,6 +8,7 @@ CURRENCY_NAME_PLURAL: str = "Pints"
 
 GET_DEBTS_COMMAND: str = "pints"
 GET_ALL_DEBTS_COMMAND: str = "all_pints"
+DEBTS_WITH_USER_COMMAND: str = "pints_with_user"
 
 API_URL: str= "http://localhost:8000"
 
