@@ -5,7 +5,7 @@ from discord import app_commands
 from bot import api_client
 from bot.command import Command
 import bot.config as config
-import random.randint as randint
+import random
 from bot.error_handling import handle_error
 from bot.formatter import currency_formatter, to_percentage
 from bot.send_messages import (
@@ -74,9 +74,9 @@ def define_command_details() -> None:
     )
 
     Command(
-        key="volcano",
-        name="volcano",
-        description="Play volcano game.",
+        key="roll",
+        name=config.ROLL_COMMAND,
+        description=f"Play {config.ROLL_COMMAND} game.",
     )
 
 async def fetch_unicode_preference(interaction, user_id) -> bool:
@@ -500,17 +500,17 @@ def register_commands(bot):
             title="Preference Updated",
             description=data["message"])
 
-    @bot.tree.command(name=Command.get("volcano").name, description=Command.get("volcano").description)
-    async def volcano(interaction: discord.Interaction):
+    @bot.tree.command(name=Command.get("roll").name, description=Command.get("roll").description)
+    async def roll(interaction: discord.Interaction):
         await interaction.response.defer()
         user = interaction.user
 
-        volcano_number = randint(1, 6)
-        if volcano_number == 6:
+        volcano_number = random.randint(1, config.ROLL_WINNING_NUMBER)
+        if volcano_number == config.ROLL_WINNING_NUMBER:
             await send_success_message(
                 interaction,
                 title=f"WINNER! You rolled {volcano_number}!",
-                description=f"Congratulations {user.mention}! You won the volcano game!"
+                description=f"Congratulations {user.mention}!\nYou won the {config.ROLL_COMMAND} game!\n"
             )
         else:
             await send_info_message(
