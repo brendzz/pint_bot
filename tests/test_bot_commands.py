@@ -129,6 +129,7 @@ class TestRegistration:
             config.DEBTS_WITH_USER_COMMAND,
             'settle',
             'set_unicode_preference',
+            config.ROLL_COMMAND,
             'settings',
         }
         assert set(bot.tree.commands.keys()) == expected

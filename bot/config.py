@@ -1,5 +1,8 @@
 """Configuration for the bot."""
 from fractions import Fraction
+from secrets import SystemRandom
+
+RANDOM_NUMBER_GENERATOR = SystemRandom()
 
 # Config for the bot
 BOT_NAME: str = "Pint Bot"
@@ -9,6 +12,7 @@ CURRENCY_NAME_PLURAL: str = "Pints"
 GET_DEBTS_COMMAND: str = "pints"
 GET_ALL_DEBTS_COMMAND: str = "all_pints"
 DEBTS_WITH_USER_COMMAND: str = "pints_with_user"
+ROLL_COMMAND: str = "volcano"
 
 API_URL: str= "http://localhost:8000"
 
@@ -16,9 +20,10 @@ QUANTIZE_SETTLING_DEBTS:  bool = True
 USE_DECIMAL_OUTPUT: bool = False
 USE_TABLE_FORMAT_DEFAULT: bool = False
 SHOW_PERCENTAGES_DEFAULT: bool = False
+PERCENTAGE_DECIMAL_PLACES: int = 1
+
 SHOW_DETAILS_DEFAULT: bool = False
 
-PERCENTAGE_DECIMAL_PLACES: int = 1
 MAXIMUM_PER_DEBT: int = 10
 SMALLEST_UNIT: Fraction = Fraction(1, 6)
 MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
@@ -28,6 +33,8 @@ REACTION_EMOJI: str ="🍺"
 REACTION_EMOJI_RARE: str ="🍻"
 REACTION_ODDS: float = 0.5
 REACTION_ODDS_RARE: float = 0.1
+
+ROLL_WINNING_NUMBER: int = 6
 
 TRANSFERABLE_ITEMS = [
     "1 Pint of liquid from a pub",

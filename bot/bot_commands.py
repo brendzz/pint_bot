@@ -72,6 +72,12 @@ def define_command_details() -> None:
         description="View the current bot settings.",
     )
 
+    Command(
+        key="roll",
+        name=config.ROLL_COMMAND,
+        description=f"Play {config.ROLL_COMMAND} game.",
+    )
+
 async def fetch_unicode_preference(interaction, user_id) -> bool:
     """Fetch the user's Unicode preference from the API."""
     try:
@@ -492,6 +498,25 @@ def register_commands(bot):
             interaction,
             title="Preference Updated",
             description=data["message"])
+
+    @bot.tree.command(name=Command.get("roll").name, description=Command.get("roll").description)
+    async def roll(interaction: discord.Interaction):
+        await interaction.response.defer()
+        user = interaction.user
+
+        volcano_number = config.RANDOM_NUMBER_GENERATOR.randint(1, config.ROLL_WINNING_NUMBER)
+        if volcano_number == config.ROLL_WINNING_NUMBER:
+            await send_success_message(
+                interaction,
+                title=f"WINNER! You rolled {volcano_number}!",
+                description=f"Congratulations {user.mention}!\nYou won the {config.ROLL_COMMAND} game!\n"
+            )
+        else:
+            await send_info_message(
+                interaction,
+                title=f"You rolled {volcano_number}.",
+                description=f"Sorry {user.mention}, that's not a winning number.\nBetter luck next time!"
+            )
 
     @bot.tree.command(name=Command.get("settings").name, description=Command.get("settings").description)
     @app_commands.describe(table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).")
