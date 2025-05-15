@@ -5,7 +5,6 @@ from discord import app_commands
 from bot import api_client
 from bot.command import Command
 import bot.config as config
-import random
 from bot.error_handling import handle_error
 from bot.formatter import currency_formatter, to_percentage
 from bot.send_messages import (
@@ -505,7 +504,7 @@ def register_commands(bot):
         await interaction.response.defer()
         user = interaction.user
 
-        volcano_number = random.randint(1, config.ROLL_WINNING_NUMBER)
+        volcano_number = config.RANDOM_NUMBER_GENERATOR.randint(1, config.ROLL_WINNING_NUMBER)
         if volcano_number == config.ROLL_WINNING_NUMBER:
             await send_success_message(
                 interaction,

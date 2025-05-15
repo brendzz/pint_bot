@@ -1,5 +1,8 @@
 """Configuration for the bot."""
 from fractions import Fraction
+from secrets import SystemRandom
+
+RANDOM_NUMBER_GENERATOR = SystemRandom()
 
 # Config for the bot
 BOT_NAME: str = "Pint Bot"
@@ -20,7 +23,6 @@ SHOW_PERCENTAGES_DEFAULT: bool = False
 PERCENTAGE_DECIMAL_PLACES: int = 1
 
 SHOW_DETAILS_DEFAULT: bool = False
-
 
 MAXIMUM_PER_DEBT: int = 10
 SMALLEST_UNIT: Fraction = Fraction(1, 6)
