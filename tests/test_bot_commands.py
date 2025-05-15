@@ -185,7 +185,7 @@ class TestGetDebtsCommand:
             'total_owed_by_you': '1',
             'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
             'total_owed_to_you': '2'
-        }, "Here are <@123>'s TestCoin debts"),
+        }, "Here are fake name's TestCoin debts"),
     ], ids=["self_no_debts", "self_with_debts", "other_no_debts", "other_with_debts"])
     @pytest.mark.asyncio
     async def test_get_debts_titles(self, bot, shared, response, expected_title):
@@ -193,7 +193,7 @@ class TestGetDebtsCommand:
         shared.debts_response = response
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands[config.GET_DEBTS_COMMAND]
-        await cmd(interaction, user=None if 'you' in expected_title.lower() else DummyUser(123))
+        await cmd(interaction, user=None if 'you' in expected_title.lower() else DummyUser(123, display_name="fake name"))
         assert interaction.response.deferred
         info_calls = interaction.send_info_message_calls
         assert info_calls
