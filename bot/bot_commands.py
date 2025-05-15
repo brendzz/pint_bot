@@ -5,6 +5,7 @@ from discord import app_commands
 from bot import api_client
 from bot.command import Command
 import bot.config as config
+import random.randint as randint
 from bot.error_handling import handle_error
 from bot.formatter import currency_formatter, to_percentage
 from bot.send_messages import (
@@ -70,6 +71,12 @@ def define_command_details() -> None:
         key="settings",
         name="settings",
         description="View the current bot settings.",
+    )
+
+    Command(
+        key="volcano",
+        name="volcano",
+        description="Play volcano game.",
     )
 
 async def fetch_unicode_preference(interaction, user_id) -> bool:
@@ -492,6 +499,25 @@ def register_commands(bot):
             interaction,
             title="Preference Updated",
             description=data["message"])
+
+    @bot.tree.command(name=Command.get("volcano").name, description=Command.get("volcano").description)
+    async def volcano(interaction: discord.Interaction):
+        await interaction.response.defer()
+        user = interaction.user
+
+        volcano_number = randint(1, 6)
+        if volcano_number == 6:
+            await send_success_message(
+                interaction,
+                title=f"WINNER! You rolled {volcano_number}!",
+                description=f"Congratulations {user.mention}! You won the volcano game!"
+            )
+        else:
+            await send_info_message(
+                interaction,
+                title=f"You rolled {volcano_number}.",
+                description=f"Sorry {user.mention}, that's not a winning number.\nBetter luck next time!"
+            )
 
     @bot.tree.command(name=Command.get("settings").name, description=Command.get("settings").description)
     @app_commands.describe(table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).")
