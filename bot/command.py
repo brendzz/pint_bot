@@ -10,10 +10,12 @@ class Command:
         key (str): The unique key for the command.
         name (str): The name of the command.
         description (str): A brief description of the command.
+        category (str): The category to which the command belongs.
     """
     key: str
     name: str
     description: str
+    category: str
 
     _registry: ClassVar[dict[str, "Command"]] = {}
 

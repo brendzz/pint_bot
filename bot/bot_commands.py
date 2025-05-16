@@ -28,54 +28,65 @@ def define_command_details() -> None:
         key="help",
         name="help",
         description="Get a list of available commands and their descriptions.",
+        category="Support"
     )
 
     Command(
         key="owe",
         name="owe",
         description=f"Add a number of {config.CURRENCY_NAME_PLURAL} you owe someone.",
+        category="Debts"
     )
 
     Command(
         key="debts_with_user",
         name=config.DEBTS_WITH_USER_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts between yourself and another user.",
+        category="Debts"
     )
 
     Command(
         key="get_debts",
         name=config.GET_DEBTS_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts for yourself or another user.",
+        category="Debts"
     )
 
     Command(
         key="get_all_debts",
         name=config.GET_ALL_DEBTS_COMMAND,
         description=f"See everyone's total {config.CURRENCY_NAME} debts.",
+        category="Debts"
     )
 
     Command(
         key="settle",
         name="settle",
-        description=f"Settle {config.CURRENCY_NAME} debts with someone, starting with the oldest debts."
+        description=(
+            f"Settle {config.CURRENCY_NAME} debts with someone, starting with the oldest debts."
+        ),
+        category="Debts"
     )
 
     Command(
         key="set_unicode_preference",
         name="set_unicode_preference",
         description="Set your default preference for using Unicode fractions.",
+        category="Settings"
     )
 
     Command(
         key="settings",
         name="settings",
         description="View the current bot settings.",
+        category="Settings"
     )
 
     Command(
         key="roll",
         name=config.ROLL_COMMAND,
         description=f"Play {config.ROLL_COMMAND} game.",
+        category="Games"
     )
 
 async def fetch_unicode_preference(interaction, user_id) -> bool:
