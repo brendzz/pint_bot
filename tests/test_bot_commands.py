@@ -1,6 +1,8 @@
 from unittest.mock import patch
 import pytest
 import bot.bot_commands as commands
+from bot.command import Command
+from types import SimpleNamespace
 
 # Dummy Discord objects for testing
 class DummyUser:
@@ -55,47 +57,80 @@ def shared():
 
 @pytest.fixture(autouse=True)
 def mocks(monkeypatch, shared):
+    # Mock utility functions
     async def fake_fetch_unicode(interaction, user_id):
         return True
-    monkeypatch.setattr(commands, 'fetch_unicode_preference', fake_fetch_unicode)
 
     async def fake_handle_error(interaction, *args, **kwargs):
         interaction.error = {'args': args, 'kwargs': kwargs}
-    monkeypatch.setattr(commands, 'handle_error', fake_handle_error)
 
+    monkeypatch.setattr(commands, 'fetch_unicode_preference', fake_fetch_unicode)
+    monkeypatch.setattr(commands, 'handle_error', fake_handle_error)
     monkeypatch.setattr(commands, 'currency_formatter', lambda amount, use_unicode: str(amount))
     monkeypatch.setattr(commands, 'to_percentage', lambda amt, total, cfg: '50')
 
+    # Mock command categories
+    fake_commands = {
+        "Core": [
+            SimpleNamespace(name="owe", description="See what you owe"),
+            SimpleNamespace(name="settle", description="Settle up"),
+        ],
+        "Fun": [
+            SimpleNamespace(name="gift", description="Gift a debt"),
+        ]
+    }
+    monkeypatch.setattr(Command, "all_by_category", lambda: fake_commands)
+
+    # Mock models
     class DummyModel:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
         def model_dump(self):
             return self.kwargs
-    for model in ['OweRequest', 'SettleRequest', 'SetUnicodePreferenceRequest', 'DebtsWithUser']:
+
+    for model in [
+        'OweRequest',
+        'SettleRequest',
+        'SetUnicodePreferenceRequest',
+        'DebtsWithUser'
+    ]:
         monkeypatch.setattr(commands, model, DummyModel)
 
+    # Mock API client
     class FakeAPI:
         def __init__(self, shared):
             self.shared = shared
             self.calls = {}
+
         def add_debt(self, payload):
             self.calls['add_debt'] = payload
-            return {'amount': payload['amount'], 'reason': payload['reason'], 'timestamp': '2025-01-01T00:00:00Z'}
+            return {
+                'amount': payload['amount'],
+                'reason': payload['reason'],
+                'timestamp': '2025-01-01T00:00:00Z'
+            }
+
         def get_debts(self, user_id):
             return self.shared.debts_response
+
         def get_all_debts(self):
             return self.shared.all_debts_response
+
         def debts_with_user(self, payload):
             self.calls['debts_with_user'] = payload
             return self.shared.debts_response
+
         def settle_debt(self, payload):
             self.calls['settle_debt'] = payload
             return {'settled_amount': payload['amount'], 'remaining_amount': '0'}
+
         def set_unicode_preference(self, payload):
             self.calls['set_unicode_preference'] = payload
             return {'message': 'Preference updated'}
+
     monkeypatch.setattr(commands, 'api_client', FakeAPI(shared))
 
+    # Mock message sending functions
     def make_stub(name):
         async def stub(interaction, *args, **kwargs):
             attr = f"{name}_calls"
@@ -105,8 +140,10 @@ def mocks(monkeypatch, shared):
         return stub
 
     for fn in [
-        'send_info_message', 'send_success_message',
-        'send_two_column_table_message', 'send_one_column_table_message'
+        'send_info_message',
+        'send_success_message',
+        'send_two_column_table_message',
+        'send_one_column_table_message',
     ]:
         monkeypatch.setattr(commands, fn, make_stub(fn))
 
@@ -136,7 +173,28 @@ class TestRegistration:
 
 class TestHelpCommand:
     @pytest.mark.asyncio
-    async def test_help_command(self, bot):
+    async def test_help_commands_section(self, bot):
+        import bot.config as config
+        interaction = DummyInteraction(DummyUser(1), bot)
+
+        cmd = bot.tree.commands["help"]
+        await cmd(interaction)
+
+        assert interaction.response.deferred
+        msg = interaction.send_info_message_calls[0]['kwargs']['description']
+
+        # Use the same fake_commands defined in the fixture
+        for category in ["Core", "Fun"]:
+            assert f"**{category}:**" in msg
+        for command in [
+            ("owe", "See what you owe"),
+            ("settle", "Settle up"),
+            ("gift", "Gift a debt"),
+        ]:
+            assert f"**/{command[0]}** — {command[1]}" in msg
+
+    @pytest.mark.asyncio
+    async def test_help_uses_section(self, bot):
         import bot.config as config
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands['help']
@@ -147,9 +205,10 @@ class TestHelpCommand:
         kwargs = calls[0]['kwargs']
         assert kwargs["title"] == f"{config.BOT_NAME} Help"
 
-        expected_items = ['**/owe**'] + [f"- {item}" for item in config.TRANSFERABLE_ITEMS]
-        for item in expected_items:
-            assert item in kwargs['description']
+        # Check that reward items are listed
+        for item in config.TRANSFERABLE_ITEMS:
+            assert f"- {item}" in kwargs["description"]
+
 
 class TestOweCommand:
     @pytest.mark.parametrize(

@@ -28,54 +28,65 @@ def define_command_details() -> None:
         key="help",
         name="help",
         description="Get a list of available commands and their descriptions.",
+        category="Support"
     )
 
     Command(
         key="owe",
         name="owe",
         description=f"Add a number of {config.CURRENCY_NAME_PLURAL} you owe someone.",
+        category="Debts"
     )
 
     Command(
         key="debts_with_user",
         name=config.DEBTS_WITH_USER_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts between yourself and another user.",
+        category="Debts"
     )
 
     Command(
         key="get_debts",
         name=config.GET_DEBTS_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts for yourself or another user.",
+        category="Debts"
     )
 
     Command(
         key="get_all_debts",
         name=config.GET_ALL_DEBTS_COMMAND,
         description=f"See everyone's total {config.CURRENCY_NAME} debts.",
+        category="Debts"
     )
 
     Command(
         key="settle",
         name="settle",
-        description=f"Settle {config.CURRENCY_NAME} debts with someone, starting with the oldest debts."
+        description=(
+            f"Settle {config.CURRENCY_NAME} debts with someone, starting with the oldest debts."
+        ),
+        category="Debts"
     )
 
     Command(
         key="set_unicode_preference",
         name="set_unicode_preference",
         description="Set your default preference for using Unicode fractions.",
+        category="Settings"
     )
 
     Command(
         key="settings",
         name="settings",
         description="View the current bot settings.",
+        category="Settings"
     )
 
     Command(
         key="roll",
         name=config.ROLL_COMMAND,
         description=f"Play {config.ROLL_COMMAND} game.",
+        category="Games"
     )
 
 async def fetch_unicode_preference(interaction, user_id) -> bool:
@@ -98,24 +109,31 @@ def register_commands(bot):
 
         # Format the response
         help_message = (
-            f"I help to keep track of {config.CURRENCY_NAME} debts owed between users.\n"
-            f"__**{config.BOT_NAME} Commands:**__\n"
+            f"My name is {config.BOT_NAME} and "
+            f"I am here to help keep track of {config.CURRENCY_NAME} debts owed between users.\n\n"
+            f"__**Commands:**__"
         )
-        for command in Command.all():
-            # Skip the help command itself
-            if command.key == "help":
-                continue
-            # Add the command name and description to the help message
-            help_message += f"**/{command.name}** — {command.description}\n"
 
-        help_message += f"\n__**What can you use your {config.CURRENCY_NAME_PLURAL} for?**__\n"
+        categorised_commands = Command.all_by_category()
+
+        for category, commands in categorised_commands.items():
+
+            # Add a header for each category
+            help_message += f"\n**{category}:**\n"
+            for command in commands:
+                # Add the command name and description to the help message
+                help_message += f"**/{command.name}** — {command.description}\n"
+
+        help_message += f"\n__**What can you redeem each {config.CURRENCY_NAME} for?**__\n"
         for item in config.TRANSFERABLE_ITEMS:
             help_message += f"- {item}\n"
 
         # Send the help message
-        await send_info_message(interaction,
-                                title=f"{config.BOT_NAME} Help",
-                                description=help_message)
+        await send_info_message(
+            interaction,
+            title=f"{config.BOT_NAME} Help",
+            description=help_message
+        )
 
     #Add a debt
     @bot.tree.command(name=Command.get("owe").name, description=Command.get("owe").description)
