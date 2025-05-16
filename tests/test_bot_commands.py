@@ -1,6 +1,7 @@
 from unittest.mock import patch
 import pytest
 import bot.bot_commands as commands
+from bot.command import Command
 
 # Dummy Discord objects for testing
 class DummyUser:
@@ -66,6 +67,20 @@ def mocks(monkeypatch, shared):
     monkeypatch.setattr(commands, 'currency_formatter', lambda amount, use_unicode: str(amount))
     monkeypatch.setattr(commands, 'to_percentage', lambda amt, total, cfg: '50')
 
+    from types import SimpleNamespace
+
+    fake_commands = {
+        "Core": [
+            SimpleNamespace(name="owe", description="See what you owe"),
+            SimpleNamespace(name="settle", description="Settle up"),
+        ],
+        "Fun": [
+            SimpleNamespace(name="gift", description="Gift a debt"),
+        ]
+    }
+
+    monkeypatch.setattr(Command, "all_by_category", lambda: fake_commands)
+    
     class DummyModel:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
@@ -136,7 +151,28 @@ class TestRegistration:
 
 class TestHelpCommand:
     @pytest.mark.asyncio
-    async def test_help_command(self, bot):
+    async def test_help_commands_section(self, bot):
+        import bot.config as config
+        interaction = DummyInteraction(DummyUser(1), bot)
+
+        cmd = bot.tree.commands["help"]
+        await cmd(interaction)
+
+        assert interaction.response.deferred
+        msg = interaction.send_info_message_calls[0]['kwargs']['description']
+
+        # Use the same fake_commands defined in the fixture
+        for category in ["Core", "Fun"]:
+            assert f"**{category}:**" in msg
+        for command in [
+            ("owe", "See what you owe"),
+            ("settle", "Settle up"),
+            ("gift", "Gift a debt"),
+        ]:
+            assert f"**/{command[0]}** — {command[1]}" in msg
+
+    @pytest.mark.asyncio
+    async def test_help_uses_section(self, bot):
         import bot.config as config
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands['help']
@@ -147,9 +183,10 @@ class TestHelpCommand:
         kwargs = calls[0]['kwargs']
         assert kwargs["title"] == f"{config.BOT_NAME} Help"
 
-        expected_items = ['**/owe**'] + [f"- {item}" for item in config.TRANSFERABLE_ITEMS]
-        for item in expected_items:
-            assert item in kwargs['description']
+        # Check that reward items are listed
+        for item in config.TRANSFERABLE_ITEMS:
+            assert f"- {item}" in kwargs["description"]
+
 
 class TestOweCommand:
     @pytest.mark.parametrize(
