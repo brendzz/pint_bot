@@ -109,8 +109,9 @@ def register_commands(bot):
 
         # Format the response
         help_message = (
-            f"I help to keep track of {config.CURRENCY_NAME} debts owed between users.\n"
-            f"__**{config.BOT_NAME} Commands:**__\n"
+            f"My name is {config.BOT_NAME} and "
+            f"I am here to help keep track of {config.CURRENCY_NAME} debts owed between users.\n\n"
+            f"__**Commands:**__"
         )
 
         categorised_commands = Command.all_by_category()
@@ -123,14 +124,16 @@ def register_commands(bot):
                 # Add the command name and description to the help message
                 help_message += f"**/{command.name}** — {command.description}\n"
 
-        help_message += f"\n__**What can you use your {config.CURRENCY_NAME_PLURAL} for?**__\n"
+        help_message += f"\n__**What can you redeem each {config.CURRENCY_NAME} for?**__\n"
         for item in config.TRANSFERABLE_ITEMS:
             help_message += f"- {item}\n"
 
         # Send the help message
-        await send_info_message(interaction,
-                                title=f"{config.BOT_NAME} Help",
-                                description=help_message)
+        await send_info_message(
+            interaction,
+            title=f"{config.BOT_NAME} Help",
+            description=help_message
+        )
 
     #Add a debt
     @bot.tree.command(name=Command.get("owe").name, description=Command.get("owe").description)
