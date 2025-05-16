@@ -112,12 +112,16 @@ def register_commands(bot):
             f"I help to keep track of {config.CURRENCY_NAME} debts owed between users.\n"
             f"__**{config.BOT_NAME} Commands:**__\n"
         )
-        for command in Command.all():
-            # Skip the help command itself
-            if command.key == "help":
-                continue
-            # Add the command name and description to the help message
-            help_message += f"**/{command.name}** — {command.description}\n"
+
+        categorised_commands = Command.all_by_category()
+
+        for category, commands in categorised_commands.items():
+
+            # Add a header for each category
+            help_message += f"\n**{category}:**\n"
+            for command in commands:
+                # Add the command name and description to the help message
+                help_message += f"**/{command.name}** — {command.description}\n"
 
         help_message += f"\n__**What can you use your {config.CURRENCY_NAME_PLURAL} for?**__\n"
         for item in config.TRANSFERABLE_ITEMS:
