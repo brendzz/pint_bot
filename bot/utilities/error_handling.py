@@ -3,8 +3,8 @@ import discord
 from pydantic import ValidationError
 import requests
 import bot.config as config
-from bot.error_messages import ERROR_MESSAGES
-from bot.send_messages import send_error_message
+from bot.utilities.error_messages import ERROR_MESSAGES
+from bot.utilities.send_messages import send_error_message
 
 def format_error_message(error_message: str):
     """Formats the error message with values from config."""

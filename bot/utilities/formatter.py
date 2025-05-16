@@ -1,7 +1,7 @@
 """Formatter module for converting fractions and formatting currency."""
 from fractions import Fraction
 import bot.config as config
-from bot.fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT
+from bot.utilities.fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT
 
 def fraction_to_unicode(fraction_str: str) -> str:
     """
