@@ -490,7 +490,7 @@ class TestRollCommand:
         import bot.config as config
 
         # Force a non-winning roll
-        losing_number = max(1, config.ROLL_WINNING_NUMBER - 1)
+        losing_number = 1 if config.ROLL_WINNING_NUMBER != 1 else 2
         monkeypatch.setattr(config.RANDOM_NUMBER_GENERATOR, "randint", lambda a, b: losing_number)
 
         interaction = DummyInteraction(DummyUser(99), bot)
