@@ -1,9 +1,9 @@
 import discord
 from bot import api_client, config
-from bot.bot_commands import fetch_unicode_preference
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter
 from bot.utilities.send_messages import send_success_message
+from bot.utilities.user_preferences import fetch_unicode_preference
 from models.owe_request import OweRequest
 from models.settle_request import SettleRequest
 

@@ -78,15 +78,6 @@ def define_command_details() -> None:
         category="Games"
     )
 
-async def fetch_unicode_preference(interaction, user_id) -> bool:
-    """Fetch the user's Unicode preference from the API."""
-    try:
-        response = api_client.get_unicode_preference(user_id)
-        return response.get("use_unicode")
-    except Exception as e:
-        await handle_error(interaction, e, title="Error Fetching Unicode Preference")
-        return False
-
 def register_commands(bot):
     """Registers the bot commands with the Discord API."""
     define_command_details()
