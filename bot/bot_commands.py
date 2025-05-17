@@ -5,9 +5,9 @@ from discord import app_commands
 from bot import api_client
 from bot.command import Command
 import bot.config as config
-from bot.error_handling import handle_error
-from bot.formatter import currency_formatter, to_percentage
-from bot.send_messages import (
+from bot.utilities.error_handling import handle_error
+from bot.utilities.formatter import currency_formatter, to_percentage
+from bot.utilities.send_messages import (
     send_info_message,
     send_one_column_table_message,
     send_success_message,

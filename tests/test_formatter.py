@@ -2,7 +2,7 @@ from fractions import Fraction
 from unittest.mock import patch
 
 import pytest
-from bot.formatter import currency_formatter, custom_unicode_fraction, fraction_to_unicode, to_percentage, to_subscript, to_superscript
+from bot.utilities.formatter import currency_formatter, custom_unicode_fraction, fraction_to_unicode, to_percentage, to_subscript, to_superscript
 
 class TestCurrencyFormatter:
     def test_singular_fraction(self):

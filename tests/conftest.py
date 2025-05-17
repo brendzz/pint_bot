@@ -33,7 +33,7 @@ PATCHED_CONFIG = {
 
 @pytest.fixture(autouse=True, scope="session")
 def patch_config_before_tests():
-    with patch.multiple("bot.error_handling.config", **PATCHED_CONFIG), \
-         patch.multiple("bot.formatter.config", **PATCHED_CONFIG), \
+    with patch.multiple("bot.utilities.error_handling.config", **PATCHED_CONFIG), \
+         patch.multiple("bot.utilities.formatter.config", **PATCHED_CONFIG), \
          patch.multiple("bot.bot_commands.config", **PATCHED_CONFIG):
         yield
