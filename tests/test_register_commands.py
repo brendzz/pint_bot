@@ -1,6 +1,6 @@
 from unittest.mock import patch
 import pytest
-import bot.bot_commands as commands
+import bot.register_commands as commands
 from bot.command import Command
 from types import SimpleNamespace
 
