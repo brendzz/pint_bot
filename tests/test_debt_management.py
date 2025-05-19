@@ -19,12 +19,12 @@ class TestOweCommand:
         assert interaction.error['kwargs']['error_code'] == error_code
 
     @pytest.mark.asyncio
-    async def test_owe_success_and_defer(self, bot):
+    async def test_owe_success_and_defer(self, bot, shared):
         interaction = DummyInteraction(DummyUser(1), bot)
         target = DummyUser(2)
         await bot.tree.commands['owe'](interaction, target, '3', reason='Test')
         assert interaction.response.deferred
-        assert api_client.calls['add_debt'] == {
+        assert shared.fake_api.calls['add_debt'] == {
             'debtor': 1, 'creditor': 2, 'amount': '3', 'reason': 'Test'
         }
         calls = interaction.send_success_message_calls
@@ -48,14 +48,14 @@ class TestSettleCommand:
         assert interaction.error['kwargs']['error_code'] == error_code
 
     @pytest.mark.asyncio
-    async def test_settle_success_and_defer(self, bot):
+    async def test_settle_success_and_defer(self, bot, shared):
         interaction = DummyInteraction(DummyUser(1), bot)
         target = DummyUser(2)
         await bot.tree.commands['settle'](interaction, target, '5')
         assert interaction.response.deferred
-        assert api_client.calls['settle_debt'] == {
+        assert shared.fake_api.calls['settle_debt'] == {
             'debtor': 1, 'creditor': 2, 'amount': '5'
         }
         calls = interaction.send_success_message_calls
         assert calls
-        assert 'Settled 5 with <@2>' in calls[0]['kwargs']['description']
+        assert 'Settled 5 testcoins with <@2>' in calls[0]['kwargs']['description']
