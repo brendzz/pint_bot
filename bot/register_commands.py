@@ -122,8 +122,8 @@ def register_commands(bot):
         show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})",
         show_details=f"Show details of each individual debt (Default: {config.SHOW_DETAILS_DEFAULT})"
     )
-    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_details: bool = None):
-        await handle_get_all_debts(interaction, table_format, show_percentages, show_details)
+    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
+        await handle_get_all_debts(interaction, table_format, show_percentages)
 
     @bot.tree.command(
         name=Command.get("debts_with_user").name,

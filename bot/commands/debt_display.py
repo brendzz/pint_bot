@@ -97,7 +97,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     # Send the formatted response
 
 #See a summary of everyone's debts
-async def handle_get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_details: bool = None):
+async def handle_get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
     if table_format is None:
         table_format = config.USE_TABLE_FORMAT_DEFAULT
     if show_percentages is None:
