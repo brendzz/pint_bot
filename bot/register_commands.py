@@ -5,7 +5,7 @@ from bot.command import Command
 from bot.commands.debt_display import handle_debts_with_user, handle_get_all_debts, handle_get_debts
 from bot.commands.debt_management import handle_owe, handle_settle
 from bot.commands.games import handle_roll
-from bot.commands.help import handle_help_command
+from bot.commands.support import handle_help_command
 from bot.commands.settings import handle_set_unicode_preference, handle_settings
 import bot.config as config
 
