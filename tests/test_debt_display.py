@@ -40,7 +40,7 @@ class TestGetDebtsCommand:
         # For example, if show_details=False, then detailed lines shouldn't appear.
 
         # Summary only (no detail lines)
-        (False, False, [("**User4**: 2", True), ("- 1 for *Coffee*", False), ("- 1 for *Beer*", False)]),
+        (False, False, [("**User4**: 2", True), ("- 1 testcoins for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
 
         # Detailed breakdown without percentages
         (True, False, [("- 1 for *Coffee* on 2025-01-01", True), ("- 1 for *Beer* on 2025-01-02", True), ("50", False)]),

@@ -147,8 +147,8 @@ def mock_bot_dependencies(monkeypatch, shared):
 
     monkeypatch.setattr(user_preferences, 'fetch_unicode_preference', fake_fetch_unicode)
     monkeypatch.setattr(error_handling, 'handle_error', fake_handle_error)
-    monkeypatch.setattr(formatter, 'currency_formatter', lambda amount, use_unicode: str(amount))
-    monkeypatch.setattr(formatter, 'to_percentage', lambda amt, total, cfg: '50')
+    monkeypatch.setattr(debt_display, 'currency_formatter', lambda amount, use_unicode: str(amount))
+    monkeypatch.setattr(debt_display, 'to_percentage', lambda amt, total, cfg: '50')
 
     # Model mocks
     class DummyModel:
