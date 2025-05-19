@@ -50,6 +50,38 @@ def reset_command_registry():
     # Clear and re-register commands before each test
     register_commands.define_command_details()
 
+# Fake API client
+class FakeAPI:
+    def __init__(self, shared):
+        self.shared = shared
+        self.calls = {}
+
+    def add_debt(self, payload):
+        self.calls['add_debt'] = payload
+        return {
+            'amount': payload['amount'],
+            'reason': payload['reason'],
+            'timestamp': '2025-01-01T00:00:00Z'
+        }
+
+    def get_debts(self, user_id):
+        return self.shared.debts_response
+
+    def get_all_debts(self):
+        return self.shared.all_debts_response
+
+    def debts_with_user(self, payload):
+        self.calls['debts_with_user'] = payload
+        return self.shared.debts_response
+
+    def settle_debt(self, payload):
+        self.calls['settle_debt'] = payload
+        return {'settled_amount': payload['amount'], 'remaining_amount': '0'}
+
+    def set_unicode_preference(self, payload):
+        self.calls['set_unicode_preference'] = payload
+        return {'message': 'Preference updated'}
+
 # Dummy Discord classes
 class DummyUser:
     def __init__(self, id, display_name=None):
@@ -103,15 +135,6 @@ class DummyBot:
     async def fetch_user(self, user_id):
         return DummyUser(user_id)
 
-# Shared state for mocks
-@pytest.fixture(scope="session")
-def shared():
-    class Shared: pass
-    shared = Shared()
-    shared.debts_response = {'message': 'No debts'}
-    shared.all_debts_response = {}
-    return shared
-
 # Auto applied mocks for utilities, models, API client, and messaging
 @pytest.fixture(autouse=True)
 def mock_bot_dependencies(monkeypatch, shared):
@@ -144,41 +167,9 @@ def mock_bot_dependencies(monkeypatch, shared):
         for model_name in model_names:
             monkeypatch.setattr(module, model_name, DummyModel)
 
-    # Fake API client
-    class FakeAPI:
-        def __init__(self, shared):
-            self.shared = shared
-            self.calls = {}
-
-        def add_debt(self, payload):
-            self.calls['add_debt'] = payload
-            return {
-                'amount': payload['amount'],
-                'reason': payload['reason'],
-                'timestamp': '2025-01-01T00:00:00Z'
-            }
-
-        def get_debts(self, user_id):
-            return self.shared.debts_response
-
-        def get_all_debts(self):
-            return self.shared.all_debts_response
-
-        def debts_with_user(self, payload):
-            self.calls['debts_with_user'] = payload
-            return self.shared.debts_response
-
-        def settle_debt(self, payload):
-            self.calls['settle_debt'] = payload
-            return {'settled_amount': payload['amount'], 'remaining_amount': '0'}
-
-        def set_unicode_preference(self, payload):
-            self.calls['set_unicode_preference'] = payload
-            return {'message': 'Preference updated'}
-
-    monkeypatch.setattr(debt_management, 'api_client', FakeAPI(shared))
-    monkeypatch.setattr(debt_display, 'api_client', FakeAPI(shared))
-    monkeypatch.setattr(settings, 'api_client', FakeAPI(shared))
+    monkeypatch.setattr(debt_management, 'api_client', shared.fake_api)
+    monkeypatch.setattr(debt_display, 'api_client', shared.fake_api)
+    monkeypatch.setattr(settings, 'api_client', shared.fake_api)
 
     # Stub message functions to capture calls
     def make_stub(name):
@@ -188,6 +179,17 @@ def mock_bot_dependencies(monkeypatch, shared):
             calls.append({'args': args, 'kwargs': kwargs})
             setattr(interaction, attr, calls)
         return stub
+    
+# Shared state for mocks
+@pytest.fixture(scope="session")
+def shared():
+    class Shared: pass
+    shared = Shared()
+    shared.debts_response = {'message': 'No debts'}
+    shared.all_debts_response = {}
+    shared.fake_api = FakeAPI(shared)
+
+    return shared
 
 @pytest.fixture(autouse=True)
 def patch_all_message_senders(monkeypatch):
