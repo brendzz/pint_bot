@@ -1,4 +1,3 @@
-from unittest.mock import patch
 import pytest
 
 from bot.register_commands import register_commands
@@ -14,8 +13,6 @@ class TestHelpCommand:
         Command(key="owe", name="owe", description="See what you owe", category="Core")
         Command(key="settle", name="settle", description="Settle up", category="Core")
         Command(key="gift", name="gift", description="Gift a debt", category="Fun")
-
-        register_commands(bot)  # <-- This is crucial
 
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands["help"]

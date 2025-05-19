@@ -13,7 +13,7 @@ import pytest
 
 import bot.register_commands as register_commands
 from bot.commands import debt_display, debt_management, settings
-from bot.utilities import error_handling, formatter, send_messages, user_preferences
+from bot.utilities import send_messages, user_preferences
 
 # Static config overrides for testing
 PATCHED_CONFIG = {
@@ -115,9 +115,6 @@ class DummyInteraction:
         self.send_one_column_table_message_calls = []
         self.error = None
 
-    async def response(self):
-        return DummyResponse()
-
 class DummyTree:
     def __init__(self):
         self.commands = {}
@@ -132,6 +129,11 @@ class DummyBot:
     def __init__(self):
         self.user = DummyUser(0)
         self.tree = DummyTree()
+
+    @property
+    def id(self):
+        return self.user.id
+
     async def fetch_user(self, user_id):
         return DummyUser(user_id)
 
@@ -144,9 +146,11 @@ def mock_bot_dependencies(monkeypatch, shared):
 
     async def fake_handle_error(interaction, *args, **kwargs):
         interaction.error = {'args': args, 'kwargs': kwargs}
+        print("[DEBUG] fake_handle_error triggered")
 
     monkeypatch.setattr(user_preferences, 'fetch_unicode_preference', fake_fetch_unicode)
-    monkeypatch.setattr(error_handling, 'handle_error', fake_handle_error)
+    monkeypatch.setattr(debt_management, 'handle_error', fake_handle_error)
+    monkeypatch.setattr(debt_display, 'handle_error', fake_handle_error)
     monkeypatch.setattr(debt_display, 'currency_formatter', lambda amount, use_unicode: str(amount))
     monkeypatch.setattr(debt_display, 'to_percentage', lambda amt, total, cfg: '50')
 
@@ -170,15 +174,6 @@ def mock_bot_dependencies(monkeypatch, shared):
     monkeypatch.setattr(debt_management, 'api_client', shared.fake_api)
     monkeypatch.setattr(debt_display, 'api_client', shared.fake_api)
     monkeypatch.setattr(settings, 'api_client', shared.fake_api)
-
-    # Stub message functions to capture calls
-    def make_stub(name):
-        async def stub(interaction, *args, **kwargs):
-            attr = f"{name}_calls"
-            calls = getattr(interaction, attr, [])
-            calls.append({'args': args, 'kwargs': kwargs})
-            setattr(interaction, attr, calls)
-        return stub
     
 # Shared state for mocks
 @pytest.fixture(scope="session")
@@ -213,9 +208,13 @@ def patch_all_message_senders(monkeypatch):
     ):
         monkeypatch.setattr(send_messages, fn, make_stub(fn))
 
+    import importlib
+    import bot.commands.support
+    importlib.reload(bot.commands.support)
+
 # Bot fixture with registered commands
 @pytest.fixture
-def bot():
+def bot(mock_bot_dependencies):
     bot = DummyBot()
     register_commands.register_commands(bot)
     return bot

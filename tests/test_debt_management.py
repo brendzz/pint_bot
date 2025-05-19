@@ -1,21 +1,24 @@
 import pytest
 
-from bot import api_client
 from tests.conftest import DummyInteraction, DummyUser
 
 class TestOweCommand:
     @pytest.mark.parametrize(
         "target_attr, error_code", [
             ("user", "CANNOT_OWE_SELF"),
-            ("interaction.client", "CANNOT_OWE_BOT"),
+            ("client", "CANNOT_OWE_BOT"),
         ],
         ids=["cant_owe_self", "cant_owe_bot"]
     )
     @pytest.mark.asyncio
     async def test_owe_errors(self, bot, target_attr, error_code):
         interaction = DummyInteraction(DummyUser(1), bot)
-        target = eval(f"interaction.{target_attr}")
+        parts = target_attr.split(".")
+        target = interaction
+        for attr in parts:
+            target = getattr(target, attr)
         await bot.tree.commands['owe'](interaction, target, '1')
+        assert interaction.error is not None
         assert interaction.error['kwargs']['error_code'] == error_code
 
     @pytest.mark.asyncio
@@ -43,8 +46,11 @@ class TestSettleCommand:
     @pytest.mark.asyncio
     async def test_settle_errors(self, bot, target_attr, error_code):
         interaction = DummyInteraction(DummyUser(1), bot)
-        target = eval(f"interaction.{target_attr}")
+        target = getattr(interaction, target_attr.split(".")[0])
+        for attr in target_attr.split(".")[1:]:
+            target = getattr(target, attr)
         await bot.tree.commands['settle'](interaction, target, '1')
+        assert interaction.error is not None
         assert interaction.error['kwargs']['error_code'] == error_code
 
     @pytest.mark.asyncio

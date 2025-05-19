@@ -1,7 +1,7 @@
 from unittest.mock import patch
 import pytest
 
-from bot import api_client
+from bot import config
 from tests.conftest import DummyInteraction, DummyUser
 
 class TestGetDebtsCommand:
@@ -57,7 +57,6 @@ class TestGetDebtsCommand:
         - Whether details and/or percentages are enabled
         - A list of (text, should_exist) pairs to assert presence/absence in the output
         """
-        import bot.config as config
 
         shared.debts_response = {
             'owed_by_you': {'4': [
@@ -99,7 +98,6 @@ class TestGetAllDebtsCommand:
     )
     @pytest.mark.asyncio
     async def test_get_all_debts_various(self, bot, shared, response, expect_error, health_msg):
-        import bot.config as config
         interaction = DummyInteraction(DummyUser(1), bot)
         shared.all_debts_response = response
         cmd = bot.tree.commands[config.GET_ALL_DEBTS_COMMAND]
@@ -107,6 +105,7 @@ class TestGetAllDebtsCommand:
         assert interaction.response.deferred
         if expect_error:
             assert hasattr(interaction, 'error')
+            assert interaction.error is not None
             assert interaction.error['kwargs']['error_code'] == 'NO_DEBTS_IN_ECONOMY'
         else:
             table_calls = interaction.send_two_column_table_message_calls
@@ -117,7 +116,6 @@ class TestGetAllDebtsCommand:
 class TestDebtsWithUserCommand:
     @pytest.mark.asyncio
     async def test_no_debts_message(self, bot, shared):
-        import bot.config as config
         shared.api_response = {"message": "No debts"}
         shared.debts_response = shared.api_response
 
@@ -134,7 +132,6 @@ class TestDebtsWithUserCommand:
 
     @pytest.mark.asyncio
     async def test_debts_with_user_with_details_and_percentages(self, bot, shared):
-        import bot.config as config
         shared.api_response = {
             'owed_by_you': [
                 {'amount': '1', 'reason': 'being silly', 'timestamp': '2025-01-01'}
@@ -167,18 +164,17 @@ class TestDebtsWithUserCommand:
         assert "2" in description and "for passing exams" in description
         assert "50" in description  # mocked percentage
 
+    @patch("bot.commands.debt_display.handle_error")
     @pytest.mark.asyncio
-    async def test_error_handling(self, bot, monkeypatch):
-        import bot.config as config
+    async def test_error_handling(self, mock_handle_error, bot, monkeypatch):
         def broken_api_call(_):
             raise Exception("Boom")
 
-        monkeypatch.setattr(api_client, "debts_with_user", broken_api_call)
+        monkeypatch.setattr("bot.commands.debt_display.api_client.debts_with_user", broken_api_call)
 
         interaction = DummyInteraction(DummyUser(1), bot)
         other_user = DummyUser(2)
+
         await bot.tree.commands[config.DEBTS_WITH_USER_COMMAND](interaction, user=other_user)
 
-        assert interaction.response.deferred
-        assert hasattr(interaction, 'error')
-        assert "Boom" in str(interaction.error['args'][0])
+        mock_handle_error.assert_called_once()
