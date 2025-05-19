@@ -1,14 +1,15 @@
 import sys
 import os
-from unittest.mock import patch
-import pytest
-from fractions import Fraction
 
 # Add the project root to the import path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Add the bot folder to the import path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bot')))
+
+from unittest.mock import patch
+from fractions import Fraction
+import pytest
 
 PATCHED_CONFIG = {
     "CURRENCY_NAME": "TestCoin",
