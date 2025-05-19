@@ -2,7 +2,7 @@ import discord
 from bot import api_client, config
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter
-from bot.utilities.send_messages import send_success_message
+import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from models.owe_request import OweRequest
 from models.settle_request import SettleRequest
@@ -37,7 +37,7 @@ async def handle_owe(interaction: discord.Interaction, user: discord.User, amoun
 
     use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
 
-    await send_success_message(
+    await send_messages.send_success_message(
             interaction,
             title=f"{config.CURRENCY_NAME} Debt Added - {config.CURRENCY_NAME} Economy Thriving",
             description= f"Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
@@ -79,7 +79,7 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
     # Send confirmation message
     settled_amount = currency_formatter(data["settled_amount"], use_unicode)
     remaining_amount = currency_formatter(data["remaining_amount"], use_unicode)
-    await send_success_message(
+    await send_messages.send_success_message(
         interaction,
         title="Debt Settled Successfully",
         description= f"Settled {settled_amount} with {user.mention}. Remaining debt: {remaining_amount}."

@@ -3,7 +3,7 @@ import discord
 from bot import api_client, config
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, to_percentage
-from bot.utilities.send_messages import send_info_message, send_two_column_table_message
+import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from models.debts_with_user_request import DebtsWithUser
 
@@ -31,7 +31,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
 
     # Check if the API returned a "message" field (no debts found)
     if "message" in data:
-        await send_info_message(
+        await send_messages.send_info_message(
             interaction,
             title=f"Looks like {"you're" if user is None else "they're"} not currently contributing to the {config.CURRENCY_NAME} economy.",
             description=f"No debts found owed to or from this user. That's kind of cringe, {" " if user is None else "tell them to"} get some {config.CURRENCY_NAME} debt bro."
@@ -87,7 +87,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     # If no debts are found, return a message
     # Send the formatted response
     title_beginning = "Your" if user is None else f"Here are {user.display_name}'s"
-    await send_info_message(
+    await send_messages.send_info_message(
         interaction,
         title=
             f"{title_beginning} {config.CURRENCY_NAME} debts *{interaction.user.display_name}*, "
@@ -157,7 +157,7 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
     )
 
     # Call send_table_message to send the data as a table
-    await send_two_column_table_message(
+    await send_messages.send_two_column_table_message(
         interaction,
         title=f"{config.CURRENCY_NAME} Economy Overview",
         description=f"{economy_health_message}\n\n**Total {config.CURRENCY_NAME_PLURAL} in circulation: {currency_formatter(total_in_circulation, use_unicode)}**",
@@ -197,7 +197,7 @@ async def handle_debts_with_user(
 
     # Check if the API returned a "message" field (no debts found)
     if "message" in data:
-        await send_info_message(
+        await send_messages.send_info_message(
             interaction,
             title=f"Looks like there are no {config.CURRENCY_NAME} debts between you two.",
             description=(
@@ -246,7 +246,7 @@ async def handle_debts_with_user(
 
     # If no debts are found, return a message
     # Send the formatted response
-    await send_info_message(
+    await send_messages.send_info_message(
         interaction,
         title=(
             f"Here are the {config.CURRENCY_NAME} debts between "

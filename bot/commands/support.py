@@ -1,7 +1,7 @@
 import discord
 from bot import config
 from bot.command import Command
-from bot.utilities.send_messages import send_info_message
+import bot.utilities.send_messages as send_messages
 
 async def handle_help_command(interaction: discord.Interaction):
     # Defer the interaction to avoid timeout
@@ -29,7 +29,7 @@ async def handle_help_command(interaction: discord.Interaction):
         help_message += f"- {item}\n"
 
     # Send the help message
-    await send_info_message(
+    await send_messages.send_info_message(
         interaction,
         title=f"{config.BOT_NAME} Help",
         description=help_message

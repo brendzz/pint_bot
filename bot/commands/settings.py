@@ -1,7 +1,7 @@
 import discord
 from bot import api_client, config
 from bot.utilities.error_handling import handle_error
-from bot.utilities.send_messages import send_one_column_table_message, send_success_message
+import bot.utilities.send_messages as send_messages
 from models.set_unicode_preference_request import SetUnicodePreferenceRequest
 
 async def handle_settings(interaction: discord.Interaction, table_format: bool = None):
@@ -35,7 +35,7 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
     ]
 
     # Send the bot settings as a one-column table
-    await send_one_column_table_message(
+    await send_messages.send_one_column_table_message(
         interaction,
         title=f"Current {config.BOT_NAME} Settings (Customizable)",
         description="Here are the current Bot settings:",
@@ -61,7 +61,7 @@ async def handle_set_unicode_preference(interaction: discord.Interaction, use_un
         await handle_error(interaction, e, title="Error Updating Preference")
         return
     # Provide feedback to the user
-    await send_success_message(
+    await send_messages.send_success_message(
         interaction,
         title="Preference Updated",
         description=data["message"])
