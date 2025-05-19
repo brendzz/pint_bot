@@ -49,7 +49,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
         lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {"YOU" if user is None else "THEY"} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}")
         for creditor_id, entries in data["owed_by_you"].items():
             try:
-                creditor = await bot.fetch_user(int(creditor_id))  # Fetch the creditor's username
+                creditor = await interaction.client.fetch_user(int(creditor_id))  # Fetch the creditor's username
                 creditor_name = creditor.display_name
             except discord.NotFound:
                 creditor_name = f"Unknown User ({creditor_id})"
@@ -69,7 +69,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
         lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {"YOU" if user is None else "THEM"}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}")
         for debtor_id, entries in data["owed_to_you"].items():
             try:
-                debtor = await bot.fetch_user(int(debtor_id))  # Fetch the debtor's username
+                debtor = await interaction.client.fetch_user(int(debtor_id))  # Fetch the debtor's username
                 debtor_name = debtor.display_name
             except discord.NotFound:
                 debtor_name = f"Unknown User ({debtor_id})"
@@ -125,7 +125,7 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
     table_data = []
     for user_id, totals in data.items():
         try:
-            user = await bot.fetch_user(int(user_id))  # Fetch the user's username
+            user = await interaction.client.fetch_user(int(user_id))  # Fetch the user's username
             user_name = user.display_name
         except discord.NotFound:
             user_name = f"Unknown User ({user_id})"

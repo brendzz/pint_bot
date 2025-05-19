@@ -17,7 +17,7 @@ async def handle_owe(interaction: discord.Interaction, user: discord.User, amoun
     if debtor == creditor:
         await handle_error(interaction, error_code="CANNOT_OWE_SELF")
         return
-    elif creditor == bot.user.id:
+    elif creditor == interaction.client.user.id:
         await handle_error(interaction, error_code="CANNOT_OWE_BOT")
         return
 
@@ -50,7 +50,7 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
     if debtor == creditor:
         await handle_error(interaction, error_code="CANNOT_SETTLE_SELF")
         return
-    elif creditor == bot.user.id:
+    elif creditor == interaction.client.user.id:
         await handle_error(interaction, error_code="CANNOT_SETTLE_BOT")
         return
 
