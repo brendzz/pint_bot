@@ -76,23 +76,23 @@ class TestCustomUnicodeFraction:
 
 class TestToPercentage:
     def test_basic_percentage(self):
-        assert to_percentage(25, 100, 0) == "25%"
+        assert to_percentage(25, 100, 0) == "(25%)"
 
     def test_decimal_places(self):
-        assert to_percentage(1, 3, 2) == "33.33%"
+        assert to_percentage(1, 3, 2) == "(33.33%)"
 
     def test_zero_part(self):
-        assert to_percentage(0, 10, 1) == "0.0%"
+        assert to_percentage(0, 10, 1) == "(0.0%)"
 
     def test_fraction_inputs(self):
         result = to_percentage(Fraction(1, 4), Fraction(1, 2), 3)
-        assert result == "50.000%"
+        assert result == "(50.000%)"
 
     def test_whole_equals_part(self):
-        assert to_percentage(5, 5, 1) == "100.0%"
+        assert to_percentage(5, 5, 1) == "(100.0%)"
 
     def test_large_numbers(self):
-        assert to_percentage(2000, 8000, 2) == "25.00%"
+        assert to_percentage(2000, 8000, 2) == "(25.00%)"
 
     def test_zero_division_handling(self):
         with pytest.raises(ZeroDivisionError):

@@ -54,7 +54,7 @@ def to_percentage(part, whole, decimal_places) -> str:
     """Divides two numbers and returns a percentage representation."""
     fraction = Fraction(part) / Fraction(whole)
     percentage = fraction * 100
-    return f"{(percentage):.{decimal_places}f}%"
+    return f"({(percentage):.{decimal_places}f}%)"
 
 def currency_formatter(amount, use_unicode: bool=False) -> str:
     """Format the currency amount based on the configuration."""
