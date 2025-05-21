@@ -119,8 +119,7 @@ def register_commands(bot):
     )
     @app_commands.describe(
         table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).",
-        show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})",
-        show_details=f"Show details of each individual debt (Default: {config.SHOW_DETAILS_DEFAULT})"
+        show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})"
     )
     async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
         await handle_get_all_debts(interaction, table_format, show_percentages)
