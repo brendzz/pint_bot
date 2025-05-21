@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 import requests
 from bot.utilities.error_handling import format_error_message, get_error_message, handle_error, parse_api_error
@@ -52,9 +52,9 @@ class TestParseApiError:
 class TestHandleError:
     @pytest.mark.asyncio
     async def test_handle_error_with_code(self):
-        interaction = MagicMock()
+        interaction = AsyncMock()
         with patch("bot.utilities.error_handling.get_error_message") as mock_get, \
-            patch("bot.utilities.error_handling.send_error_message") as mock_send:
+            patch("bot.utilities.error_handling.send_messages.send_error_message", new_callable=AsyncMock) as mock_send:
             mock_get.return_value = {"title": "Error", "description": "desc"}
             await handle_error(interaction, error_code="SOME_CODE")
             mock_send.assert_awaited_once()

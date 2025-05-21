@@ -4,7 +4,7 @@ from pydantic import ValidationError
 import requests
 import bot.config as config
 from bot.utilities.error_messages import ERROR_MESSAGES
-from bot.utilities.send_messages import send_error_message
+import bot.utilities.send_messages as send_messages
 
 def format_error_message(error_message: str):
     """Formats the error message with values from config."""
@@ -56,4 +56,4 @@ async def handle_error(interaction: discord.Interaction, error=None, error_code:
     if title:
         error_message["title"] = format_error_message(title)
 
-    await send_error_message(interaction, error_message["title"], error_message["description"])
+    await send_messages.send_error_message(interaction, error_message["title"], error_message["description"])
