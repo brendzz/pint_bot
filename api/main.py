@@ -77,7 +77,7 @@ async def add_debt(request: OweRequest):
 
 @app.get(f"/{config.GET_DEBTS_COMMAND}/{{user_id}}")
 async def get_debts(user_id: str):
-    """See your current pint debts."""
+    """See a user's current pint debts."""
     data = load_data()
 
      # Prepare the response
@@ -134,7 +134,7 @@ async def get_debts(user_id: str):
 
 @app.get(f"/{config.GET_ALL_DEBTS_COMMAND}")
 async def get_all_debts():
-    """To see all current debts between users."""
+    """See all current debts."""
     data = load_data()
 
     result = {}
@@ -162,7 +162,7 @@ async def get_all_debts():
 
 @app.get("/debts_with_user")
 async def debts_with_user(request: DebtsWithUser):
-    """See your current debts with one other user."""
+    """See current debts between the requester and one other user."""
     data = load_data()
     user_id = str(request.user_id)
     other_user_id = str(request.other_user_id)
