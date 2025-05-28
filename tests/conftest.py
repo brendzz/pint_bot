@@ -129,8 +129,7 @@ class FakeAPI:
     def get_all_debts(self):
         return self.shared.all_debts_response
 
-    def debts_with_user(self, payload):
-        self.calls['debts_with_user'] = payload
+    def debts_with_user(self, user_id1, user_id2):
         return self.shared.debts_response
 
     def settle_debt(self, payload):
@@ -174,7 +173,6 @@ def mock_bot_dependencies(monkeypatch, shared):
 
     for module, model_names in {
         debt_management: ['OweRequest', 'SettleRequest'],
-        debt_display: ['DebtsWithUser'],
         settings: ['SetUnicodePreferenceRequest'],
     }.items():
         for name in model_names:

@@ -6,6 +6,5 @@ from .settle_request import SettleRequest
 from .user_debts import UserDebts
 from .user_data import UserData
 from .user_preferences import UserPreferences
-from .debts_with_user_request import DebtsWithUser
 
-__all__ = ["DebtEntry", "OweRequest", "PintEconomy", "SetUnicodePreferenceRequest", "SettleRequest", "UserDebts", "UserData", "UserPreferences", "DebtsWithUser"]
+__all__ = ["DebtEntry", "OweRequest", "PintEconomy", "SetUnicodePreferenceRequest", "SettleRequest", "UserDebts", "UserData", "UserPreferences"]

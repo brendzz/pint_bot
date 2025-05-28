@@ -5,7 +5,6 @@ from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, to_percentage
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
-from models.debts_with_user_request import DebtsWithUser
 
 #See either your own debts or those of another user
 async def handle_get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None):
@@ -185,12 +184,9 @@ async def handle_debts_with_user(
 
     # Call the external API to fetch debts
     try:
-        debts_with_user_request = DebtsWithUser(
-            user_id=str(interaction.user.id),
-            other_user_id=user_id
-        )
-        payload = debts_with_user_request.model_dump()
-        data = api_client.debts_with_user(payload)
+        user_id1=str(interaction.user.id)
+        user_id2=user_id
+        data = api_client.debts_with_user(user_id1, user_id2)
     except Exception as e:
         await handle_error(interaction, e, title=f"Error Fetching {config.CURRENCY_NAME} Debts")
         return
