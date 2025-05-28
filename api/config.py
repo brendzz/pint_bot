@@ -7,12 +7,6 @@ from pathlib import Path
 BASE = Path(__file__).parent
 DATA_FILE = BASE / "pint_economy.json"
 
-# Set the name for the command used to get the debts of a user
-GET_DEBTS_COMMAND: str = "pints"
-
-# Set the name for the command used to get the debts of ALL users
-GET_ALL_DEBTS_COMMAND: str = "all_pints"
-
 # Set the maximum amount of currency allowed in each individual debt
 # No single debt can be more than this amount
 # Users can still owe more than this, but will need to split it into multiple debts

@@ -12,8 +12,7 @@ from models import (
     DebtEntry,
     OweRequest,
     SettleRequest,
-    SetUnicodePreferenceRequest,
-    DebtsWithUser
+    SetUnicodePreferenceRequest
 )
 
 # Setup
@@ -27,7 +26,7 @@ async def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
 
-@app.post("/owe")
+@app.post("/debts")
 async def add_debt(request: OweRequest):
     """Add pint debts between a pair of users."""
 
@@ -75,7 +74,7 @@ async def add_debt(request: OweRequest):
         "timestamp": datetime.now().strftime("%d-%m-%Y")
     }
 
-@app.get(f"/{config.GET_DEBTS_COMMAND}/{{user_id}}")
+@app.get("/users/{user_id}/debts")
 async def get_debts(user_id: str):
     """See a user's current pint debts."""
     data = load_data()
@@ -132,7 +131,7 @@ async def get_debts(user_id: str):
 
     return result
 
-@app.get(f"/{config.GET_ALL_DEBTS_COMMAND}")
+@app.get("/debts")
 async def get_all_debts():
     """See all current debts."""
     data = load_data()
@@ -160,12 +159,10 @@ async def get_all_debts():
     result["total_in_circulation"] = str(total_in_circulation)
     return result
 
-@app.get("/debts_with_user")
-async def debts_with_user(request: DebtsWithUser):
+@app.get("/debts/between")
+async def debts_with_user(user_id1: str, user_id2: str):
     """See current debts between the requester and one other user."""
     data = load_data()
-    user_id = str(request.user_id)
-    other_user_id = str(request.other_user_id)
 
      # Prepare the response
     result = {"owed_by_you": [],
@@ -175,11 +172,11 @@ async def debts_with_user(request: DebtsWithUser):
       }  # Include the user's preference}
 
     # Check if the user exists in the data
-    if user_id in data.users:
-        users_debts = data.users[user_id].debts.creditors
-        if other_user_id in users_debts:
+    if user_id1 in data.users:
+        users_debts = data.users[user_id1].debts.creditors
+        if user_id2 in users_debts:
             # Debts owed by the user
-            debts = users_debts[other_user_id]
+            debts = users_debts[user_id2]
             if not isinstance(debts, list):
                 raise TypeError(f"Expected 'debts' to be a list, but got {type(debts)}")
             result["owed_by_you"] = [
@@ -194,11 +191,11 @@ async def debts_with_user(request: DebtsWithUser):
             result["total_owed_by_you"] += sum(Fraction(debt.amount) for debt in debts)
 
     # Check if the user is a creditor in other users' debts
-    if other_user_id in data.users:
-        other_users_debts = data.users[other_user_id].debts.creditors
-        if user_id in other_users_debts:
+    if user_id2 in data.users:
+        other_users_debts = data.users[user_id2].debts.creditors
+        if user_id1 in other_users_debts:
             # Debts owed by the other user
-            debts = other_users_debts[user_id]
+            debts = other_users_debts[user_id1]
             if not isinstance(debts, list):
                 raise TypeError(f"Expected 'debts' to be a list, but got {type(debts)}")
             result["owed_to_you"] = [
@@ -222,7 +219,7 @@ async def debts_with_user(request: DebtsWithUser):
 
     return result
 
-@app.post("/settle")
+@app.patch("/debts")
 async def settle_debt(request: SettleRequest):
     """Settle debt between a pair of users."""
     data = load_data()
@@ -293,7 +290,7 @@ async def settle_debt(request: SettleRequest):
         "remaining_amount": str(total_remaining_debt),
     }
 
-@app.get("/get_unicode_preference/{user_id}")
+@app.get("/users/{user_id}/unicode_preference")
 async def get_unicode_preference(user_id: str):
     """Get a user's preference on whether they want fractions to be displayed in Unicode format."""
     data = load_data()
@@ -307,11 +304,10 @@ async def get_unicode_preference(user_id: str):
 
     return {"use_unicode": use_unicode}
 
-@app.post("/set_unicode_preference")
-async def set_unicode_preference(request: SetUnicodePreferenceRequest):
+@app.post("/users/{user_id}/unicode_preference")
+async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequest):
     """Set a user's preference on whether they want fractions to be displayed in Unicode format."""
     data = load_data()
-    user_id = str(request.user_id)
     use_unicode = request.use_unicode
 
     if user_id not in data.users:
