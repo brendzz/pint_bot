@@ -207,7 +207,7 @@ async def handle_debts_with_user(
         )
         return
 
-    use_unicode = await fetch_unicode_preference(interaction, user_id2)
+    use_unicode = await fetch_unicode_preference(interaction, user_id1)
 
     # Format the response
     lines = []
@@ -219,7 +219,8 @@ async def handle_debts_with_user(
             f"__**{config.CURRENCY_NAME_PLURAL} YOU OWE THEM:**__ "
             f"{currency_formatter(total_owed_by_you, use_unicode).upper()}"
         )
-        lines.extend(format_debt_entries(data["owed_by_you"], total_owed_by_you, use_unicode, show_details, show_percentages))
+        if show_details:
+            lines.extend(format_debt_entries(data["owed_by_you"], total_owed_by_you, use_unicode, show_details, show_percentages))
 
     # Debts owed to the user
     if data["owed_to_you"]:
@@ -228,7 +229,8 @@ async def handle_debts_with_user(
             f"__**{config.CURRENCY_NAME_PLURAL} THEY OWE YOU:**__ "
             f"{currency_formatter(total_owed_to_you, use_unicode).upper()}"
         )
-        lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages))
+        if show_details:
+            lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages))
 
     # If no debts are found, return a message
     # Send the formatted response
