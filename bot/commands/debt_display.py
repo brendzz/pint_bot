@@ -7,7 +7,13 @@ import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from bot.utilities.user_utils import get_display_name
 
-def format_debt_entries(entries, total: Fraction, use_unicode: bool, show_details: bool, show_percentages: bool) -> list[str]:
+def format_debt_entries(
+    entries,
+    total: Fraction,
+    use_unicode: bool,
+    show_details: bool,
+    show_percentages: bool
+) -> list[str]:
     """Format debt entries for display."""
     lines = []
     total_amount = sum(Fraction(entry['amount']) for entry in entries)
@@ -21,6 +27,7 @@ def format_debt_entries(entries, total: Fraction, use_unicode: bool, show_detail
     return lines
 
 async def handle_get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None):
+    """Handle fetching and displaying user debts for one user."""
     if show_details is None:
         show_details = config.SHOW_DETAILS_DEFAULT
 
@@ -87,8 +94,12 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     )
     # Send the formatted response
 
-#See a summary of everyone's debts
-async def handle_get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
+async def handle_get_all_debts(
+    interaction: discord.Interaction,
+    table_format: bool = None,
+    show_percentages: bool = None
+):
+    """Handle fetching and displaying user debts for all users."""
     if table_format is None:
         table_format = config.USE_TABLE_FORMAT_DEFAULT
     if show_percentages is None:
@@ -150,13 +161,13 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
         table_format=table_format
     )
 
-#See your debts with one other user
 async def handle_debts_with_user(
     interaction: discord.Interaction,
     user: discord.User,
     show_details: bool = None,
     show_percentages: bool = None
 ):
+    """Handle fetching and displaying user debts between two users."""
     if show_details is None:
         show_details = config.SHOW_DETAILS_DEFAULT
 
