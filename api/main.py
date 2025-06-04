@@ -123,10 +123,10 @@ async def get_all_debts():
     # Convert fractions to strings for the final response
     result = {
         user_id: {
-            "owes": str(data["owes"]),
-            "is_owed": str(data["is_owed"]),
+            "owes": str(summary_data["owes"]),
+            "is_owed": str(summary_data["is_owed"]),
         }
-        for user_id, data in summary.items()
+        for user_id, summary_data in summary.items()
     }
     result["total_in_circulation"] = str(total_in_circulation)
 
