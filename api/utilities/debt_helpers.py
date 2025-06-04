@@ -57,7 +57,7 @@ def debts_owed_to(data, user_id: str):
     return owed_to, total
 
 def debts_to(data, from_user_id: str, to_user_id: str):
-    """Returns a debts from one user to another."""
+    """Returns debts from one user to another."""
     owed = {}
     total = Fraction(0)
 
