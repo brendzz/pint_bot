@@ -207,7 +207,7 @@ async def handle_debts_with_user(
         )
         return
 
-    use_unicode = await fetch_unicode_preference(interaction, user_id2)
+    use_unicode = await fetch_unicode_preference(interaction, user_id1)
 
     # Format the response
     lines = []
