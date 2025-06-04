@@ -5,9 +5,37 @@ from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, to_percentage
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
+from bot.utilities.user_utils import get_display_name
 
-#See either your own debts or those of another user
+def with_percentage(value: Fraction, total: Fraction, use_unicode: bool) -> str:
+    """Format a value with its percentage of the total."""
+    formatted = currency_formatter(value, use_unicode)
+    if total > 0:
+        formatted += f" {to_percentage(value, total, config.PERCENTAGE_DECIMAL_PLACES)}"
+    return formatted
+
+def format_debt_entries(
+    entries,
+    total: Fraction,
+    use_unicode: bool,
+    show_details: bool,
+    show_percentages: bool
+) -> list[str]:
+    """Format debt entries for display."""
+    lines = []
+    total_amount = sum(Fraction(entry['amount']) for entry in entries)
+    lines.append(currency_formatter(total_amount, use_unicode))
+    if show_details:
+        for entry in entries:
+            if show_percentages:
+                amount = with_percentage(entry["amount"], total, use_unicode)
+            else:
+                amount = currency_formatter(entry["amount"], use_unicode)
+            lines.append(f"- {amount} for *{entry['reason']}* on {entry['timestamp']}")
+    return lines
+
 async def handle_get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None):
+    """Handle fetching and displaying user debts for one user."""
     if show_details is None:
         show_details = config.SHOW_DETAILS_DEFAULT
 
@@ -47,41 +75,20 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
         total_owed_by_you = Fraction(data['total_owed_by_you'])
         lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {"YOU" if user is None else "THEY"} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}")
         for creditor_id, entries in data["owed_by_you"].items():
-            try:
-                creditor = await interaction.client.fetch_user(int(creditor_id))  # Fetch the creditor's username
-                creditor_name = creditor.display_name
-            except discord.NotFound:
-                creditor_name = f"Unknown User ({creditor_id})"
-            lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
-            if show_details:
-                for entry in entries:
-                    amount = currency_formatter(entry["amount"], use_unicode)
-                    if show_percentages:
-                        amount+=f" {to_percentage(entry['amount'],total_owed_by_you, config.PERCENTAGE_DECIMAL_PLACES)}"
-                    reason = entry["reason"]
-                    timestamp = entry["timestamp"]
-                    lines.append(f"- {amount} for *{reason}* on {timestamp}")
+            creditor_name = await get_display_name(interaction.client, creditor_id)
+            entry_lines = format_debt_entries(entries, total_owed_by_you, use_unicode, show_details, show_percentages)
+            lines.append(f"\n**{creditor_name}**: {entry_lines[0]}")
+            lines.extend(entry_lines[1:])
 
     # Debts owed to the user
     if data["owed_to_you"]:
         total_owed_to_you = Fraction(data['total_owed_to_you'])
         lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {"YOU" if user is None else "THEM"}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}")
         for debtor_id, entries in data["owed_to_you"].items():
-            try:
-                debtor = await interaction.client.fetch_user(int(debtor_id))  # Fetch the debtor's username
-                debtor_name = debtor.display_name
-            except discord.NotFound:
-                debtor_name = f"Unknown User ({debtor_id})"
-
-            lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
-            if show_details:
-                for entry in entries:
-                    amount = currency_formatter(entry["amount"], use_unicode)
-                    if show_percentages:
-                        amount+=f" {to_percentage(entry['amount'],total_owed_to_you, config.PERCENTAGE_DECIMAL_PLACES)}"
-                    reason = entry["reason"]
-                    timestamp = entry["timestamp"]
-                    lines.append(f"- {amount} for *{reason}* on {timestamp}")
+            debtor_name = await get_display_name(interaction.client, debtor_id)
+            entry_lines = format_debt_entries(entries, total_owed_to_you, use_unicode, show_details, show_percentages)
+            lines.append(f"\n**{debtor_name}**: {entry_lines[0]}")
+            lines.extend(entry_lines[1:])
 
     # If no debts are found, return a message
     # Send the formatted response
@@ -95,8 +102,12 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     )
     # Send the formatted response
 
-#See a summary of everyone's debts
-async def handle_get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None):
+async def handle_get_all_debts(
+    interaction: discord.Interaction,
+    table_format: bool = None,
+    show_percentages: bool = None
+):
+    """Handle fetching and displaying user debts for all users."""
     if table_format is None:
         table_format = config.USE_TABLE_FORMAT_DEFAULT
     if show_percentages is None:
@@ -123,18 +134,14 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
     total_in_circulation = Fraction(data.pop("total_in_circulation", 0))
     table_data = []
     for user_id, totals in data.items():
-        try:
-            user = await interaction.client.fetch_user(int(user_id))  # Fetch the user's username
-            user_name = user.display_name
-        except discord.NotFound:
-            user_name = f"Unknown User ({user_id})"
-
-        owes = currency_formatter(totals['owes'], use_unicode)
-        is_owed = currency_formatter(totals['is_owed'], use_unicode)
+        user_name = await get_display_name(interaction.client, user_id)
 
         if show_percentages:
-            owes += f" {to_percentage(totals['owes'],total_in_circulation, config.PERCENTAGE_DECIMAL_PLACES)}"
-            is_owed += f" {to_percentage(totals['is_owed'],total_in_circulation, config.PERCENTAGE_DECIMAL_PLACES)}"
+            owes = with_percentage(totals['owes'], total_in_circulation, use_unicode)
+            is_owed = with_percentage(totals['is_owed'], total_in_circulation, use_unicode)
+        else:
+            owes = currency_formatter(totals['owes'], use_unicode)
+            is_owed = currency_formatter(totals['is_owed'], use_unicode)
 
         table_data.append({
             "name": user_name,
@@ -143,17 +150,15 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
         })
 
     # Determine the economy health message
-    economy_health_message = (
-        max(
-            (
-                health
-                for health in config.ECONOMY_HEALTH_MESSAGES
-                if total_in_circulation >= health["threshold"]
-            ),
-            key=lambda h: h["threshold"],
-            default={"message": "The economy is in an unknown state"}
-        )["message"]
-    )
+    economy_health_message = max(
+        (
+            health
+            for health in config.ECONOMY_HEALTH_MESSAGES
+            if total_in_circulation >= health["threshold"]
+        ),
+        key=lambda h: h["threshold"],
+        default={"message": "The economy is in an unknown state"}
+    )["message"]
 
     # Call send_table_message to send the data as a table
     await send_messages.send_two_column_table_message(
@@ -164,28 +169,27 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
         table_format=table_format
     )
 
-#See your debts with one other user
 async def handle_debts_with_user(
     interaction: discord.Interaction,
     user: discord.User,
     show_details: bool = None,
     show_percentages: bool = None
 ):
+    """Handle fetching and displaying user debts between two users."""
     if show_details is None:
         show_details = config.SHOW_DETAILS_DEFAULT
 
     if show_percentages is None:
         show_percentages = config.SHOW_PERCENTAGES_DEFAULT
 
-    user_id = str(user.id)
+    user_id1 = str(interaction.user.id)
+    user_id2 = str(user.id)
 
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
 
     # Call the external API to fetch debts
     try:
-        user_id1=str(interaction.user.id)
-        user_id2=user_id
         data = api_client.debts_with_user(user_id1, user_id2)
     except Exception as e:
         await handle_error(interaction, e, title=f"Error Fetching {config.CURRENCY_NAME} Debts")
@@ -203,7 +207,7 @@ async def handle_debts_with_user(
         )
         return
 
-    use_unicode = await fetch_unicode_preference(interaction, user_id)
+    use_unicode = await fetch_unicode_preference(interaction, user_id2)
 
     # Format the response
     lines = []
@@ -215,14 +219,7 @@ async def handle_debts_with_user(
             f"__**{config.CURRENCY_NAME_PLURAL} YOU OWE THEM:**__ "
             f"{currency_formatter(total_owed_by_you, use_unicode).upper()}"
         )
-        for debt in data["owed_by_you"]:
-            if show_details:
-                amount = currency_formatter(debt["amount"], use_unicode)
-                if show_percentages:
-                    amount += f" {to_percentage(debt['amount'], total_owed_by_you, config.PERCENTAGE_DECIMAL_PLACES)}"
-                reason = debt["reason"]
-                timestamp = debt["timestamp"]
-                lines.append(f"- {amount} for *{reason}* on {timestamp}")
+        lines.extend(format_debt_entries(data["owed_by_you"], total_owed_by_you, use_unicode, show_details, show_percentages))
 
     # Debts owed to the user
     if data["owed_to_you"]:
@@ -231,14 +228,7 @@ async def handle_debts_with_user(
             f"__**{config.CURRENCY_NAME_PLURAL} THEY OWE YOU:**__ "
             f"{currency_formatter(total_owed_to_you, use_unicode).upper()}"
         )
-        for debt in data["owed_to_you"]:
-            if show_details:
-                amount = currency_formatter(debt["amount"], use_unicode)
-                if show_percentages:
-                    amount += f" {to_percentage(debt['amount'], total_owed_to_you, config.PERCENTAGE_DECIMAL_PLACES)}"
-                reason = debt["reason"]
-                timestamp = debt["timestamp"]
-                lines.append(f"- {amount} for *{reason}* on {timestamp}")
+        lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages))
 
     # If no debts are found, return a message
     # Send the formatted response
