@@ -1,12 +1,12 @@
 # Imports
 """FastAPI for managing pint debts between users."""
 from fractions import Fraction
-from datetime import datetime
 import logging
 from fastapi import FastAPI, HTTPException
 import api.config as config
 import api.fraction_functions as fractions
 from api.data_manager import load_data, save_data
+from api.utilities.debt_helpers import current_timestamp, get_or_create_user, serialize_debt_entry, sum_debts
 from models import (
     UserData,
     DebtEntry,
@@ -23,7 +23,6 @@ app = FastAPI()
 
 NO_DEBTS_MESSAGE = "No debts found owed to or from this user."
 HTTP_BAD_REQUEST_CODE = 400
-DATE_FORMAT = "%d-%m-%Y"
 
 @app.get("/health", status_code=200)
 async def health_check():
@@ -48,22 +47,19 @@ async def add_debt(request: OweRequest):
     fractions.check_quantization(amount)
 
     # Get or create the debtor's data
-    if debtor_id not in data.users:
-        data.users[debtor_id] = UserData()
-
-    debtor_data = data.users[debtor_id]
+    debtor = get_or_create_user(data, debtor_id)
 
     # Add the debt
-    if creditor_id not in debtor_data.debts.creditors:
-        debtor_data.debts.creditors[creditor_id] = []
+    if creditor_id not in debtor.debts.creditors:
+        debtor.debts.creditors[creditor_id] = []
 
     try:
         {
-            debtor_data.debts.creditors[creditor_id].append(
+            debtor.debts.creditors[creditor_id].append(
                 DebtEntry(
                     amount=amount,
                     reason=request.reason,
-                    timestamp=datetime.now().strftime(DATE_FORMAT)
+                    timestamp=current_timestamp()
                 )
             )
         }
@@ -75,7 +71,7 @@ async def add_debt(request: OweRequest):
     return {
         "amount": str(amount),
         "reason": request.reason,
-        "timestamp": datetime.now().strftime(DATE_FORMAT)
+        "timestamp": current_timestamp()
     }
 
 @app.get("/users/{user_id}/debts")
@@ -99,15 +95,11 @@ async def get_debts(user_id: str):
             if not isinstance(entries, list):
                 raise TypeError(f"Expected 'entries' to be a list, but got {type(entries)}")
             result["owed_by_you"][creditor_id] = [
-                {
-                    "amount": str(entry.amount),
-                    "reason": entry.reason,
-                    "timestamp": entry.timestamp,
-                }
+                serialize_debt_entry(entry)
                 for entry in entries
             ]
             # Convert amount to Fraction for summation
-            result["total_owed_by_you"] += sum(Fraction(entry.amount) for entry in entries)
+            result["total_owed_by_you"] += sum_debts(entries)
 
     # Check if the user is a creditor in other users' debts
     for debtor_id, user in data.users.items():
@@ -115,15 +107,11 @@ async def get_debts(user_id: str):
             if debtor_id not in result["owed_to_you"]:
                 result["owed_to_you"][debtor_id] = []
             result["owed_to_you"][debtor_id].extend(
-                {
-                    "amount": str(entry.amount),
-                    "reason": entry.reason,
-                    "timestamp": entry.timestamp,
-                }
+                serialize_debt_entry(entry)
                 for entry in user.debts.creditors[user_id]
             )
             # Convert amount to Fraction for summation
-            result["total_owed_to_you"] += sum(Fraction(entry.amount) for entry in user.debts.creditors[user_id])
+            result["total_owed_to_you"] += sum_debts(user.debts.creditors[user_id])
 
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
@@ -312,12 +300,10 @@ async def get_unicode_preference(user_id: str):
 async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequest):
     """Set a user's preference on whether they want fractions to be displayed in Unicode format."""
     data = load_data()
-    use_unicode = request.use_unicode
+    user = get_or_create_user(data, user_id)
 
-    if user_id not in data.users:
-        data.users[user_id] = UserData()
-
-    data.users[user_id].preferences.use_unicode = use_unicode
+    unicode_preference = request.use_unicode
+    user.preferences.use_unicode = unicode_preference
     save_data(data)
 
-    return {"message": f"Preference for Unicode fractions set to {use_unicode}."}
+    return {"message": f"Preference for Unicode fractions set to {unicode_preference}."}
