@@ -7,6 +7,13 @@ import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from bot.utilities.user_utils import get_display_name
 
+def with_percentage(value: Fraction, total: Fraction, use_unicode: bool) -> str:
+    """Format a value with its percentage of the total."""
+    formatted = currency_formatter(value, use_unicode)
+    if total > 0:
+        formatted += f" {to_percentage(value, total, config.PERCENTAGE_DECIMAL_PLACES)}"
+    return formatted
+
 def format_debt_entries(
     entries,
     total: Fraction,
@@ -20,9 +27,10 @@ def format_debt_entries(
     lines.append(currency_formatter(total_amount, use_unicode))
     if show_details:
         for entry in entries:
-            amount = currency_formatter(entry["amount"], use_unicode)
             if show_percentages:
-                amount += f" {to_percentage(entry['amount'], total, config.PERCENTAGE_DECIMAL_PLACES)}"
+                amount = with_percentage(entry["amount"], total, use_unicode)
+            else:
+                amount = currency_formatter(entry["amount"], use_unicode)
             lines.append(f"- {amount} for *{entry['reason']}* on {entry['timestamp']}")
     return lines
 
@@ -128,12 +136,12 @@ async def handle_get_all_debts(
     for user_id, totals in data.items():
         user_name = await get_display_name(interaction.client, user_id)
 
-        owes = currency_formatter(totals['owes'], use_unicode)
-        is_owed = currency_formatter(totals['is_owed'], use_unicode)
-
         if show_percentages:
-            owes += f" {to_percentage(totals['owes'],total_in_circulation, config.PERCENTAGE_DECIMAL_PLACES)}"
-            is_owed += f" {to_percentage(totals['is_owed'],total_in_circulation, config.PERCENTAGE_DECIMAL_PLACES)}"
+            owes = with_percentage(totals['owes'], total_in_circulation, use_unicode)
+            is_owed = with_percentage(totals['is_owed'], total_in_circulation, use_unicode)
+        else:
+            owes = currency_formatter(totals['owes'], use_unicode)
+            is_owed = currency_formatter(totals['is_owed'], use_unicode)
 
         table_data.append({
             "name": user_name,
