@@ -11,7 +11,8 @@ from api.utilities.debt_helpers import (
     debts_between,
     debts_owed_by,
     debts_owed_to,
-    get_or_create_user
+    get_or_create_user,
+    settle_debts_between_users
 )
 from models import (
     DebtEntry,
@@ -161,52 +162,32 @@ async def settle_debt(request: SettleRequest):
     # Validate pint number constraints
     fractions.check_in_range(amount, settling=True)
 
-    if config.QUANTIZE_SETTLING_DEBTS is True:
+    if config.QUANTIZE_SETTLING_DEBTS:
         fractions.check_quantization(amount)
 
     # Check if the debtor owes the creditor
-    if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
+    debtor = data.users.get(debtor_id)
+
+    if debtor is None  or creditor_id not in debtor.debts.creditors:
         raise HTTPException(
             status_code=HTTP_BAD_REQUEST_CODE,
             detail="NO_DEBTS_FOUND"
         )
 
-    # Settle debts starting with the oldest
-    debtor_data = data.users[debtor_id]
-    creditor_entries = debtor_data.debts.creditors[creditor_id]
-    remaining_to_settle = amount # Track amount left to settle in this transaction
-    settled_amount = Fraction(0)
-    updated_entries = []
+    creditor_entries = debtor.debts.creditors.get(creditor_id)
 
-    for entry in creditor_entries:
-        entry_amount = entry.amount
-        if remaining_to_settle <= 0:
-            updated_entries.append(entry)  # Keep remaining debts
-            continue
-
-        if entry_amount <= remaining_to_settle:
-            # Fully settle this entry
-            settled_amount += entry_amount
-            remaining_to_settle -= entry_amount
-        else:
-            # Partially settle this entry
-            settled_amount += remaining_to_settle
-            updated_entry = DebtEntry(
-                amount=entry_amount - remaining_to_settle,
-                reason=entry.reason,
-                timestamp=entry.timestamp
-            )
-            updated_entries.append(updated_entry)
-            remaining_to_settle = 0
+    # Settle debts
+    updated_entries, settled_amount = settle_debts_between_users(creditor_entries, amount)
 
     # Update debts
     if updated_entries:
-        debtor_data.debts.creditors[creditor_id] = updated_entries
+        debtor.debts.creditors[creditor_id] = updated_entries
     else:
-        del debtor_data.debts.creditors[creditor_id]  # Remove creditor if all debts are settled
+        del debtor.debts.creditors[creditor_id]
 
-    if not debtor_data.debts.creditors:
-        del data.users[debtor_id]  # Remove debtor if no debts remain
+    if not debtor.debts.creditors:
+        # Remove debtor if no debts remain
+        del data.users[debtor_id]
 
     # Save the updated data
     save_data(data)

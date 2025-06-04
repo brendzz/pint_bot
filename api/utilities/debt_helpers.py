@@ -82,3 +82,30 @@ def debts_between(data, user_id1: str, user_id2: str):
     }
 
     return result
+
+def settle_debts_between_users(entries: list[DebtEntry], amount_to_settle: Fraction) -> tuple[list[DebtEntry], Fraction]:
+    """Settle debts in FIFO order. Returns updated entries and settled amount."""
+    remaining = amount_to_settle
+    settled = Fraction(0)
+    updated_entries = []
+
+    for entry in entries:
+        if remaining <= 0:
+            updated_entries.append(entry)
+            continue
+
+        if entry.amount <= remaining:
+            # Fully settle this entry
+            settled += entry.amount
+            remaining -= entry.amount
+        else:
+            # Partially settle this entry
+            settled += remaining
+            updated_entries.append(DebtEntry(
+                amount=entry.amount - remaining,
+                reason=entry.reason,
+                timestamp=entry.timestamp
+            ))
+            remaining = 0
+
+    return updated_entries, settled
