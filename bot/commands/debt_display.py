@@ -133,17 +133,15 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
         })
 
     # Determine the economy health message
-    economy_health_message = (
-        max(
-            (
-                health
-                for health in config.ECONOMY_HEALTH_MESSAGES
-                if total_in_circulation >= health["threshold"]
-            ),
-            key=lambda h: h["threshold"],
-            default={"message": "The economy is in an unknown state"}
-        )["message"]
-    )
+    economy_health_message = max(
+        (
+            health
+            for health in config.ECONOMY_HEALTH_MESSAGES
+            if total_in_circulation >= health["threshold"]
+        ),
+        key=lambda h: h["threshold"],
+        default={"message": "The economy is in an unknown state"}
+    )["message"]
 
     # Call send_table_message to send the data as a table
     await send_messages.send_two_column_table_message(
