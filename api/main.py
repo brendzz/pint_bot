@@ -21,6 +21,10 @@ logging.basicConfig(level=logging.DEBUG)
 # Set up FastAPI
 app = FastAPI()
 
+NO_DEBTS_MESSAGE = "No debts found owed to or from this user."
+HTTP_BAD_REQUEST_CODE = 400
+DATE_FORMAT = "%d-%m-%Y"
+
 @app.get("/health", status_code=200)
 async def health_check():
     """Health check endpoint."""
@@ -35,7 +39,7 @@ async def add_debt(request: OweRequest):
     creditor_id = str(request.creditor)
     # Check if valid target to owe
     if debtor_id == creditor_id:
-        raise HTTPException(status_code=400, detail="CANNOT_OWE_SELF")
+        raise HTTPException(status_code=HTTP_BAD_REQUEST_CODE, detail="CANNOT_OWE_SELF")
 
     amount = fractions.mixed_number_to_fraction(request.amount.strip())
 
@@ -59,19 +63,19 @@ async def add_debt(request: OweRequest):
                 DebtEntry(
                     amount=amount,
                     reason=request.reason,
-                    timestamp=datetime.now().strftime("%d-%m-%Y")
+                    timestamp=datetime.now().strftime(DATE_FORMAT)
                 )
             )
         }
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail="EXCEEDS_MAXIMUM") from exc
+        raise HTTPException(status_code=HTTP_BAD_REQUEST_CODE, detail="EXCEEDS_MAXIMUM") from exc
     # Save the updated data
     save_data(data)
 
     return {
         "amount": str(amount),
         "reason": request.reason,
-        "timestamp": datetime.now().strftime("%d-%m-%Y")
+        "timestamp": datetime.now().strftime(DATE_FORMAT)
     }
 
 @app.get("/users/{user_id}/debts")
@@ -123,7 +127,7 @@ async def get_debts(user_id: str):
 
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
-        return {"message": "No debts found owed to or from this user."}
+        return {"message": NO_DEBTS_MESSAGE}
 
     # Convert totals back to strings for the response
     result["total_owed_by_you"] = str(result["total_owed_by_you"])
@@ -211,7 +215,7 @@ async def debts_with_user(user_id1: str, user_id2: str):
 
     # If no debts are found, return an empty response
     if not result["owed_by_you"] and not result["owed_to_you"]:
-        return {"message": "No debts found owed to or from this user."}
+        return {"message": NO_DEBTS_MESSAGE}
 
     # Convert totals back to strings for the response
     result["total_owed_by_you"] = str(result["total_owed_by_you"])
@@ -238,7 +242,7 @@ async def settle_debt(request: SettleRequest):
     # Check if the debtor owes the creditor
     if debtor_id not in data.users or creditor_id not in data.users[debtor_id].debts.creditors:
         raise HTTPException(
-            status_code=400,
+            status_code=HTTP_BAD_REQUEST_CODE,
             detail="NO_DEBTS_FOUND"
         )
 
