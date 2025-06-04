@@ -165,15 +165,14 @@ async def handle_debts_with_user(
     if show_percentages is None:
         show_percentages = config.SHOW_PERCENTAGES_DEFAULT
 
-    user_id = str(user.id)
+    user_id1 = str(interaction.user.id)
+    user_id2 = str(user.id)
 
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
 
     # Call the external API to fetch debts
     try:
-        user_id1=str(interaction.user.id)
-        user_id2=user_id
         data = api_client.debts_with_user(user_id1, user_id2)
     except Exception as e:
         await handle_error(interaction, e, title=f"Error Fetching {config.CURRENCY_NAME} Debts")
@@ -191,7 +190,7 @@ async def handle_debts_with_user(
         )
         return
 
-    use_unicode = await fetch_unicode_preference(interaction, user_id)
+    use_unicode = await fetch_unicode_preference(interaction, user_id2)
 
     # Format the response
     lines = []
