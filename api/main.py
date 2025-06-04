@@ -156,12 +156,13 @@ async def debts_with_user(user_id1: str, user_id2: str):
     """See current debts between the requester and one other user."""
     data = load_data()
 
-     # Prepare the response
-    result = {"owed_by_you": [],
-              "total_owed_by_you": 0, 
-              "owed_to_you": [], 
-              "total_owed_to_you": 0
-      }  # Include the user's preference}
+    # Prepare the response
+    result = {
+        "owed_by_you": [],
+        "total_owed_by_you": Fraction(0),
+        "owed_to_you": [],
+        "total_owed_to_you": Fraction(0)
+    }
 
     # Check if the user exists in the data
     if user_id1 in data.users:
