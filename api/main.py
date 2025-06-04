@@ -100,29 +100,35 @@ async def get_debts(user_id: str):
 @app.get("/debts")
 async def get_all_debts():
     """See all current debts."""
-    data = load_data()
+    users = load_data().users
 
     result = {}
-    total_in_circulation= Fraction(0)
-    # Iterate over all users to calculate debts owed by them
-    for debtor_id, debtor_data in data.users.items():
-        total_owed_by = Fraction(0)
+    total_in_circulation = Fraction(0)
+    summary = {}
+
+    for debtor_id, debtor_data in users.items():
         for creditor_id, entries in debtor_data.debts.creditors.items():
-            total_owed_by += sum(entry.amount for entry in entries)
-        if debtor_id not in result:
-            result[debtor_id] = {"owes": str(total_owed_by), "is_owed": "0"}
-        total_in_circulation += total_owed_by
-     # Iterate over all users to calculate debts owed to them
-    for debtor_id, debtor_data in data.users.items():
-        for creditor_id, entries in debtor_data.debts.creditors.items():
-            total_owed_to = sum(entry.amount for entry in entries)
-            if creditor_id not in result:
-                result[creditor_id] = {"owes": "0", "is_owed": str(total_owed_to)}
-            else:
-                result[creditor_id]["is_owed"] = str(
-                    Fraction(result[creditor_id]["is_owed"]) + total_owed_to
-                )
+            amount = sum(entry.amount for entry in entries)
+            total_in_circulation += amount
+
+            # Update debtor's "owes"
+            summary.setdefault(debtor_id, {"owes": Fraction(0), "is_owed": Fraction(0)})
+            summary[debtor_id]["owes"] += amount
+
+            # Update creditor's "is_owed"
+            summary.setdefault(creditor_id, {"owes": Fraction(0), "is_owed": Fraction(0)})
+            summary[creditor_id]["is_owed"] += amount
+
+    # Convert fractions to strings for the final response
+    result = {
+        user_id: {
+            "owes": str(data["owes"]),
+            "is_owed": str(data["is_owed"]),
+        }
+        for user_id, data in summary.items()
+    }
     result["total_in_circulation"] = str(total_in_circulation)
+
     return result
 
 @app.get("/debts/between")
@@ -139,7 +145,7 @@ async def debts_with_user(requester_id: str, target_id: str):
     # Convert totals back to strings for the response
     debts["total_owed_by_you"] = str(debts["total_owed_by_you"])
     debts["total_owed_to_you"] = str(debts["total_owed_to_you"])
-    
+
     return debts
 
 @app.patch("/debts")
