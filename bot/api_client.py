@@ -22,7 +22,7 @@ def get_all_debts():
 
 def debts_with_user(user_id1: str, user_id2: str):
     """Get all debts between two users from the API."""
-    response = requests.get(f"{config.API_URL}/debts/between", params={"user_id1": user_id1, "user_id2": user_id2})
+    response = requests.get(f"{config.API_URL}/debts/between", params={"requester_id": user_id1, "target_id": user_id2})
     response.raise_for_status()
     return response.json()
 

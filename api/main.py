@@ -6,9 +6,14 @@ from fastapi import FastAPI, HTTPException
 import api.config as config
 import api.fraction_functions as fractions
 from api.data_manager import load_data, save_data
-from api.utilities.debt_helpers import current_timestamp, get_or_create_user, serialize_debt_entry, sum_debts
+from api.utilities.debt_helpers import (
+    current_timestamp,
+    debts_between,
+    debts_owed_by,
+    debts_owed_to,
+    get_or_create_user
+)
 from models import (
-    UserData,
     DebtEntry,
     OweRequest,
     SettleRequest,
@@ -79,49 +84,18 @@ async def get_debts(user_id: str):
     """See a user's current pint debts."""
     data = load_data()
 
-     # Prepare the response
-    result = {"owed_by_you": {},
-              "total_owed_by_you": 0, 
-              "owed_to_you": {}, 
-              "total_owed_to_you": 0
-      }  # Include the user's preference}
+    owed_by_you, total_owed_by_you = debts_owed_by(data, user_id)
+    owed_to_you, total_owed_to_you = debts_owed_to(data, user_id)
 
-    # Check if the user exists in the data
-    if user_id in data.users:
-        user_data = data.users[user_id]
-
-        # Debts owed by the user
-        for creditor_id, entries in user_data.debts.creditors.items():
-            if not isinstance(entries, list):
-                raise TypeError(f"Expected 'entries' to be a list, but got {type(entries)}")
-            result["owed_by_you"][creditor_id] = [
-                serialize_debt_entry(entry)
-                for entry in entries
-            ]
-            # Convert amount to Fraction for summation
-            result["total_owed_by_you"] += sum_debts(entries)
-
-    # Check if the user is a creditor in other users' debts
-    for debtor_id, user in data.users.items():
-        if user_id in user.debts.creditors:
-            if debtor_id not in result["owed_to_you"]:
-                result["owed_to_you"][debtor_id] = []
-            result["owed_to_you"][debtor_id].extend(
-                serialize_debt_entry(entry)
-                for entry in user.debts.creditors[user_id]
-            )
-            # Convert amount to Fraction for summation
-            result["total_owed_to_you"] += sum_debts(user.debts.creditors[user_id])
-
-    # If no debts are found, return an empty response
-    if not result["owed_by_you"] and not result["owed_to_you"]:
+    if not owed_by_you and not owed_to_you:
         return {"message": NO_DEBTS_MESSAGE}
 
-    # Convert totals back to strings for the response
-    result["total_owed_by_you"] = str(result["total_owed_by_you"])
-    result["total_owed_to_you"] = str(result["total_owed_to_you"])
-
-    return result
+    return {
+        "owed_by_you": owed_by_you,
+        "total_owed_by_you": str(total_owed_by_you),
+        "owed_to_you": owed_to_you,
+        "total_owed_to_you": str(total_owed_to_you),
+    }
 
 @app.get("/debts")
 async def get_all_debts():
@@ -152,65 +126,21 @@ async def get_all_debts():
     return result
 
 @app.get("/debts/between")
-async def debts_with_user(user_id1: str, user_id2: str):
+async def debts_with_user(requester_id: str, target_id: str):
     """See current debts between the requester and one other user."""
     data = load_data()
 
-    # Prepare the response
-    result = {
-        "owed_by_you": [],
-        "total_owed_by_you": Fraction(0),
-        "owed_to_you": [],
-        "total_owed_to_you": Fraction(0)
-    }
-
-    # Check if the user exists in the data
-    if user_id1 in data.users:
-        users_debts = data.users[user_id1].debts.creditors
-        if user_id2 in users_debts:
-            # Debts owed by the user
-            debts = users_debts[user_id2]
-            if not isinstance(debts, list):
-                raise TypeError(f"Expected 'debts' to be a list, but got {type(debts)}")
-            result["owed_by_you"] = [
-                {
-                    "amount": str(debt.amount),
-                    "reason": debt.reason,
-                    "timestamp": debt.timestamp,
-                }
-                for debt in debts
-            ]
-            # Convert amount to Fraction for summation
-            result["total_owed_by_you"] += sum(Fraction(debt.amount) for debt in debts)
-
-    # Check if the user is a creditor in other users' debts
-    if user_id2 in data.users:
-        other_users_debts = data.users[user_id2].debts.creditors
-        if user_id1 in other_users_debts:
-            # Debts owed by the other user
-            debts = other_users_debts[user_id1]
-            if not isinstance(debts, list):
-                raise TypeError(f"Expected 'debts' to be a list, but got {type(debts)}")
-            result["owed_to_you"] = [
-                {
-                    "amount": str(debt.amount),
-                    "reason": debt.reason,
-                    "timestamp": debt.timestamp,
-                }
-                for debt in debts
-            ]
-            # Convert amount to Fraction for summation
-            result["total_owed_to_you"] += sum(Fraction(debt.amount) for debt in debts)
+    debts = debts_between(data, requester_id, target_id)
 
     # If no debts are found, return an empty response
-    if not result["owed_by_you"] and not result["owed_to_you"]:
+    if not debts["owed_by_you"] and not debts["owed_to_you"]:
         return {"message": NO_DEBTS_MESSAGE}
 
     # Convert totals back to strings for the response
-    result["total_owed_by_you"] = str(result["total_owed_by_you"])
-    result["total_owed_to_you"] = str(result["total_owed_to_you"])
-
-    return result
+    debts["total_owed_by_you"] = str(debts["total_owed_by_you"])
+    debts["total_owed_to_you"] = str(debts["total_owed_to_you"])
+    
+    return debts
 
 @app.patch("/debts")
 async def settle_debt(request: SettleRequest):
