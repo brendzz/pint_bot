@@ -5,6 +5,7 @@ from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, to_percentage
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
+from bot.utilities.user_utils import get_display_name
 
 #See either your own debts or those of another user
 async def handle_get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None):
@@ -47,11 +48,8 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
         total_owed_by_you = Fraction(data['total_owed_by_you'])
         lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {"YOU" if user is None else "THEY"} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}")
         for creditor_id, entries in data["owed_by_you"].items():
-            try:
-                creditor = await interaction.client.fetch_user(int(creditor_id))  # Fetch the creditor's username
-                creditor_name = creditor.display_name
-            except discord.NotFound:
-                creditor_name = f"Unknown User ({creditor_id})"
+            creditor_name = await get_display_name(interaction.client, creditor_id)
+
             lines.append(f"\n**{creditor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
             if show_details:
                 for entry in entries:
@@ -67,11 +65,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
         total_owed_to_you = Fraction(data['total_owed_to_you'])
         lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {"YOU" if user is None else "THEM"}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}")
         for debtor_id, entries in data["owed_to_you"].items():
-            try:
-                debtor = await interaction.client.fetch_user(int(debtor_id))  # Fetch the debtor's username
-                debtor_name = debtor.display_name
-            except discord.NotFound:
-                debtor_name = f"Unknown User ({debtor_id})"
+            debtor_name = await get_display_name(interaction.client, debtor_id)
 
             lines.append(f"\n**{debtor_name}**: {currency_formatter(sum(Fraction(entry['amount']) for entry in entries), use_unicode)}")
             if show_details:
@@ -123,11 +117,7 @@ async def handle_get_all_debts(interaction: discord.Interaction, table_format: b
     total_in_circulation = Fraction(data.pop("total_in_circulation", 0))
     table_data = []
     for user_id, totals in data.items():
-        try:
-            user = await interaction.client.fetch_user(int(user_id))  # Fetch the user's username
-            user_name = user.display_name
-        except discord.NotFound:
-            user_name = f"Unknown User ({user_id})"
+        user_name = await get_display_name(interaction.client, user_id)
 
         owes = currency_formatter(totals['owes'], use_unicode)
         is_owed = currency_formatter(totals['is_owed'], use_unicode)
