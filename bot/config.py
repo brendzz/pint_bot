@@ -44,6 +44,8 @@ TRANSFERABLE_ITEMS = [
 ]
 
 ECONOMY_HEALTH_MESSAGES: list[dict[str, str]] = [
+    {"threshold": 100, "message": f"{CURRENCY_NAME} Level 100/10 - The levels of {CURRENCY_NAME_PLURAL} is off the scale! We have broken reality!"},
+    {"threshold": 75, "message": f"{CURRENCY_NAME} Level 11/10 - We are going beyond into infinite {CURRENCY_NAME} realm!"},
     {"threshold": 50, "message": f"{CURRENCY_NAME} Level 10/10 - We have reached peak {CURRENCY_NAME_PLURAL}! {BOT_NAME} has now achieved sentience! All hail {BOT_NAME}!"},
     {"threshold": 45, "message": f"{CURRENCY_NAME} Level 9/10 - The {CURRENCY_NAME} economy is in a golden era! The people are thriving and the {CURRENCY_NAME_PLURAL} are flowing!"},
     {"threshold": 40, "message": f"{CURRENCY_NAME} Level 8/10 - The {CURRENCY_NAME} economy is booming! Prosperity for all!"},

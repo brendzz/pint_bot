@@ -43,7 +43,7 @@ async def handle_owe(interaction: discord.Interaction, user: discord.User, amoun
             description= f"Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
         )
 
-async def handle_settle(interaction: discord.Interaction, user: discord.User, amount: str):
+async def handle_settle(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
     debtor = interaction.user.id
     creditor = user.id
 
@@ -82,5 +82,5 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
     await send_messages.send_success_message(
         interaction,
         title="Debt Settled Successfully",
-        description= f"Settled {settled_amount} with {user.mention}. Remaining debt: {remaining_amount}."
+        description= f"Settled {settled_amount} with {user.mention}.\n*{message}*\nRemaining debt: {remaining_amount}."
     )
