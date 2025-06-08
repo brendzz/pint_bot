@@ -151,7 +151,7 @@ def register_commands(bot):
     @app_commands.describe(
         user="Who you want to settle debts with",
         amount=f"How many {config.CURRENCY_NAME_PLURAL} to settle",
-        message=f"Message to apply to this transaction (optional)"
+        message="Message to show with this transaction (optional)"
     )
     async def settle(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
         await handle_settle(interaction, user, amount, message=message)

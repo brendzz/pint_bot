@@ -50,7 +50,7 @@ def debts_owed_by(data, user_id: str):
             reverse=True
         )
     )
-    #sorted_owes = owes.sorted(owes)
+
     return sorted_owes, total
 
 def debts_owed_to(data, user_id: str):

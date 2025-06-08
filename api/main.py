@@ -120,23 +120,18 @@ async def get_all_debts():
             summary.setdefault(creditor_id, {"owes": Fraction(0), "is_owed": Fraction(0)})
             summary[creditor_id]["is_owed"] += amount
 
-    # Prepare a list of (user_id, summary_data) tuples for sorting
-    summary_items = list(summary.items())
-
     # Sort by default in config
     if config.SORT_OWES_FIRST:
-        sorted_items = sorted(
-            summary_items,
-            key=lambda item: item[1]["owes"],
-            reverse=True
-        )
+            sort_key=lambda item: item[1]["owes"]
     else:
-        sorted_items = sorted(
-            summary_items,
-            key=lambda item: item[1]["is_owed"],
+        sort_key=lambda item: item[1]["is_owed"]
+
+    sorted_items = sorted(
+            summary.items(),
+            key=sort_key,
             reverse=True
         )
-
+    
     result = {
         user_id: {
             "owes": str(summary_data["owes"]),
