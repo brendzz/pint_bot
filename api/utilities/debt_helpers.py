@@ -33,28 +33,47 @@ def build_debt_summary(entries: list[DebtEntry]) -> tuple[list[dict], Fraction]:
     return serialized, total
 
 def debts_owed_by(data, user_id: str):
-    """Returns a summary of debts owed by the user."""
-    owed = {}
+    """Returns a summary of debts the user owes."""
+    owes = {}
     total = Fraction(0)
     if user_id in data.users:
         for creditor_id, entries in data.users[user_id].debts.creditors.items():
             serialized, subtotal = build_debt_summary(entries)
-            owed[creditor_id] = serialized
+            owes[creditor_id] = serialized
             total += subtotal
-    return owed, total
+
+    # Sort creditors by total owed (descending by default)
+    sorted_owes = dict(
+        sorted(
+            owes.items(),
+            key=lambda item: sum(Fraction(e["amount"]) for e in item[1]),
+            reverse=True
+        )
+    )
+
+    return sorted_owes, total
 
 def debts_owed_to(data, user_id: str):
     """Returns a summary of debts owed to the user."""
-    owed_to = {}
+    owed = {}
     total = Fraction(0)
     for debtor_id, user in data.users.items():
         if user_id in user.debts.creditors:
             serialized, subtotal = build_debt_summary(user.debts.creditors[user_id])
-            if debtor_id not in owed_to:
-                owed_to[debtor_id] = []
-            owed_to[debtor_id].extend(serialized)
+            if debtor_id not in owed:
+                owed[debtor_id] = []
+            owed[debtor_id].extend(serialized)
             total += subtotal
-    return owed_to, total
+
+    # Sort debtors by total owed (descending by default)
+    sorted_owed = dict(
+        sorted(
+            owed.items(),
+            key=lambda item: sum(Fraction(e["amount"]) for e in item[1]),
+            reverse=True
+        )
+    )
+    return sorted_owed, total
 
 def debts_to(data, from_user_id: str, to_user_id: str):
     """Returns debts from one user to another."""

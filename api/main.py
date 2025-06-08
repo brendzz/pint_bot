@@ -120,16 +120,26 @@ async def get_all_debts():
             summary.setdefault(creditor_id, {"owes": Fraction(0), "is_owed": Fraction(0)})
             summary[creditor_id]["is_owed"] += amount
 
-    # Convert fractions to strings for the final response
+    # Sort by default in config
+    if config.SORT_OWES_FIRST:
+            sort_key=lambda item: item[1]["owes"]
+    else:
+        sort_key=lambda item: item[1]["is_owed"]
+
+    sorted_items = sorted(
+            summary.items(),
+            key=sort_key,
+            reverse=True
+        )
+    
     result = {
         user_id: {
             "owes": str(summary_data["owes"]),
             "is_owed": str(summary_data["is_owed"]),
         }
-        for user_id, summary_data in summary.items()
+        for user_id, summary_data in sorted_items
     }
     result["total_in_circulation"] = str(total_in_circulation)
-
     return result
 
 @app.get("/debts/between")
