@@ -10,7 +10,7 @@ class TransactionEntry(BaseModel):
     creditor: str
     amount: Fraction
     reason: str = ""
-    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat("YYYY-MM-DD HH:MM:SS"))
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat(timespec="seconds"))
 
     @field_validator("amount", mode="before")
     @classmethod
