@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 import api.config as config
 import api.fraction_functions as fractions
 from api.data_manager import (
+    append_transaction,
     load_debts,
     load_preferences,
     save_debts,
@@ -25,6 +26,7 @@ from models import (
     SetUnicodePreferenceRequest,
     UserPreferences,
     UserDebts,
+    TransactionEntry
 )
 
 # Setup
@@ -81,6 +83,17 @@ async def add_debt(request: OweRequest):
         raise HTTPException(status_code=HTTP_BAD_REQUEST_CODE, detail="EXCEEDS_MAXIMUM") from exc
     # Save the updated data
     save_debts(data)
+
+    transaction_entry= TransactionEntry(
+        type="owe",
+        debtor= debtor_id,
+        creditor= creditor_id,
+        amount= amount,
+        reason= request.reason
+    )
+
+    # Append the transaction entry
+    append_transaction(transaction_entry)
 
     return {
         "amount": str(amount),
@@ -209,6 +222,16 @@ async def settle_debt(request: SettleRequest):
 
     # Save the updated data
     save_debts(data)
+
+    transaction_entry= TransactionEntry(
+        type="settle",
+        debtor= debtor_id,
+        creditor= creditor_id,
+        amount= amount,
+    )
+
+    # Append the transaction entry
+    append_transaction(transaction_entry)
 
     # Calculate the total remaining debt for the creditor
     total_remaining_debt = sum(entry.amount for entry in updated_entries)

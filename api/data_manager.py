@@ -3,11 +3,14 @@ import json
 from pathlib import Path
 from models import (
     DebtsData,
+    TransactionsData,
+    TransactionEntry,
     PreferencesData,
 )
 
 DATA_DIRECTORY = Path("data")
 DEBTS_FILE = DATA_DIRECTORY / "debts.json"
+TRANSACTIONS_FILE = DATA_DIRECTORY / "transactions.json"
 PREFERENCES_FILE = DATA_DIRECTORY / "preferences.json"
 
 def load_data(file_path: Path, model, fallback):
@@ -30,6 +33,18 @@ def load_debts() -> DebtsData:
 def save_debts(data: DebtsData):
     """Save debts data."""
     save_data(DEBTS_FILE, data)
+
+# --- Transactions ---
+def load_transactions() -> TransactionsData:
+    """Load transactions data."""
+    fallback = {"transactions": []}
+    return load_data(TRANSACTIONS_FILE, TransactionsData, fallback)
+
+def append_transaction(entry: TransactionEntry):
+    """Append a new transaction entry."""
+    transactions_data = load_transactions()
+    transactions_data.transactions.append(entry)
+    save_data(TRANSACTIONS_FILE, transactions_data)
 
 # --- Preferences ---
 def load_preferences() -> PreferencesData:
