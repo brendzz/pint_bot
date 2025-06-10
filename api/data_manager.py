@@ -1,23 +1,42 @@
 """Module for handling data loading and saving."""
 import json
-import os
-import api.config as config
-from models import PintEconomy
+from pathlib import Path
+from models import (
+    DebtsData,
+    PreferencesData,
+)
 
-def load_data() -> PintEconomy:
-    """Load the PintEconomy data from a JSON file."""
-    if not os.path.exists(config.DATA_FILE):
-        # Create an empty data structure if the file doesn't exist
-        return PintEconomy()
-    try:
-        with open(config.DATA_FILE, "r") as f:
-            raw_data = json.load(f)
-            return PintEconomy.model_validate(raw_data)
-    except json.JSONDecodeError:
-        print("Error: Malformed JSON in data file.")
-        return PintEconomy()
+DATA_DIRECTORY = Path("data")
+DEBTS_FILE = DATA_DIRECTORY / "debts.json"
+PREFERENCES_FILE = DATA_DIRECTORY / "preferences.json"
 
-def save_data(data: PintEconomy):
-    """Save the PintEconomy data to a JSON file."""
-    with open(config.DATA_FILE, "w") as f:
-        json.dump(data.model_dump(), f, indent=2)
+def load_data(file_path: Path, model, fallback):
+    """Generic loader for JSON files with fallback."""
+    if not file_path.exists():
+        return model(**fallback)
+    return model(**json.loads(file_path.read_text()))
+
+def save_data(file_path: Path, data):
+    """Generic saver for JSON files."""
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_text(json.dumps(data.model_dump(), indent=2))
+
+# --- Debts ---
+def load_debts() -> DebtsData:
+    """Load debts data."""
+    fallback = {"debtors": {}}
+    return load_data(DEBTS_FILE, DebtsData, fallback)
+
+def save_debts(data: DebtsData):
+    """Save debts data."""
+    save_data(DEBTS_FILE, data)
+
+# --- Preferences ---
+def load_preferences() -> PreferencesData:
+    """Load user preferences data."""
+    fallback = {"users": {}}
+    return load_data(PREFERENCES_FILE, PreferencesData, fallback)
+
+def save_preferences(data: PreferencesData):
+    """Save user preferences data."""
+    save_data(PREFERENCES_FILE, data)

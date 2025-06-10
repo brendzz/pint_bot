@@ -5,20 +5,26 @@ import logging
 from fastapi import FastAPI, HTTPException
 import api.config as config
 import api.fraction_functions as fractions
-from api.data_manager import load_data, save_data
+from api.data_manager import (
+    load_debts,
+    load_preferences,
+    save_debts,
+    save_preferences
+)
 from api.utilities.debt_helpers import (
     current_timestamp,
     debts_between,
     debts_owed_by,
     debts_owed_to,
-    get_or_create_user,
     settle_debts_between_users
 )
 from models import (
     DebtEntry,
     OweRequest,
     SettleRequest,
-    SetUnicodePreferenceRequest
+    SetUnicodePreferenceRequest,
+    UserPreferences,
+    UserDebts,
 )
 
 # Setup
@@ -39,7 +45,7 @@ async def health_check():
 async def add_debt(request: OweRequest):
     """Add pint debts between a pair of users."""
 
-    data = load_data()
+    data = load_debts()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
     # Check if valid target to owe
@@ -53,15 +59,17 @@ async def add_debt(request: OweRequest):
     fractions.check_quantization(amount)
 
     # Get or create the debtor's data
-    debtor = get_or_create_user(data, debtor_id)
+    if debtor_id not in data.debtors:
+        data.debtors[debtor_id] = UserDebts()
+    debtor = data.debtors[debtor_id]
 
     # Add the debt
-    if creditor_id not in debtor.debts.creditors:
-        debtor.debts.creditors[creditor_id] = []
+    if creditor_id not in debtor.creditors:
+        debtor.creditors[creditor_id] = []
 
     try:
         {
-            debtor.debts.creditors[creditor_id].append(
+            debtor.creditors[creditor_id].append(
                 DebtEntry(
                     amount=amount,
                     reason=request.reason,
@@ -72,7 +80,7 @@ async def add_debt(request: OweRequest):
     except ValueError as exc:
         raise HTTPException(status_code=HTTP_BAD_REQUEST_CODE, detail="EXCEEDS_MAXIMUM") from exc
     # Save the updated data
-    save_data(data)
+    save_debts(data)
 
     return {
         "amount": str(amount),
@@ -83,7 +91,7 @@ async def add_debt(request: OweRequest):
 @app.get("/users/{user_id}/debts")
 async def get_debts(user_id: str):
     """See a user's current pint debts."""
-    data = load_data()
+    data = load_debts()
 
     owed_by_you, total_owed_by_you = debts_owed_by(data, user_id)
     owed_to_you, total_owed_to_you = debts_owed_to(data, user_id)
@@ -101,14 +109,14 @@ async def get_debts(user_id: str):
 @app.get("/debts")
 async def get_all_debts():
     """See all current debts."""
-    users = load_data().users
+    debts_data = load_debts()
 
     result = {}
     total_in_circulation = Fraction(0)
     summary = {}
 
-    for debtor_id, debtor_data in users.items():
-        for creditor_id, entries in debtor_data.debts.creditors.items():
+    for debtor_id, debtor_data in debts_data.debtors.items():
+        for creditor_id, entries in debtor_data.creditors.items():
             amount = sum(entry.amount for entry in entries)
             total_in_circulation += amount
 
@@ -122,7 +130,7 @@ async def get_all_debts():
 
     # Sort by default in config
     if config.SORT_OWES_FIRST:
-            sort_key=lambda item: item[1]["owes"]
+        sort_key=lambda item: item[1]["owes"]
     else:
         sort_key=lambda item: item[1]["is_owed"]
 
@@ -131,7 +139,7 @@ async def get_all_debts():
             key=sort_key,
             reverse=True
         )
-    
+
     result = {
         user_id: {
             "owes": str(summary_data["owes"]),
@@ -145,7 +153,7 @@ async def get_all_debts():
 @app.get("/debts/between")
 async def debts_with_user(requester_id: str, target_id: str):
     """See current debts between the requester and one other user."""
-    data = load_data()
+    data = load_debts()
 
     debts = debts_between(data, requester_id, target_id)
 
@@ -162,7 +170,7 @@ async def debts_with_user(requester_id: str, target_id: str):
 @app.patch("/debts")
 async def settle_debt(request: SettleRequest):
     """Settle debt between a pair of users."""
-    data = load_data()
+    data = load_debts()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
 
@@ -176,31 +184,31 @@ async def settle_debt(request: SettleRequest):
         fractions.check_quantization(amount)
 
     # Check if the debtor owes the creditor
-    debtor = data.users.get(debtor_id)
+    debtor = data.debtors[debtor_id]
 
-    if debtor is None  or creditor_id not in debtor.debts.creditors:
+    if debtor is None  or creditor_id not in debtor.creditors:
         raise HTTPException(
             status_code=HTTP_BAD_REQUEST_CODE,
             detail="NO_DEBTS_FOUND"
         )
 
-    creditor_entries = debtor.debts.creditors.get(creditor_id)
+    creditor_entries = debtor.creditors[creditor_id]
 
     # Settle debts
     updated_entries, settled_amount = settle_debts_between_users(creditor_entries, amount)
 
     # Update debts
     if updated_entries:
-        debtor.debts.creditors[creditor_id] = updated_entries
+        debtor.creditors[creditor_id] = updated_entries
     else:
-        del debtor.debts.creditors[creditor_id]
+        del debtor.creditors[creditor_id]
 
-    if not debtor.debts.creditors:
+    if not debtor.creditors:
         # Remove debtor if no debts remain
-        del data.users[debtor_id]
+        del data.debtors[debtor_id]
 
     # Save the updated data
-    save_data(data)
+    save_debts(data)
 
     # Calculate the total remaining debt for the creditor
     total_remaining_debt = sum(entry.amount for entry in updated_entries)
@@ -211,27 +219,29 @@ async def settle_debt(request: SettleRequest):
     }
 
 @app.get("/users/{user_id}/unicode_preference")
-async def get_unicode_preference(user_id: str):
+async def get_unicode_preference(user_id: str) -> bool:
     """Get a user's preference on whether they want fractions to be displayed in Unicode format."""
-    data = load_data()
+    all_preferences = load_preferences()
 
     # Check if the user exists in the data
-    if user_id not in data.users:
-        return {"use_unicode": False}  # Default value if the user does not exist
+    if user_id not in all_preferences.users:
+        return False  # Default value if the user does not exist
 
     # Retrieve the user's Unicode preference or return the default value
-    use_unicode = getattr(data.users[user_id].preferences, "use_unicode", False)
+    user_preferences = all_preferences.users[user_id]
 
-    return {"use_unicode": use_unicode}
+    return user_preferences.use_unicode
 
 @app.post("/users/{user_id}/unicode_preference")
 async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequest):
     """Set a user's preference on whether they want fractions to be displayed in Unicode format."""
-    data = load_data()
-    user = get_or_create_user(data, user_id)
+    all_preferences = load_preferences()
+
+    if user_id not in all_preferences.users:
+        all_preferences.users[user_id] = UserPreferences()
 
     unicode_preference = request.use_unicode
-    user.preferences.use_unicode = unicode_preference
-    save_data(data)
+    all_preferences.users[user_id].use_unicode = unicode_preference
+    save_preferences(all_preferences)
 
     return {"message": f"Preference for Unicode fractions set to {unicode_preference}."}
