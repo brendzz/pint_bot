@@ -49,7 +49,7 @@ class TestGetDebtsCommand:
         (True, True, [("- 1 50 for *Coffee* on 2025-01-01", True), ("- 1 50 for *Beer* on 2025-01-02", True)]),
     ], ids=["summary_only", "details_no_percentages", "details_with_percentages"])
     @pytest.mark.asyncio
-    async def test_get_debts_optional_variants(self, bot, shared, show_details, show_percentages, show_conversion_currency, expected_checks):
+    async def test_get_debts_optional_variants(self, bot, shared, show_details, show_percentages, show_alternative_currency, expected_checks):
         """
         Tests combinations of 'show_details' and 'show_percentages' flags for get_debts.
 
@@ -151,7 +151,7 @@ class TestDebtsWithUserCommand:
             user=other_user,
             show_details=True,
             show_percentages=True,
-            show_conversion_currency=False
+            show_alternative_currency=False
         )
 
         assert interaction.response.deferred
