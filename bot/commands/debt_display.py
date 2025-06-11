@@ -99,7 +99,7 @@ async def handle_get_debts(interaction: discord.Interaction,
         if show_conversion_currency:
             total_owed_by_you_formatted=with_conversion_currency(total_owed_by_you, total_owed_by_you_formatted)
    
-        lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {"YOU" if user is None else "THEY"} OWE:**__ {total_owed_by_you_formatted}")
+        lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {'YOU' if user is None else 'THEY'} OWE:**__ {total_owed_by_you_formatted}")
         for creditor_id, entries in data["owed_by_you"].items():
             creditor_name = await get_display_name(interaction.client, creditor_id)
             entry_lines = format_debt_entries(entries, total_owed_by_you, use_unicode, show_details, show_percentages, show_conversion_currency)
@@ -113,7 +113,7 @@ async def handle_get_debts(interaction: discord.Interaction,
         if show_conversion_currency:
             total_owed_to_you_formatted=with_conversion_currency(total_owed_to_you, total_owed_to_you_formatted)
   
-        lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {"YOU" if user is None else "THEM"}:**__ {total_owed_to_you_formatted}")
+        lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {'YOU' if user is None else 'THEM'}:**__ {total_owed_to_you_formatted}")
         for debtor_id, entries in data["owed_to_you"].items():
             debtor_name = await get_display_name(interaction.client, debtor_id)
             entry_lines = format_debt_entries(entries, total_owed_to_you, use_unicode, show_details, show_percentages, show_conversion_currency)
