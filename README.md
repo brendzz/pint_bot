@@ -16,7 +16,7 @@ uvicorn api.main:app
 ### Bot
 1. Create a new Discord bot in the [Developer Portal](https://discord.com/developers/applications).
 2. Invite the bot to your server with the "application.commands" permission.
-3. Set up a `.env` file in the bot folder. See the `.env.example` file for reference. Add your Discord Bot Token from the [Developer Portal](https://discord.com/developers/applications) as `BOT_TOKEN`.
+3. Set up a `.env` file in the bot folder. See the `.env.example` file for reference. Add your Discord Bot Token from the [Developer Portal](https://discord.com/developers/applications) as `BOT_TOKEN` and the API URL as `API_URL`.
 4. Customise the settings in the `config.py` file if you wish, or leave them as defaults.
 5. Run `pint_bot.py` to start the bot:
 ```bash
