@@ -1,6 +1,6 @@
 from datetime import datetime
 from fractions import Fraction
-from models import DebtEntry, UserData
+from models import DebtEntry
 
 DATE_FORMAT = "%d-%m-%Y"
 
@@ -20,12 +20,6 @@ def current_timestamp() -> str:
     """Get the current timestamp in the specified format."""
     return datetime.now().strftime(DATE_FORMAT)
 
-def get_or_create_user(data, user_id: str) -> UserData:
-    """Get or create a user record for the given user_id."""
-    if user_id not in data.users:
-        data.users[user_id] = UserData()
-    return data.users[user_id]
-
 def build_debt_summary(entries: list[DebtEntry]) -> tuple[list[dict], Fraction]:
     """Returns serialized debt entries and their total sum."""
     serialized = [serialize_debt_entry(e) for e in entries]
@@ -36,8 +30,8 @@ def debts_owed_by(data, user_id: str):
     """Returns a summary of debts the user owes."""
     owes = {}
     total = Fraction(0)
-    if user_id in data.users:
-        for creditor_id, entries in data.users[user_id].debts.creditors.items():
+    if user_id in data.debtors:
+        for creditor_id, entries in data.debtors[user_id].creditors.items():
             serialized, subtotal = build_debt_summary(entries)
             owes[creditor_id] = serialized
             total += subtotal
@@ -57,9 +51,9 @@ def debts_owed_to(data, user_id: str):
     """Returns a summary of debts owed to the user."""
     owed = {}
     total = Fraction(0)
-    for debtor_id, user in data.users.items():
-        if user_id in user.debts.creditors:
-            serialized, subtotal = build_debt_summary(user.debts.creditors[user_id])
+    for debtor_id, user in data.debtors.items():
+        if user_id in user.creditors:
+            serialized, subtotal = build_debt_summary(user.creditors[user_id])
             if debtor_id not in owed:
                 owed[debtor_id] = []
             owed[debtor_id].extend(serialized)
@@ -80,8 +74,8 @@ def debts_to(data, from_user_id: str, to_user_id: str):
     owed = {}
     total = Fraction(0)
 
-    if from_user_id in data.users:
-        requesters_debts = data.users[from_user_id].debts.creditors
+    if from_user_id in data.debtors:
+        requesters_debts = data.debtors[from_user_id].creditors
         if to_user_id in requesters_debts:
             debts = requesters_debts[to_user_id]
             owed, total = build_debt_summary(debts)
