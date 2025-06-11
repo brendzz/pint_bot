@@ -130,8 +130,10 @@ jobs:
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
 
             # Write bot env in place
-            echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}
-            API_URL=${{ secrets.PROD_API_URL }}" > bot/.env
+            cat > bot/.env <<EOF
+            BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}
+            API_URL=${{ secrets.PROD_API_URL }}
+            EOF
 
             echo "Starting deployment script at $(date)"
             export PATH="$HOME/.local/bin:$PATH"
