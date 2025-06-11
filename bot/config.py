@@ -15,7 +15,7 @@ GET_ALL_DEBTS_COMMAND: str = "all_pints"
 DEBTS_WITH_USER_COMMAND: str = "pints_with_user"
 ROLL_COMMAND: str = "volcano"
 
-API_URL: str = os.getenv("API_URL", "http://localhost:8000")
+API_URL: str = os.getenv("API_URL", "http://api:8000")
 
 QUANTIZE_SETTLING_DEBTS:  bool = True
 USE_DECIMAL_OUTPUT: bool = False
