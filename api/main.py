@@ -197,7 +197,7 @@ async def settle_debt(request: SettleRequest):
         fractions.check_quantization(amount)
 
     # Check if the debtor owes the creditor
-    debtor = data.debtors[debtor_id]
+    debtor = data.debtors.get(debtor_id)
 
     if debtor is None  or creditor_id not in debtor.creditors:
         raise HTTPException(
