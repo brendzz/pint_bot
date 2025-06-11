@@ -16,8 +16,8 @@ uvicorn api.main:app
 ### Bot
 1. Create a new Discord bot in the [Developer Portal](https://discord.com/developers/applications).
 2. Invite the bot to your server with the "application.commands" permission.
-3. Set up a `.env` file in the bot folder. See the `.env.example` file for reference. Add your Discord Bot Token from the Developer Portal as `BOT_TOKEN`.
-4. Add your API URL to the `config.py` file as `API_URL` (if running locally, this is likely `http://127.0.0.1:8000`). Customise the other settings if you wish, or leave them as defaults.
+3. Set up a `.env` file in the bot folder. See the `.env.example` file for reference. Add your Discord Bot Token from the [Developer Portal](https://discord.com/developers/applications) as `BOT_TOKEN`.
+4. Customise the settings in the `config.py` file if you wish, or leave them as defaults.
 5. Run `pint_bot.py` to start the bot:
 ```bash
 python -m bot.pint_bot
@@ -26,16 +26,15 @@ python -m bot.pint_bot
 ## Docker
 > **Prerequisites:** [Docker Engine](https://docs.docker.com/engine/) & [Docker Compose](https://docs.docker.com/compose/)
 1. Set up a `.env` file in the bot folder. See the `.env.example` file for reference.
-2. Add your API URL to the `config.py` file as `API_URL` (if running locally, this is `http://api:8000`).
-3. To build and start both services:
+2. To build and start both services:
 ```bash
 docker-compose up --build -d
 ```
-4. To verify, run this and you should see two running containers (api healthy, bot up):
+3. To verify, run this and you should see two running containers (api healthy, bot up):
 ```bash
 docker-compose ps
 ```
-5. To stop and remove:
+4. To stop and remove:
 ```bash
 docker-compose down
 ```
@@ -57,7 +56,7 @@ pytest
 ```
 
 ## Customising
-- Customise the API by modifying the `config.py` file in the `api` folder (e.g., how much debt to allow per transaction, the API endpoint names).
+- Customise the API by modifying the `config.py` file in the `api` folder (e.g., how much debt to allow per transaction).
 - Customise the bot by modifying the `config.py` file in the `bot` folder.
 - Customise the way the bot sends messages in the `send_messages.py` file (by default it uses embeds).
 
