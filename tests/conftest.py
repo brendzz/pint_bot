@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bot')))
 
 # Imports
-import bot.register_commands as register_commands
+import bot.setup.register_commands as register_commands
 from bot.commands import debt_display, debt_management, settings
 from bot.utilities import send_messages, user_preferences
 

@@ -68,26 +68,26 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
         ]
     }
 ]
-    flat_data = []
+    formatted_data = []
     for category in bot_settings_data:
         if table_format:
-           flat_data.append({"Setting": f"**{category['Category']}**", "Value": "-"})
+           formatted_data.append({"Setting": f"**{category['Category']}**", "Value": "-"})
         else:
-            flat_data.append({"Setting": f"**__{category['Category']}__**", "Value": ""})
+            formatted_data.append({"Setting": f"**__{category['Category']}__**", "Value": ""})
         for setting in category["Settings"]:
-            flat_data.append(setting)
+            formatted_data.append(setting)
 
-        flat_data.append({"Setting": " ", "Value": " "})
+        formatted_data.append({"Setting": " ", "Value": " "})
     
-    if flat_data and flat_data[-1]["Setting"].strip() == "":
-        flat_data.pop()
+    if formatted_data and formatted_data[-1]["Setting"].strip() == "":
+        formatted_data.pop()
         
 
     await send_messages.send_one_column_table_message(
         interaction,
         title=f"Current {config.BOT_NAME} Settings (Customizable)",
         description="Here are the current Bot settings:",
-        data=flat_data,
+        data=formatted_data,
         table_format=table_format
     )
 

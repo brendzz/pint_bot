@@ -6,8 +6,10 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 import bot.config as config
-from bot.register_commands import register_commands
+from bot.setup.register_commands import register_commands
+from bot.setup.update_settings_from_api import update_settings_from_api
 import bot.api_client as api_client
+from fractions import Fraction
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -22,18 +24,7 @@ async def on_ready():
     start_time = time.perf_counter()
     register_commands(bot)
     await bot.tree.sync()
-
-    try:
-        settings = api_client.get_settings()
-        config.MAXIMUM_DEBT_CHARACTER_LIMIT = settings.get("MAXIMUM_DEBT_CHARACTER_LIMIT", config.MAXIMUM_DEBT_CHARACTER_LIMIT)
-        config.MAXIMUM_PER_DEBT = settings.get("MAXIMUM_PER_DEBT", config.MAXIMUM_PER_DEBT)
-        config.SMALLEST_UNIT = settings.get("SMALLEST_UNIT", config.SMALLEST_UNIT)
-        config.QUANTIZE_SETTLING_DEBTS = settings.get("QUANTIZE_SETTLING_DEBTS", config.QUANTIZE_SETTLING_DEBTS)
-        config.QUANTIZE_OWING_DEBTS = settings.get("QUANTIZE_OWING_DEBTS", config.QUANTIZE_OWING_DEBTS)
-        config.SORT_OWES_FIRST = settings.get("SORT_OWES_FIRST", config.SORT_OWES_FIRST)
-        print("Loaded config values from API.")
-    except Exception as e:
-        print(f"Failed to load config from API: {e}")
+    await update_settings_from_api()
     end_time = time.perf_counter()
     elapsed = end_time - start_time
     print(f"Commands registered and API settings synced in {elapsed:.2f} seconds.")

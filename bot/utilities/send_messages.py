@@ -16,6 +16,7 @@ async def send_info_message(interaction: discord.Interaction, title: str, descri
     await interaction.followup.send(embed=embed)
 
 async def send_one_column_table_message(interaction: discord.Interaction, title: str, description: str, data: list, table_format: bool):
+    """Sends a one-column table message to the user."""
     # Split data into chunks of 25 rows (Discord's limit for embed fields)
     chunk_size = 25
     chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
@@ -52,6 +53,7 @@ async def send_one_column_table_message(interaction: discord.Interaction, title:
             await interaction.channel.send(embed=embed)
 
 async def send_two_column_table_message(interaction: discord.Interaction, title: str, description: str, data: list, table_format: bool):
+    """Sends a two-column table message to the user."""
     # Split data into chunks of 25 rows (Discord's limit for embed fields)
     chunk_size = 25
     chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]

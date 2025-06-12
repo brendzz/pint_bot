@@ -3,7 +3,7 @@ import os
 from fractions import Fraction
 from secrets import SystemRandom
 
-# Meta
+# API Connection
 API_URL: str = os.getenv("API_URL", "http://api:8000")
 
 # Misc
