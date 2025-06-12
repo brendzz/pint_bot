@@ -42,7 +42,7 @@ PATCHED_CONFIG = {
 def patch_config_before_tests():
     with patch.multiple("bot.utilities.error_handling.config", **PATCHED_CONFIG), \
          patch.multiple("bot.utilities.formatter.config", **PATCHED_CONFIG), \
-         patch.multiple("bot.register_commands.config", **PATCHED_CONFIG):
+         patch.multiple("bot.setup.register_commands.config", **PATCHED_CONFIG):
         yield
 
 @pytest.fixture(autouse=True)
