@@ -1,5 +1,5 @@
 /.vscode
-/data
+*/data
 *.pyc
 *.env
 *.DS_Store

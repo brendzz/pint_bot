@@ -8,7 +8,8 @@ from models import (
     PreferencesData,
 )
 
-DATA_DIRECTORY = Path("data")
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIRECTORY = BASE_DIR / "data"
 DEBTS_FILE = DATA_DIRECTORY / "debts.json"
 TRANSACTIONS_FILE = DATA_DIRECTORY / "transactions.json"
 PREFERENCES_FILE = DATA_DIRECTORY / "preferences.json"
