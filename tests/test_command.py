@@ -1,6 +1,6 @@
 from dataclasses import FrozenInstanceError
 import pytest
-from bot.command import Command
+from bot.setup.command import Command
 
 
 @pytest.fixture(autouse=True)

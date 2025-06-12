@@ -58,7 +58,9 @@ async def add_debt(request: OweRequest):
 
     # Checks
     fractions.check_in_range(amount, settling=False)
-    fractions.check_quantization(amount)
+    
+    if config.QUANTIZE_OWING_DEBTS:
+        fractions.check_quantization(amount)
 
     # Get or create the debtor's data
     if debtor_id not in data.debtors:
@@ -268,3 +270,16 @@ async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequ
     save_preferences(all_preferences)
 
     return {"message": f"Preference for Unicode fractions set to {unicode_preference}."}
+
+@app.get("/settings")
+async def get_settings():
+    """Get current bot settings."""
+    # You can customize which config values to expose
+    return {
+        "MAXIMUM_DEBT_CHARACTER_LIMIT": config.MAXIMUM_DEBT_CHARACTER_LIMIT,
+        "MAXIMUM_PER_DEBT": config.MAXIMUM_PER_DEBT,
+        "SMALLEST_UNIT": str(config.SMALLEST_UNIT),
+        "QUANTIZE_SETTLING_DEBTS": config.QUANTIZE_SETTLING_DEBTS,
+        "QUANTIZE_OWING_DEBTS": config.QUANTIZE_OWING_DEBTS,
+        "SORT_OWES_FIRST": config.SORT_OWES_FIRST
+    }

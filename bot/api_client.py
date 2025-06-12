@@ -43,3 +43,9 @@ def set_unicode_preference(user_id: str, payload: dict):
     response = requests.post(f"{config.API_URL}/users/{user_id}/unicode_preference", json=payload)
     response.raise_for_status()
     return response.json()
+
+def get_settings():
+    """Get the configuration values which have been set in the API."""
+    response = requests.get(f"{config.API_URL}/settings")
+    response.raise_for_status()
+    return response.json()

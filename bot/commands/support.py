@@ -1,6 +1,6 @@
 import discord
 from bot import config
-from bot.command import Command
+from bot.setup.command import Command
 import bot.utilities.send_messages as send_messages
 
 async def handle_help_command(interaction: discord.Interaction):

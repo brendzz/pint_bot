@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bot')))
 
 # Imports
-import bot.register_commands as register_commands
+import bot.setup.register_commands as register_commands
 from bot.commands import debt_display, debt_management, settings
 from bot.utilities import send_messages, user_preferences
 
@@ -42,7 +42,7 @@ PATCHED_CONFIG = {
 def patch_config_before_tests():
     with patch.multiple("bot.utilities.error_handling.config", **PATCHED_CONFIG), \
          patch.multiple("bot.utilities.formatter.config", **PATCHED_CONFIG), \
-         patch.multiple("bot.register_commands.config", **PATCHED_CONFIG):
+         patch.multiple("bot.setup.register_commands.config", **PATCHED_CONFIG):
         yield
 
 @pytest.fixture(autouse=True)

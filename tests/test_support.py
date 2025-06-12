@@ -1,7 +1,7 @@
 import pytest
 
-from bot.register_commands import register_commands
-from bot.command import Command
+from bot.setup.register_commands import register_commands
+from bot.setup.command import Command
 from tests.conftest import DummyInteraction, DummyUser
 
 class TestHelpCommand:

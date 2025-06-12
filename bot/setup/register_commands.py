@@ -1,7 +1,7 @@
 """Module for defining bot commands."""
 import discord
 from discord import app_commands
-from bot.command import Command
+from bot.setup.command import Command
 from bot.commands.debt_display import handle_debts_with_user, handle_get_all_debts, handle_get_debts
 from bot.commands.debt_management import handle_owe, handle_settle
 from bot.commands.games import handle_roll
