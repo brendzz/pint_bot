@@ -35,20 +35,20 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
         "Settings": [
             {"Setting": "Use Decimal Output", "Value": config.USE_DECIMAL_OUTPUT},
             {"Setting": "Show Percentages by Default", "Value": config.SHOW_PERCENTAGES_DEFAULT},
-            {"Setting": "Show All Debt Details by Default", "Value": config.SHOW_DETAILS_DEFAULT},
             {"Setting": "Percentage Decimal Places", "Value": config.PERCENTAGE_DECIMAL_PLACES},
-            {"Setting": "Use Table Format Default", "Value": config.USE_TABLE_FORMAT_DEFAULT},
-             {"Setting": "Sort by who owes the most first", "Value": config.SORT_OWES_FIRST}
+            {"Setting": "Show All Debt Details by Default", "Value": config.SHOW_DETAILS_DEFAULT},
+            {"Setting": "Use Table Format by Default", "Value": config.USE_TABLE_FORMAT_DEFAULT},
+            {"Setting": "Sort by who owes the most first by Default (API Setting)", "Value": config.SORT_OWES_FIRST}
         ]
     },
     {
-        "Category": "Debt Rules",
+        "Category": "Debt Rules - API Settings",
         "Settings": [
             {"Setting": "Maximum Debt Per Transaction", "Value": config.MAXIMUM_PER_DEBT},
-            {"Setting": "Smallest Unit Allowed (Quantization)", "Value": config.SMALLEST_UNIT},
             {"Setting": "Maximum Debt Description Character Limit", "Value": config.MAXIMUM_DEBT_CHARACTER_LIMIT},
+            {"Setting": "Smallest Unit Allowed/Quantization", "Value": config.SMALLEST_UNIT},
             {"Setting": "Enforce Quantization when Owing Debts", "Value": config.QUANTIZE_OWING_DEBTS},
-            {"Setting": "Enforce Quantization when Settling Debts", "Value": config.QUANTIZE_SETTLING_DEBTS},
+            {"Setting": "Enforce Quantization when Settling Debts", "Value": config.QUANTIZE_SETTLING_DEBTS}
         ]
     },
     {
@@ -68,15 +68,21 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
         ]
     }
 ]
-      # Flatten the data for the table message
     flat_data = []
     for category in bot_settings_data:
-        # Add a heading row for the category
-        flat_data.append({"Setting": f"__{category['Category']}__", "Value": "-"})
-        # Add each setting under this category
+        if table_format:
+           flat_data.append({"Setting": f"**{category['Category']}**", "Value": "-"})
+        else:
+            flat_data.append({"Setting": f"**__{category['Category']}__**", "Value": ""})
         for setting in category["Settings"]:
             flat_data.append(setting)
-    # Send the bot settings as a one-column table
+
+        flat_data.append({"Setting": " ", "Value": " "})
+    
+    if flat_data and flat_data[-1]["Setting"].strip() == "":
+        flat_data.pop()
+        
+
     await send_messages.send_one_column_table_message(
         interaction,
         title=f"Current {config.BOT_NAME} Settings (Customizable)",
