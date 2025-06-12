@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ./api/data:/app/data:rw,Z
+      - ./api/data:/app/api/data:rw,Z
   
   bot:
     image: ghcr.io/${GITHUB_OWNER}/my-bot:sha-${REF}
