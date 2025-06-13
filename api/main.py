@@ -59,6 +59,12 @@ async def get_transactions(
     """
     transactions = load_transactions().transactions
 
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=HTTP_BAD_REQUEST_CODE,
+            detail="VALIDATION_ERROR"
+        )
+
     # Convert date to datetime boundaries
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
