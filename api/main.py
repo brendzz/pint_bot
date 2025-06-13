@@ -1,14 +1,17 @@
 # Imports
 """FastAPI for managing pint debts between users."""
+from datetime import date, datetime, timedelta
 from fractions import Fraction
 import logging
-from fastapi import FastAPI, HTTPException
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Query
 import api.config as config
 import api.fraction_functions as fractions
 from api.data_manager import (
     append_transaction,
     load_debts,
     load_preferences,
+    load_transactions,
     save_debts,
     save_preferences
 )
@@ -42,6 +45,54 @@ HTTP_BAD_REQUEST_CODE = 400
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
+
+@app.get("/transactions")
+async def get_transactions(
+    start_date: date = Query(default=date.today() - timedelta(days=30)),
+    end_date: date = Query(default=date.today()),
+    user_id: Optional[str] = None,
+    transaction_type: Optional[str] = Query(None, alias="type", regex="^(owe|settle)$"),
+):
+    """
+    Get all transactions in a date range (default: last 30 days).
+    Optionally filtered by type and/or user.
+    """
+    transactions = load_transactions().transactions
+
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=HTTP_BAD_REQUEST_CODE,
+            detail="VALIDATION_ERROR"
+        )
+
+    # Convert date to datetime boundaries
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+
+    # Filter by date range
+    transactions = [
+        t for t in transactions
+        if start_datetime <= datetime.fromisoformat(t.timestamp) <= end_datetime
+    ]
+
+    # Apply user ID filter
+    if user_id:
+        transactions = [
+            t for t in transactions
+            if t.debtor == user_id or t.creditor == user_id
+        ]
+
+    # Apply type filter
+    if transaction_type:
+        transactions = [
+            t for t in transactions
+            if t.type == transaction_type
+        ]
+
+    # Convert each transaction to a dictionary for JSON serialization
+    response = [transaction.model_dump() for transaction in transactions]
+
+    return response
 
 @app.post("/debts")
 async def add_debt(request: OweRequest):
