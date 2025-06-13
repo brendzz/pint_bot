@@ -48,12 +48,20 @@ async def health_check():
 
 @app.get("/transactions")
 async def get_transactions(
+    last_n_days: int = 30,
     user_id: Optional[str] = None,
     transaction_type: Optional[str] = Query(None, regex="^(owe|settle)$"),
-    last_n_days: Optional[int] = None
 ):
-    """Get all transactions. Optionally filtered by type, date, and/or user."""
+    """
+    Get all transactions in a time period (default: 30 days).
+    Optionally filtered by type and/or user.
+    """
     transactions = load_transactions().transactions
+
+    # Apply date filter
+    now = datetime.now()
+    threshold = now - timedelta(days=last_n_days)
+    transactions = [t for t in transactions if datetime.fromisoformat(t.timestamp) >= threshold]
 
     # Apply user ID filter
     if user_id:
@@ -62,12 +70,6 @@ async def get_transactions(
     # Apply type filter
     if transaction_type:
         transactions = [t for t in transactions if t.type == transaction_type]
-
-    # Apply date filter
-    if last_n_days:
-        now = datetime.now()
-        threshold = now - timedelta(days=last_n_days)
-        transactions = [t for t in transactions if datetime.fromisoformat(t.timestamp) >= threshold]
 
     # Convert each transaction to a dictionary for JSON serialization
     response = [transaction.model_dump() for transaction in transactions]
