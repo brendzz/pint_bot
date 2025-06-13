@@ -1,14 +1,17 @@
 # Imports
 """FastAPI for managing pint debts between users."""
+from datetime import datetime, timedelta
 from fractions import Fraction
 import logging
-from fastapi import FastAPI, HTTPException
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Query
 import api.config as config
 import api.fraction_functions as fractions
 from api.data_manager import (
     append_transaction,
     load_debts,
     load_preferences,
+    load_transactions,
     save_debts,
     save_preferences
 )
@@ -42,6 +45,34 @@ HTTP_BAD_REQUEST_CODE = 400
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
+
+@app.get("/transactions")
+async def get_transactions(
+    user_id: Optional[str] = None,
+    transaction_type: Optional[str] = Query(None, regex="^(owe|settle)$"),
+    last_n_days: Optional[int] = None
+):
+    """Get all transactions. Optionally filtered by type, date, and/or user."""
+    transactions = load_transactions().transactions
+
+    # Apply user ID filter
+    if user_id:
+        transactions = [t for t in transactions if t.debtor == user_id or t.creditor == user_id]
+
+    # Apply type filter
+    if transaction_type:
+        transactions = [t for t in transactions if t.type == transaction_type]
+
+    # Apply date filter
+    if last_n_days:
+        now = datetime.now()
+        threshold = now - timedelta(days=last_n_days)
+        transactions = [t for t in transactions if datetime.fromisoformat(t.timestamp) >= threshold]
+
+    # Convert each transaction to a dictionary for JSON serialization
+    response = [transaction.model_dump() for transaction in transactions]
+
+    return response
 
 @app.post("/debts")
 async def add_debt(request: OweRequest):
