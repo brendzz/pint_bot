@@ -1,6 +1,6 @@
 # Imports
 """FastAPI for managing pint debts between users."""
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from fractions import Fraction
 import logging
 from typing import Optional
@@ -48,28 +48,40 @@ async def health_check():
 
 @app.get("/transactions")
 async def get_transactions(
-    last_n_days: int = 30,
+    start_date: date = Query(default_factory=lambda: date.today() - timedelta(days=30)),
+    end_date: date = Query(default_factory=date.today),
     user_id: Optional[str] = None,
-    transaction_type: Optional[str] = Query(None, regex="^(owe|settle)$"),
+    transaction_type: Optional[str] = Query(None, alias="type", regex="^(owe|settle)$"),
 ):
     """
-    Get all transactions in a time period (default: 30 days).
+    Get all transactions in a date range (default: last 30 days).
     Optionally filtered by type and/or user.
     """
     transactions = load_transactions().transactions
 
-    # Apply date filter
-    now = datetime.now()
-    threshold = now - timedelta(days=last_n_days)
-    transactions = [t for t in transactions if datetime.fromisoformat(t.timestamp) >= threshold]
+    # Convert date to datetime boundaries
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+
+    # Filter by date range
+    transactions = [
+        t for t in transactions
+        if start_datetime <= datetime.fromisoformat(t.timestamp) <= end_datetime
+    ]
 
     # Apply user ID filter
     if user_id:
-        transactions = [t for t in transactions if t.debtor == user_id or t.creditor == user_id]
+        transactions = [
+            t for t in transactions
+            if t.debtor == user_id or t.creditor == user_id
+        ]
 
     # Apply type filter
     if transaction_type:
-        transactions = [t for t in transactions if t.type == transaction_type]
+        transactions = [
+            t for t in transactions
+            if t.type == transaction_type
+        ]
 
     # Convert each transaction to a dictionary for JSON serialization
     response = [transaction.model_dump() for transaction in transactions]
