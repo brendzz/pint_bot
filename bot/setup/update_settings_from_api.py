@@ -1,6 +1,8 @@
 """Update the bot settings file with settings that are defined at api level"""
-from bot import api_client, config
-from fractions import Fraction        
+from bot import api_client
+from fractions import Fraction
+
+from bot import config        
 
 async def update_settings_from_api():
     try:
