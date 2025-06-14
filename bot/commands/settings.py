@@ -1,5 +1,6 @@
 import discord
-from bot import api_client, config
+from bot import api_client
+from bot import config
 from bot.utilities.error_handling import handle_error
 import bot.utilities.send_messages as send_messages
 from models.set_unicode_preference_request import SetUnicodePreferenceRequest

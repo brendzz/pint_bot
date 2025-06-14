@@ -3,3 +3,5 @@
 *.pyc
 *.env
 *.DS_Store
+data/transactions.json
+data/debts.json
