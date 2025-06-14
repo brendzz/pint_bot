@@ -48,8 +48,8 @@ async def health_check():
 
 @app.get("/transactions")
 async def get_transactions(
-    start_date: date = Query(default=date.today() - timedelta(days=30)),
-    end_date: date = Query(default=date.today()),
+    start_date: date = Query(default_factory=lambda: date.today() - timedelta(days=30)),
+    end_date: date = Query(default_factory=date.today),
     user_id: Optional[str] = None,
     transaction_type: Optional[str] = Query(None, alias="type", regex="^(owe|settle)$"),
 ):
