@@ -149,7 +149,7 @@ async def handle_get_all_debts(
         })
 
     # Determine the economy health message
-    economy_health_message=get_economy_health(total_in_circulation)
+    economy_health_message = get_economy_health(total_in_circulation)
     await send_messages.send_two_column_table_message(
         interaction,
         title=f"{config.CURRENCY_NAME} Economy Overview",
