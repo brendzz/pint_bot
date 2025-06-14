@@ -101,7 +101,6 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
         description="\n".join(lines)
     )
 
-
 async def handle_get_all_debts(
     interaction: discord.Interaction,
     table_format: bool = None,
