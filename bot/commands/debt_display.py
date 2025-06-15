@@ -74,7 +74,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     # Debts owed by the user
     if data["owed_by_you"]:
         total_owed_by_you = Fraction(data['total_owed_by_you'])
-        lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {"YOU" if user is None else "THEY"} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}{get_secret_message(total_owed_by_you)}")
+        lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {'YOU' if user is None else 'THEY'} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}{get_secret_message(total_owed_by_you)}")
         for creditor_id, entries in data["owed_by_you"].items():
             creditor_name = await get_display_name(interaction.client, creditor_id)
             entry_lines = format_debt_entries(entries, total_owed_by_you, use_unicode, show_details, show_percentages)
@@ -84,7 +84,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     # Debts owed to the user
     if data["owed_to_you"]:
         total_owed_to_you = Fraction(data['total_owed_to_you'])
-        lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {"YOU" if user is None else "THEM"}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}{get_secret_message(total_owed_to_you)}")
+        lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {'YOU' if user is None else 'THEM'}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}{get_secret_message(total_owed_to_you)}")
         for debtor_id, entries in data["owed_to_you"].items():
             debtor_name = await get_display_name(interaction.client, debtor_id)
             entry_lines = format_debt_entries(entries, total_owed_to_you, use_unicode, show_details, show_percentages)
