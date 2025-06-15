@@ -35,22 +35,26 @@ class TestGetDebtsCommand:
         title = info_calls[0]['kwargs']['title']
         assert expected_title in title
     
-    @pytest.mark.parametrize("show_details, show_percentages, expected_checks", [
+    @pytest.mark.parametrize("show_details, show_percentages, show_conversion_currency, expected_checks", [
         # Each tuple is: (expected_text, should_be_present)
         # Used to verify whether specific content appears in the command output.
         # For example, if show_details=False, then detailed lines shouldn't appear.
 
         # Summary only (no detail lines)
-        (False, False, [("**User4**: 2", True), ("- 1 testcoins for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
+        (False, False, False, [("**User4**: 2", True), ("- 1 testcoins for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
 
-        # Detailed breakdown without percentages
-        (True, False, [("- 1 for *Coffee* on 2025-01-01", True), ("- 1 for *Beer* on 2025-01-02", True), ("50", False)]),
+        # Detailed breakdown without percentages or conversion currency
+        (True, False, False, [("- 1 for *Coffee* on 2025-01-01", True), ("- 1 for *Beer* on 2025-01-02", True), ("50", False), ("£6", False)]),
 
         # Detailed breakdown with percentages (mocked to '50')
-        (True, True, [("- 1 50 for *Coffee* on 2025-01-01", True), ("- 1 50 for *Beer* on 2025-01-02", True)]),
-    ], ids=["summary_only", "details_no_percentages", "details_with_percentages"])
+        (True, True, False, [("- 1 50 for *Coffee* on 2025-01-01", True), ("- 1 50 for *Beer* on 2025-01-02", True), ("£6", False)]),
+
+        # Breakdown with conversion currency but no details or percentage
+        (False, False, True, [("- 1 £6", True), ("- 1 £6", True), ("50", False)]),
+
+    ], ids=["summary_only", "details_no_percentages", "details_with_percentages", "with_conversion_currency"])
     @pytest.mark.asyncio
-    async def test_get_debts_optional_variants(self, bot, shared, show_details, show_percentages, show_alternative_currency, expected_checks):
+    async def test_get_debts_optional_variants(self, bot, shared, show_details, show_percentages, show_conversion_currency, expected_checks):
         """
         Tests combinations of 'show_details' and 'show_percentages' flags for get_debts.
 
@@ -71,7 +75,7 @@ class TestGetDebtsCommand:
 
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands[config.GET_DEBTS_COMMAND]
-        await cmd(interaction, show_details=show_details, show_percentages=show_percentages)
+        await cmd(interaction, show_details=show_details, show_percentages=show_percentages, show_conversion_currency=show_conversion_currency)
         description = interaction.send_info_message_calls[0]['kwargs']['description']
 
         for text, should_exist in expected_checks:
@@ -153,7 +157,7 @@ class TestDebtsWithUserCommand:
             user=other_user,
             show_details=True,
             show_percentages=True,
-            show_alternative_currency=False
+            show_conversion_currency=False
         )
 
         assert interaction.response.deferred

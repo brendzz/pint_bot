@@ -109,13 +109,13 @@ def register_commands(bot):
         user="Another user to view debts for",
         show_details=f"Show details of each individual debt (Default:{config.SHOW_DETAILS_DEFAULT})",
         show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})",
-         show_alternative_currency=(
-            f"Show the equivalent value of the debts in {config.ALTERNATIVE_CURRENCY} "
-            f"(Default: {config.SHOW_ALTERNATIVE_CURRENCY_DEFAULT})"
+         show_conversion_currency=(
+            f"Show the equivalent value of the debts in {config.CONVERSION_CURRENCY} "
+            f"(Default: {config.SHOW_CONVERSION_CURRENCY_DEFAULT})"
         )
     )
-    async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None, show_alternative_currency: bool = None):
-        await handle_get_debts(interaction, user, show_details, show_percentages, show_alternative_currency)
+    async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None, show_conversion_currency: bool = None):
+        await handle_get_debts(interaction, user, show_details, show_percentages, show_conversion_currency)
 
     @bot.tree.command(
         name=Command.get("get_all_debts").name,
@@ -124,13 +124,13 @@ def register_commands(bot):
     @app_commands.describe(
         table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).",
         show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})",
-        show_alternative_currency=(
-                f"Show the worth of the debts in {config.ALTERNATIVE_CURRENCY} "
-                f"(Default: {config.SHOW_ALTERNATIVE_CURRENCY_DEFAULT})"
+        show_conversion_currency=(
+                f"Show the worth of the debts in {config.CONVERSION_CURRENCY} "
+                f"(Default: {config.SHOW_CONVERSION_CURRENCY_DEFAULT})"
             )
     )
-    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_alternative_currency: bool = None,):
-        await handle_get_all_debts(interaction, table_format, show_percentages, show_alternative_currency)
+    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_conversion_currency: bool = None):
+        await handle_get_all_debts(interaction, table_format, show_percentages, show_conversion_currency)
 
     @bot.tree.command(
         name=Command.get("debts_with_user").name,
@@ -146,9 +146,9 @@ def register_commands(bot):
             f"Display percentages of how much each person owes/is owed "
             f"(Default: {config.SHOW_PERCENTAGES_DEFAULT})"
         ),
-        show_alternative_currency=(
-            f"Show the worth of the debts in {config.ALTERNATIVE_CURRENCY} "
-            f"(Default: {config.SHOW_ALTERNATIVE_CURRENCY_DEFAULT})"
+        show_conversion_currency=(
+            f"Show the worth of the debts in {config.CONVERSION_CURRENCY} "
+            f"(Default: {config.SHOW_CONVERSION_CURRENCY_DEFAULT})"
         )
     )
     async def debts_with_user(
@@ -156,9 +156,9 @@ def register_commands(bot):
         user: discord.User,
         show_details: bool = None,
         show_percentages: bool = None,
-        show_alternative_currency: bool = None
+        show_conversion_currency: bool = None
     ):
-        await handle_debts_with_user(interaction, user, show_details, show_percentages, show_alternative_currency)
+        await handle_debts_with_user(interaction, user, show_details, show_percentages, show_conversion_currency)
 
     @bot.tree.command(
         name=Command.get("settle").name,

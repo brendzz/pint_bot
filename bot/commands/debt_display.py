@@ -3,24 +3,14 @@ import discord
 from bot import api_client, config
 from bot.utilities.flavour_messages import get_economy_health, get_secret_message
 from bot.utilities.error_handling import handle_error
-from bot.utilities.formatter import currency_formatter, to_percentage
+from bot.utilities.formatter import currency_formatter, to_percentage, with_conversion_currency
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from bot.utilities.user_utils import get_display_name
 
 def with_percentage(value: Fraction, total: Fraction, string_amount:str) -> str:
-    """Format a value with its percentage of the total."""
+    """Format a debt with its percentage of the total."""
     formatted = f"{string_amount} {to_percentage(value, total, config.PERCENTAGE_DECIMAL_PLACES)}"
-    return formatted
-
-def with_alternative_currency(value: Fraction, string_amount:str) -> str:
-    value = Fraction(value)
-    ratio = Fraction(config.CONVERSION_RATE_TO_ALTERNATIVE_CURRENCY)
-    converted = ratio * value
-    if config.ALTERNATIVE_CURRENCY_SYMBOL_BEFORE_AMOUNT:
-        formatted = f"{string_amount} ({config.ALTERNATIVE_CURRENCY}{converted})"
-    else:
-        formatted = f"{string_amount} ({converted}{config.ALTERNATIVE_CURRENCY})"
     return formatted
 
 def format_debt_entries(
@@ -29,21 +19,21 @@ def format_debt_entries(
     use_unicode: bool,
     show_details: bool,
     show_percentages: bool,
-    show_alternative_currency: bool
+    show_conversion_currency: bool
 ) -> list[str]:
     """Format debt entries for display."""
     lines = []
     total_amount = sum(Fraction(entry['amount']) for entry in entries)
     total_formatted = currency_formatter(total_amount, use_unicode)
-    if show_alternative_currency:
-        total_formatted = with_alternative_currency(total_amount, total_formatted)
+    if show_conversion_currency:
+        total_formatted = with_conversion_currency(total_amount, total_formatted)
     lines.append(total_formatted)
     
     if show_details:
         for entry in entries:
             amount = currency_formatter(entry["amount"], use_unicode)
-            if show_alternative_currency:
-                amount = with_alternative_currency(entry["amount"], amount)
+            if show_conversion_currency:
+                amount = with_conversion_currency(entry["amount"], amount)
             if show_percentages:
                 amount = with_percentage(entry["amount"], total, amount)
             
@@ -54,7 +44,7 @@ async def handle_get_debts(interaction: discord.Interaction,
                            user: discord.User = None, 
                            show_details: bool = None, 
                            show_percentages: bool = None,
-                           show_alternative_currency: bool = None):
+                           show_conversion_currency: bool = None):
     """Handle fetching and displaying user debts for one user."""
     if show_details is None:
         show_details = config.SHOW_DETAILS_DEFAULT
@@ -62,8 +52,8 @@ async def handle_get_debts(interaction: discord.Interaction,
     if show_percentages is None:
         show_percentages = config.SHOW_PERCENTAGES_DEFAULT
 
-    if show_alternative_currency is None:
-        show_alternative_currency = config.SHOW_ALTERNATIVE_CURRENCY_DEFAULT
+    if show_conversion_currency is None:
+        show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
 
     if user is None:
         user_id = str(interaction.user.id)
@@ -97,13 +87,13 @@ async def handle_get_debts(interaction: discord.Interaction,
     if data["owed_by_you"]:
         total_owed_by_you = Fraction(data['total_owed_by_you'])
         total_owed_by_you_formatted = currency_formatter(total_owed_by_you, use_unicode).upper()
-        if show_alternative_currency:
-            total_owed_by_you_formatted=with_alternative_currency(total_owed_by_you, total_owed_by_you_formatted)
+        if show_conversion_currency:
+            total_owed_by_you_formatted=with_conversion_currency(total_owed_by_you, total_owed_by_you_formatted)
    
         lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {'YOU' if user is None else 'THEY'} OWE:**__ {total_owed_by_you_formatted}")
         for creditor_id, entries in data["owed_by_you"].items():
             creditor_name = await get_display_name(interaction.client, creditor_id)
-            entry_lines = format_debt_entries(entries, total_owed_by_you, use_unicode, show_details, show_percentages, show_alternative_currency)
+            entry_lines = format_debt_entries(entries, total_owed_by_you, use_unicode, show_details, show_percentages, show_conversion_currency)
             lines.append(f"\n**{creditor_name}**: {entry_lines[0]}")
             lines.extend(entry_lines[1:])
 
@@ -111,13 +101,13 @@ async def handle_get_debts(interaction: discord.Interaction,
     if data["owed_to_you"]:
         total_owed_to_you = Fraction(data['total_owed_to_you'])
         total_owed_to_you_formatted = currency_formatter(total_owed_to_you, use_unicode).upper()
-        if show_alternative_currency:
-            total_owed_to_you_formatted=with_alternative_currency(total_owed_to_you, total_owed_to_you_formatted)
+        if show_conversion_currency:
+            total_owed_to_you_formatted=with_conversion_currency(total_owed_to_you, total_owed_to_you_formatted)
   
         lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {'YOU' if user is None else 'THEM'}:**__ {total_owed_to_you_formatted}")
         for debtor_id, entries in data["owed_to_you"].items():
             debtor_name = await get_display_name(interaction.client, debtor_id)
-            entry_lines = format_debt_entries(entries, total_owed_to_you, use_unicode, show_details, show_percentages, show_alternative_currency)
+            entry_lines = format_debt_entries(entries, total_owed_to_you, use_unicode, show_details, show_percentages, show_conversion_currency)
             lines.append(f"\n**{debtor_name}**: {entry_lines[0]}")
             lines.extend(entry_lines[1:])
 
@@ -135,15 +125,15 @@ async def handle_get_all_debts(
     interaction: discord.Interaction,
     table_format: bool = None,
     show_percentages: bool = None,
-    show_alternative_currency: bool = None
+    show_conversion_currency: bool = None
 ):
     """Handle fetching and displaying user debts for all users."""
     if table_format is None:
         table_format = config.USE_TABLE_FORMAT_DEFAULT
     if show_percentages is None:
         show_percentages = config.SHOW_PERCENTAGES_DEFAULT
-    if show_alternative_currency is None:
-        show_alternative_currency = config.SHOW_ALTERNATIVE_CURRENCY_DEFAULT
+    if show_conversion_currency is None:
+        show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
 
@@ -169,9 +159,9 @@ async def handle_get_all_debts(
         owes = currency_formatter(totals['owes'], use_unicode)
         is_owed = currency_formatter(totals['is_owed'], use_unicode)
 
-        if show_alternative_currency:
-            owes = with_alternative_currency(totals['owes'], owes)
-            is_owed = with_alternative_currency(totals['is_owed'], is_owed)
+        if show_conversion_currency:
+            owes = with_conversion_currency(totals['owes'], owes)
+            is_owed = with_conversion_currency(totals['is_owed'], is_owed)
 
         if show_percentages:
             owes = with_percentage(totals['owes'], total_in_circulation, owes)
@@ -195,8 +185,8 @@ async def handle_get_all_debts(
     )["message"]
 
     total_formatted = currency_formatter(total_in_circulation, use_unicode)
-    if show_alternative_currency:
-        total_formatted=with_alternative_currency(total_in_circulation, total_formatted)
+    if show_conversion_currency:
+        total_formatted=with_conversion_currency(total_in_circulation, total_formatted)
 
     # Call send_table_message to send the data as a table
     await send_messages.send_two_column_table_message(
@@ -212,7 +202,7 @@ async def handle_debts_with_user(
     user: discord.User,
     show_details: bool = None,
     show_percentages: bool = None,
-    show_alternative_currency: bool = None
+    show_conversion_currency: bool = None
 ):
     """Handle fetching and displaying user debts between two users."""
     if show_details is None:
@@ -221,8 +211,8 @@ async def handle_debts_with_user(
     if show_percentages is None:
         show_percentages = config.SHOW_PERCENTAGES_DEFAULT
 
-    if show_alternative_currency is None:
-        show_alternative_currency = config.SHOW_ALTERNATIVE_CURRENCY_DEFAULT
+    if show_conversion_currency is None:
+        show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
 
     user_id1 = str(interaction.user.id)
     user_id2 = str(user.id)
@@ -258,27 +248,27 @@ async def handle_debts_with_user(
     if data["owed_by_you"]:
         total_owed_by_you = Fraction(data['total_owed_by_you'])
         total_owed_by_you_formatted = currency_formatter(total_owed_by_you, use_unicode).upper()
-        if show_alternative_currency:
-            total_owed_by_you_formatted=with_alternative_currency(total_owed_by_you, total_owed_by_you_formatted)
+        if show_conversion_currency:
+            total_owed_by_you_formatted=with_conversion_currency(total_owed_by_you, total_owed_by_you_formatted)
         lines.append(
             f"__**{config.CURRENCY_NAME_PLURAL} YOU OWE THEM:**__ "
             f"{total_owed_by_you_formatted}"
         )
         if show_details:
-            lines.extend(format_debt_entries(data["owed_by_you"], total_owed_by_you, use_unicode, show_details, show_percentages, show_alternative_currency))
+            lines.extend(format_debt_entries(data["owed_by_you"], total_owed_by_you, use_unicode, show_details, show_percentages, show_conversion_currency))
 
     # Debts owed to the user
     if data["owed_to_you"]:
         total_owed_to_you = Fraction(data['total_owed_to_you'])
         total_owed_to_you_formatted = currency_formatter(total_owed_to_you, use_unicode).upper()
-        if show_alternative_currency:
-            total_owed_to_you_formatted=with_alternative_currency(total_owed_to_you, total_owed_to_you_formatted)
+        if show_conversion_currency:
+            total_owed_to_you_formatted=with_conversion_currency(total_owed_to_you, total_owed_to_you_formatted)
         lines.append(
             f"__**{config.CURRENCY_NAME_PLURAL} THEY OWE YOU:**__ "
             f"{total_owed_to_you_formatted}"
         )
         if show_details:
-            lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages, show_alternative_currency))
+            lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages, show_conversion_currency))
 
     # Send the formatted response
     await send_messages.send_info_message(
