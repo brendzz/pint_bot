@@ -137,8 +137,11 @@ class FakeAPI:
         self.calls['settle_debt'] = payload
         return {'settled_amount': payload['amount'], 'remaining_amount': '0'}
 
-    def set_unicode_preference(self, payload):
-        self.calls['set_unicode_preference'] = payload
+    def set_unicode_preference(self, user_id, payload):
+        self.calls['set_unicode_preference'] = {
+            'user_id': user_id,
+            'use_unicode': payload['use_unicode']
+        }
         return {'message': 'Preference updated'}
 
 # -------------------------------
