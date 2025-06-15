@@ -108,7 +108,6 @@ async def handle_set_unicode_preference(interaction: discord.Interaction, use_un
     # Call the external API to update the preference
     try:
         set_unicode_preference_request = SetUnicodePreferenceRequest(
-            user_id=user_id,
             use_unicode=use_unicode
         )
         payload = set_unicode_preference_request.model_dump()
