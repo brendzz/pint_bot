@@ -1,7 +1,6 @@
 from fractions import Fraction
 import discord
 from bot import api_client, config
-from bot.utilities.flavour_messages import get_economy_health, get_secret_message
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, to_percentage, with_conversion_currency
 import bot.utilities.send_messages as send_messages

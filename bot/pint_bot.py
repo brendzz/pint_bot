@@ -8,8 +8,6 @@ from dotenv import load_dotenv
 import bot.config as config
 from bot.setup.register_commands import register_commands
 from bot.setup.update_settings_from_api import update_settings_from_api
-import bot.api_client as api_client
-from fractions import Fraction
 
 intents = discord.Intents.default()
 intents.message_content = True
