@@ -3,6 +3,7 @@ import pytest
 
 from bot import config
 from tests.conftest import DummyInteraction, DummyUser
+from fractions import Fraction
 
 class TestGetDebtsCommand:
     @pytest.mark.parametrize("response, expected_title", [
@@ -89,15 +90,16 @@ class TestGetAllDebtsCommand:
         }, False, 'Economy active'),
     ],
     ids=["no_debts_in_economy", "debts_in_economy"])
-    @patch.multiple(
-        "bot.config",
-        ECONOMY_HEALTH_MESSAGES=[
-            {"threshold": 1, "message": "Economy active"},
-            {"threshold": 0, "message": "Economy is dead"}
+    @patch(
+        "bot.utilities.flavour_messages.ECONOMY_HEALTH_MESSAGES",
+        [
+            {"threshold": Fraction(1), "message": "Economy active"},
+            {"threshold": Fraction(0), "message": "Economy is dead"}
         ],
     )
     @pytest.mark.asyncio
     async def test_get_all_debts_various(self, bot, shared, response, expect_error, health_msg):
+        import bot.config as config
         interaction = DummyInteraction(DummyUser(1), bot)
         shared.all_debts_response = response
         cmd = bot.tree.commands[config.GET_ALL_DEBTS_COMMAND]
