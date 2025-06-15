@@ -1,6 +1,7 @@
 """Configuration for the bot."""
 from fractions import Fraction
 from bot.configuration.constants import BOT_NAME, CURRENCY_NAME, CURRENCY_NAME_PLURAL
+
 ECONOMY_HEALTH_MESSAGES: list[dict[str, Fraction | str]] = [
     {
         "threshold": Fraction(100),
@@ -86,7 +87,7 @@ ECONOMY_HEALTH_MESSAGES: list[dict[str, Fraction | str]] = [
 ]
 
 SECRET_ECONOMY_MESSAGES = {
-    Fraction(3.14): f"Pi time",
+    Fraction(3.14): "Pi time",
     Fraction(13): f"A spooky number of {CURRENCY_NAME_PLURAL} indeed.",
     Fraction(42): f"The answer to life, the universe, and everything is {CURRENCY_NAME_PLURAL}!",
     Fraction(69): "Nice.",

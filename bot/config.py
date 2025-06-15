@@ -5,6 +5,7 @@ from fractions import Fraction
 import bot.configuration.economy_messages as economy_messages
 import bot.configuration.transferable_items as transferable_items
 import bot.configuration.constants as constants
+
 # API Connection
 API_URL: str = os.getenv("API_URL", "http://api:8000")
 
