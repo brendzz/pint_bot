@@ -42,6 +42,15 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
             {"Setting": "Sort by who owes the most first by Default (API Setting)", "Value": config.SORT_OWES_FIRST}
         ]
     },
+     {
+        "Category": "Display - Conversion Currency",
+        "Settings": [
+            {"Setting": "Conversion Currency", "Value": config.CONVERSION_CURRENCY},
+            {"Setting": "Show Conversion Currency by Default", "Value": config.SHOW_CONVERSION_CURRENCY_DEFAULT},
+            {"Setting": "Conversion ratio of how many of units of debt currency = 1 unit of Conversion Currency", "Value": config.EXCHANGE_RATE_TO_CONVERSION_CURRENCY},
+            {"Setting": "Show Conversino Currency Symble before amount by Default", "Value": config.CONVERSION_CURRENCY_SHOW_SYMBOL_BEFORE_AMOUNT}
+        ]
+    },
     {
         "Category": "Debt Rules - API Settings",
         "Settings": [

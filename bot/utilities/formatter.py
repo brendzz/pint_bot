@@ -56,6 +56,16 @@ def to_percentage(part, whole, decimal_places) -> str:
     percentage = fraction * 100
     return f"({percentage:.{decimal_places}f}%)"
 
+def with_conversion_currency(value, string_amount) -> str:
+    value = Fraction(value)
+    ratio = Fraction(config.EXCHANGE_RATE_TO_CONVERSION_CURRENCY)
+    converted = ratio * value
+    if config.CONVERSION_CURRENCY_SHOW_SYMBOL_BEFORE_AMOUNT:
+        formatted = f"{string_amount} [{config.CONVERSION_CURRENCY}{converted}]"
+    else:
+        formatted = f"{string_amount} [{converted}{config.CONVERSION_CURRENCY}]"
+    return formatted
+
 def currency_formatter(amount, use_unicode: bool=False) -> str:
     """Format the currency amount based on the configuration."""
     fraction = Fraction(amount)

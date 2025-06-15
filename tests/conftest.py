@@ -36,6 +36,7 @@ PATCHED_CONFIG = {
     "MAXIMUM_DEBT_CHARACTER_LIMIT": 200,
     "QUANTIZE_SETTLING_DEBTS": True,
     "SHOW_DETAILS_DEFAULT": True,
+    "EXCHANGE_RATE_TO_CONVERSION_CURRENCY": 6
 }
 
 @pytest.fixture(autouse=True, scope="session")
@@ -170,6 +171,7 @@ def mock_bot_dependencies(monkeypatch, shared):
     monkeypatch.setattr(debt_display, 'handle_error', fake_handle_error)
     monkeypatch.setattr(debt_display, 'currency_formatter', lambda amount, use_unicode: str(amount))
     monkeypatch.setattr(debt_display, 'to_percentage', lambda amount, total, config : '50')
+    monkeypatch.setattr(debt_display, 'with_conversion_currency', lambda value, string_amount : '- 1 £6')
 
     for module, model_names in {
         debt_management: ['OweRequest', 'SettleRequest'],
