@@ -28,8 +28,8 @@ PATCHED_CONFIG = {
     "SHOW_PERCENTAGES_DEFAULT": False,
     "USE_TABLE_FORMAT_DEFAULT": True,
     "ECONOMY_HEALTH_MESSAGES": [
-        {"threshold": 0, "message": "Economy is dead"},
         {"threshold": 1, "message": "Economy active"},
+        {"threshold": 0, "message": "Economy is dead"}
     ],
     "MAXIMUM_PER_DEBT": 10,
     "SMALLEST_UNIT": Fraction(1, 6),

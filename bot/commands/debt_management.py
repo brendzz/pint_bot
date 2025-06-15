@@ -1,5 +1,6 @@
 import discord
-from bot import api_client, config
+from bot import api_client
+from bot import config
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter
 import bot.utilities.send_messages as send_messages

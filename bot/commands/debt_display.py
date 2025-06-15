@@ -1,6 +1,7 @@
 from fractions import Fraction
 import discord
 from bot import api_client, config
+from bot.utilities.flavour_messages import get_economy_health, get_secret_message
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, to_percentage
 import bot.utilities.send_messages as send_messages
@@ -120,7 +121,6 @@ async def handle_get_debts(interaction: discord.Interaction,
             lines.append(f"\n**{debtor_name}**: {entry_lines[0]}")
             lines.extend(entry_lines[1:])
 
-    # If no debts are found, return a message
     # Send the formatted response
     title_beginning = "Your" if user is None else f"Here are {user.display_name}'s"
     await send_messages.send_info_message(
@@ -130,7 +130,6 @@ async def handle_get_debts(interaction: discord.Interaction,
             f"{'thanks' if user is None else 'thank them'} for participating in the {config.CURRENCY_NAME} economy!",
         description="\n".join(lines)
     )
-    # Send the formatted response
 
 async def handle_get_all_debts(
     interaction: discord.Interaction,
@@ -281,14 +280,13 @@ async def handle_debts_with_user(
         if show_details:
             lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages, show_alternative_currency))
 
-    # If no debts are found, return a message
     # Send the formatted response
     await send_messages.send_info_message(
         interaction,
         title=(
-            f"Here are the {config.CURRENCY_NAME} debts between "
-            f"*{interaction.user.display_name}* and *{user.display_name}*, "
-            f"thank you for participating in the {config.CURRENCY_NAME} economy!"
-        ),
+        f"Here are the {config.CURRENCY_NAME} debts between "
+        f"*{interaction.user.display_name}* and *{user.display_name}*, "
+        f"thank you for participating in the {config.CURRENCY_NAME} economy!"
+    ),
         description="\n".join(lines)
     )
