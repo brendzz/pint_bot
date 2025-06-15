@@ -22,6 +22,7 @@ MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
 
 # Set to True to only allow Settling debts in quantities of the smallest unit
 QUANTIZE_SETTLING_DEBTS: bool = True
+QUANTIZE_OWING_DEBTS: bool = True
 
 # True = sort debts most owed by user to least owed, false = sort by most owed to user to least
 SORT_OWES_FIRST: bool = True

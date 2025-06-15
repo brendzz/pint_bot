@@ -83,7 +83,7 @@ async def handle_get_debts(interaction: discord.Interaction,
         await send_messages.send_info_message(
             interaction,
             title=f"Looks like {"you're" if user is None else "they're"} not currently contributing to the {config.CURRENCY_NAME} economy.",
-            description=f"No debts found owed to or from this user. That's kind of cringe, {" " if user is None else "tell them to"} get some {config.CURRENCY_NAME} debt bro."
+            description=f"No debts found owed to or from this user. That's kind of cringe, {"" if user is None else "tell them to"} get some {config.CURRENCY_NAME} debt bro."
         )
         return
 

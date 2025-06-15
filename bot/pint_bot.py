@@ -6,7 +6,10 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 import bot.config as config
-from bot.register_commands import register_commands
+from bot.setup.register_commands import register_commands
+from bot.setup.update_settings_from_api import update_settings_from_api
+import bot.api_client as api_client
+from fractions import Fraction
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -21,9 +24,10 @@ async def on_ready():
     start_time = time.perf_counter()
     register_commands(bot)
     await bot.tree.sync()
+    await update_settings_from_api()
     end_time = time.perf_counter()
     elapsed = end_time - start_time
-    print(f"Commands registered and synced in {elapsed:.2f} seconds.")
+    print(f"Commands registered and API settings synced in {elapsed:.2f} seconds.")
     print("--------------------------------------------------------------")
 
 @bot.event

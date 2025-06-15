@@ -1,5 +1,5 @@
 /.vscode
+*/data
 *.pyc
 *.env
 *.DS_Store
-pint_economy.json

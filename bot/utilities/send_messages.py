@@ -36,11 +36,11 @@ async def send_one_column_table_message(interaction: discord.Interaction, title:
             embed.add_field(name="Setting", value=settings, inline=True)
             embed.add_field(name="Value", value=values, inline=True)
         else:
-                # Format each row into a vertical layout
+            # Format each row into a vertical layout
             for row in chunk:
                 embed.add_field(
-                    name=row["Setting"],  # Use the setting name as the field title
-                    value=f"{row['Value']}",  # Display the value below the setting name
+                    name=row["Setting"],
+                    value=f"{row['Value']}",  
                     inline=False  # Ensure the field spans the full width
                 )
 
