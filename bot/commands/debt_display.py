@@ -1,6 +1,7 @@
 from fractions import Fraction
 import discord
 from bot import api_client, config
+from bot.utilities.flavour_messages import get_economy_health, get_secret_message
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, to_percentage
 import bot.utilities.send_messages as send_messages
@@ -73,7 +74,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     # Debts owed by the user
     if data["owed_by_you"]:
         total_owed_by_you = Fraction(data['total_owed_by_you'])
-        lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {"YOU" if user is None else "THEY"} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}")
+        lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {'YOU' if user is None else 'THEY'} OWE:**__ {currency_formatter(total_owed_by_you, use_unicode).upper()}{get_secret_message(total_owed_by_you)}")
         for creditor_id, entries in data["owed_by_you"].items():
             creditor_name = await get_display_name(interaction.client, creditor_id)
             entry_lines = format_debt_entries(entries, total_owed_by_you, use_unicode, show_details, show_percentages)
@@ -83,14 +84,13 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
     # Debts owed to the user
     if data["owed_to_you"]:
         total_owed_to_you = Fraction(data['total_owed_to_you'])
-        lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {"YOU" if user is None else "THEM"}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}")
+        lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {'YOU' if user is None else 'THEM'}:**__ {currency_formatter(total_owed_to_you, use_unicode).upper()}{get_secret_message(total_owed_to_you)}")
         for debtor_id, entries in data["owed_to_you"].items():
             debtor_name = await get_display_name(interaction.client, debtor_id)
             entry_lines = format_debt_entries(entries, total_owed_to_you, use_unicode, show_details, show_percentages)
             lines.append(f"\n**{debtor_name}**: {entry_lines[0]}")
             lines.extend(entry_lines[1:])
 
-    # If no debts are found, return a message
     # Send the formatted response
     title_beginning = "Your" if user is None else f"Here are {user.display_name}'s"
     await send_messages.send_info_message(
@@ -100,7 +100,6 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
             f"{'thanks' if user is None else 'thank them'} for participating in the {config.CURRENCY_NAME} economy!",
         description="\n".join(lines)
     )
-    # Send the formatted response
 
 async def handle_get_all_debts(
     interaction: discord.Interaction,
@@ -150,21 +149,11 @@ async def handle_get_all_debts(
         })
 
     # Determine the economy health message
-    economy_health_message = max(
-        (
-            health
-            for health in config.ECONOMY_HEALTH_MESSAGES
-            if total_in_circulation >= health["threshold"]
-        ),
-        key=lambda h: h["threshold"],
-        default={"message": "The economy is in an unknown state"}
-    )["message"]
-
-    # Call send_table_message to send the data as a table
+    economy_health_message = get_economy_health(total_in_circulation)
     await send_messages.send_two_column_table_message(
         interaction,
         title=f"{config.CURRENCY_NAME} Economy Overview",
-        description=f"{economy_health_message}\n\n**Total {config.CURRENCY_NAME_PLURAL} in circulation: {currency_formatter(total_in_circulation, use_unicode)}**",
+        description=f"{economy_health_message}\n\n**Total {config.CURRENCY_NAME_PLURAL} in circulation: {currency_formatter(total_in_circulation, use_unicode)}**{get_secret_message(total_in_circulation)}",
         data=table_data,
         table_format=table_format
     )
@@ -218,6 +207,7 @@ async def handle_debts_with_user(
         lines.append(
             f"__**{config.CURRENCY_NAME_PLURAL} YOU OWE THEM:**__ "
             f"{currency_formatter(total_owed_by_you, use_unicode).upper()}"
+            f"{get_secret_message(total_owed_by_you)}"
         )
         if show_details:
             lines.extend(format_debt_entries(data["owed_by_you"], total_owed_by_you, use_unicode, show_details, show_percentages))
@@ -228,19 +218,18 @@ async def handle_debts_with_user(
         lines.append(
             f"__**{config.CURRENCY_NAME_PLURAL} THEY OWE YOU:**__ "
             f"{currency_formatter(total_owed_to_you, use_unicode).upper()}"
+            f"{get_secret_message(total_owed_to_you)}"
         )
         if show_details:
             lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages))
 
-    # If no debts are found, return a message
     # Send the formatted response
     await send_messages.send_info_message(
         interaction,
         title=(
-            f"Here are the {config.CURRENCY_NAME} debts between "
-            f"*{interaction.user.display_name}* and *{user.display_name}*, "
-            f"thank you for participating in the {config.CURRENCY_NAME} economy!"
-        ),
+        f"Here are the {config.CURRENCY_NAME} debts between "
+        f"*{interaction.user.display_name}* and *{user.display_name}*, "
+        f"thank you for participating in the {config.CURRENCY_NAME} economy!"
+    ),
         description="\n".join(lines)
     )
-    # Send the formatted response
