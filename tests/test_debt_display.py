@@ -92,8 +92,8 @@ class TestGetAllDebtsCommand:
     @patch.multiple(
         "bot.config",
         ECONOMY_HEALTH_MESSAGES=[
-            {"threshold": 0, "message": "Economy is dead"},
             {"threshold": 1, "message": "Economy active"},
+            {"threshold": 0, "message": "Economy is dead"}
         ],
     )
     @pytest.mark.asyncio

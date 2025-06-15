@@ -2,9 +2,9 @@
 from secrets import SystemRandom
 import os
 from fractions import Fraction
-from bot.configuration.economy_health_messages import ECONOMY_HEALTH_MESSAGES, SECRET_ECONOMY_MESSAGES
-from bot.configuration.transferable_items import TRANSFERABLE_ITEMS
-from bot.configuration.constants import BOT_NAME, CURRENCY_NAME, CURRENCY_NAME_PLURAL
+import bot.configuration.economy_messages as economy_messages
+import bot.configuration.transferable_items as transferable_items
+import bot.configuration.constants as constants
 # API Connection
 API_URL: str = os.getenv("API_URL", "http://api:8000")
 
@@ -12,9 +12,9 @@ API_URL: str = os.getenv("API_URL", "http://api:8000")
 RANDOM_NUMBER_GENERATOR = SystemRandom()
 
 # General
-BOT_NAME=BOT_NAME
-CURRENCY_NAME=CURRENCY_NAME
-CURRENCY_NAME_PLURAL=CURRENCY_NAME_PLURAL
+BOT_NAME = constants.BOT_NAME
+CURRENCY_NAME = constants.CURRENCY_NAME
+CURRENCY_NAME_PLURAL = constants.CURRENCY_NAME_PLURAL
 
 # Commands
 GET_DEBTS_COMMAND: str = "pints"
@@ -47,6 +47,6 @@ REACTION_ODDS_RARE: float = 0.1
 # Fun
 ROLL_WINNING_NUMBER: int = 6
 
-ECONOMY_HEALTH_MESSAGES=ECONOMY_HEALTH_MESSAGES
-SECRET_ECONOMY_MESSAGES=SECRET_ECONOMY_MESSAGES
-TRANSFERABLE_ITEMS=TRANSFERABLE_ITEMS
+ECONOMY_HEALTH_MESSAGES = economy_messages.ECONOMY_HEALTH_MESSAGES
+SECRET_ECONOMY_MESSAGES = economy_messages.SECRET_ECONOMY_MESSAGES
+TRANSFERABLE_ITEMS = transferable_items.TRANSFERABLE_ITEMS

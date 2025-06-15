@@ -70,7 +70,6 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
 
     # Format the response
     lines = []
-    title_beginning = "Your" if user is None else f"Here are {user.display_name}'s"
 
     # Debts owed by the user
     if data["owed_by_you"]:
@@ -93,6 +92,7 @@ async def handle_get_debts(interaction: discord.Interaction, user: discord.User 
             lines.extend(entry_lines[1:])
 
     # Send the formatted response
+    title_beginning = "Your" if user is None else f"Here are {user.display_name}'s"
     await send_messages.send_info_message(
         interaction,
         title=
