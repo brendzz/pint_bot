@@ -1,6 +1,5 @@
 import pytest
 
-from bot.setup.register_commands import register_commands
 from bot.setup.command import Command
 from tests.conftest import DummyInteraction, DummyUser
 

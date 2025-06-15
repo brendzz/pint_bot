@@ -1,9 +1,6 @@
 import discord
-from bot import api_client
 from bot import config
-from bot.utilities.error_handling import handle_error
 import bot.utilities.send_messages as send_messages
-from models.set_unicode_preference_request import SetUnicodePreferenceRequest
 
 async def handle_settings(interaction: discord.Interaction, table_format: bool = None):
     if table_format is None:
@@ -48,7 +45,7 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
             {"Setting": "Conversion Currency", "Value": config.CONVERSION_CURRENCY},
             {"Setting": "Show Conversion Currency by Default", "Value": config.SHOW_CONVERSION_CURRENCY_DEFAULT},
             {"Setting": "Conversion ratio of how many of units of debt currency = 1 unit of Conversion Currency", "Value": config.EXCHANGE_RATE_TO_CONVERSION_CURRENCY},
-            {"Setting": "Show Conversino Currency Symble before amount by Default", "Value": config.CONVERSION_CURRENCY_SHOW_SYMBOL_BEFORE_AMOUNT}
+            {"Setting": "Show Conversion Currency Symbol before amount by Default", "Value": config.CONVERSION_CURRENCY_SHOW_SYMBOL_BEFORE_AMOUNT}
         ]
     },
     {
@@ -100,26 +97,3 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
         data=formatted_data,
         table_format=table_format
     )
-
-async def handle_set_unicode_preference(interaction: discord.Interaction, use_unicode: bool):
-    await interaction.response.defer()
-    user_id = str(interaction.user.id)  # Get the user's ID
-
-    # Call the external API to update the preference
-    try:
-        set_unicode_preference_request = SetUnicodePreferenceRequest(
-            user_id=user_id,
-            use_unicode=use_unicode
-        )
-        payload = set_unicode_preference_request.model_dump()
-
-        # Send the request to the API
-        data = api_client.set_unicode_preference(payload)
-    except Exception as e:
-        await handle_error(interaction, e, title="Error Updating Preference")
-        return
-    # Provide feedback to the user
-    await send_messages.send_success_message(
-        interaction,
-        title="Preference Updated",
-        description=data["message"])

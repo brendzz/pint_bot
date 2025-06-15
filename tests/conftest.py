@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 # Imports
 import bot.setup.register_commands as register_commands
-from bot.commands import debt_display, debt_management, settings
+from bot.commands import bot_settings, debt_display, debt_management
 from bot.utilities import send_messages, user_preferences
 
 # -------------------------------
@@ -175,14 +175,14 @@ def mock_bot_dependencies(monkeypatch, shared):
 
     for module, model_names in {
         debt_management: ['OweRequest', 'SettleRequest'],
-        settings: ['SetUnicodePreferenceRequest'],
+        bot_settings: ['SetUnicodePreferenceRequest'],
     }.items():
         for name in model_names:
             monkeypatch.setattr(module, name, lambda **kwargs: type("DummyModel", (), {"model_dump": lambda self: kwargs})())
 
     monkeypatch.setattr(debt_management, 'api_client', shared.fake_api)
     monkeypatch.setattr(debt_display, 'api_client', shared.fake_api)
-    monkeypatch.setattr(settings, 'api_client', shared.fake_api)
+    monkeypatch.setattr(bot_settings, 'api_client', shared.fake_api)
 
 # -------------------------------
 # Intercept message functions
