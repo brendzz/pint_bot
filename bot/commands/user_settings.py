@@ -16,7 +16,7 @@ async def handle_set_unicode_preference(interaction: discord.Interaction, use_un
         payload = set_unicode_preference_request.model_dump()
 
         # Send the request to the API
-        data = api_client.set_unicode_preference(payload)
+        data = api_client.set_unicode_preference(user_id, payload)
     except Exception as e:
         await handle_error(interaction, e, title="Error Updating Preference")
         return

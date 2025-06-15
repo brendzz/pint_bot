@@ -6,7 +6,8 @@ from bot.commands.debt_display import handle_debts_with_user, handle_get_all_deb
 from bot.commands.debt_management import handle_owe, handle_settle
 from bot.commands.games import handle_roll
 from bot.commands.support import handle_help_command
-from bot.commands.bot_settings import handle_set_unicode_preference, handle_settings
+from bot.commands.bot_settings import handle_settings
+from bot.commands.user_settings import handle_set_unicode_preference
 import bot.config as config
 
 def define_command_details() -> None:
