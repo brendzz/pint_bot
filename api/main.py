@@ -1,10 +1,11 @@
 # Imports
 """FastAPI for managing pint debts between users."""
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from fractions import Fraction
 import logging
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
+from dateutil.parser import isoparse
 import api.config as config
 import api.fraction_functions as fractions
 from api.data_manager import (
@@ -66,13 +67,13 @@ async def get_transactions(
         )
 
     # Convert date to datetime boundaries
-    start_datetime = datetime.combine(start_date, datetime.min.time())
-    end_datetime = datetime.combine(end_date, datetime.max.time())
+    start_datetime = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc)
+    end_datetime = datetime.combine(end_date, datetime.max.time(), tzinfo=timezone.utc)
 
     # Filter by date range
     transactions = [
         t for t in transactions
-        if start_datetime <= datetime.fromisoformat(t.timestamp) <= end_datetime
+        if start_datetime <= isoparse(t.timestamp) <= end_datetime
     ]
 
     # Apply user ID filter
