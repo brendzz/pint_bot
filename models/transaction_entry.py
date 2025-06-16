@@ -1,6 +1,6 @@
 from typing import Literal
 from fractions import Fraction
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field, field_validator
 
 class TransactionEntry(BaseModel):
@@ -10,7 +10,9 @@ class TransactionEntry(BaseModel):
     creditor: str
     amount: Fraction
     reason: str = ""
-    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat(timespec="seconds"))
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    )
 
     @field_validator("amount", mode="before")
     @classmethod
