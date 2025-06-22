@@ -29,6 +29,12 @@ class TestMixedNumberToFraction:
     def test_mixed_number_missing_fraction(self):
         assert fractions.mixed_number_to_fraction("2 ") == Fraction(2)
 
+    def test_decimal(self):
+        assert fractions.mixed_number_to_fraction("0.5") == Fraction(1, 2)
+
+    def test_decimal_with_extra_spaces(self):
+        assert fractions.mixed_number_to_fraction("  .5 ") == Fraction(1, 2)
+
     def test_zero_division(self):
         with pytest.raises(HTTPException) as e:
             fractions.mixed_number_to_fraction("1/0")
@@ -42,11 +48,6 @@ class TestMixedNumberToFraction:
     def test_non_numeric_string(self):
         with pytest.raises(HTTPException) as e:
             fractions.mixed_number_to_fraction("hello world")
-        assert e.value.detail == "INVALID_AMOUNT"
-
-    def test_float_string_should_fail(self):
-        with pytest.raises(HTTPException) as e:
-            fractions.mixed_number_to_fraction("1.5")
         assert e.value.detail == "INVALID_AMOUNT"
 
     def test_none_input(self):
