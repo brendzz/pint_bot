@@ -26,8 +26,8 @@ def mixed_number_to_fraction(input_str: str) -> Fraction:
             whole = 0
             numerator, denominator = map(int, input_str.split("/"))
         else:
-            # If there's no fraction, treat it as a whole number
-            return Fraction(int(input_str))
+            # If there's no fraction, treat it as a number
+            return Fraction(input_str)
 
         if denominator == 0:
             raise HTTPException(status_code=400, detail="INVALID_AMOUNT")

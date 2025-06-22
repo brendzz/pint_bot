@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
 from dateutil.parser import isoparse
 import api.config as config
-import api.fraction_functions as fractions
+import api.fraction_functions as fraction_functions
 from api.data_manager import (
     append_transaction,
     load_debts,
@@ -106,13 +106,13 @@ async def add_debt(request: OweRequest):
     if debtor_id == creditor_id:
         raise HTTPException(status_code=HTTP_BAD_REQUEST_CODE, detail="CANNOT_OWE_SELF")
 
-    amount = fractions.mixed_number_to_fraction(request.amount.strip())
+    amount = fraction_functions.mixed_number_to_fraction(request.amount.strip())
 
     # Checks
-    fractions.check_in_range(amount, settling=False)
+    fraction_functions.check_in_range(amount, settling=False)
     
     if config.QUANTIZE_OWING_DEBTS:
-        fractions.check_quantization(amount)
+        fraction_functions.check_quantization(amount)
 
     # Get or create the debtor's data
     if debtor_id not in data.debtors:
@@ -242,13 +242,13 @@ async def settle_debt(request: SettleRequest):
     creditor_id = str(request.creditor)
 
     # Validate and parse the pint number
-    amount = fractions.mixed_number_to_fraction(request.amount.strip())
+    amount = fraction_functions.mixed_number_to_fraction(request.amount.strip())
 
     # Validate pint number constraints
-    fractions.check_in_range(amount, settling=True)
+    fraction_functions.check_in_range(amount, settling=True)
 
     if config.QUANTIZE_SETTLING_DEBTS:
-        fractions.check_quantization(amount)
+        fraction_functions.check_quantization(amount)
 
     # Check if the debtor owes the creditor
     debtor = data.debtors.get(debtor_id)
