@@ -8,6 +8,7 @@ class TestRegistration:
             config.GET_ALL_DEBTS_COMMAND,
             config.DEBTS_WITH_USER_COMMAND,
             'settle',
+            'cashout',
             'set_unicode_preference',
             config.ROLL_COMMAND,
             'settings',
