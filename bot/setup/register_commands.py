@@ -3,7 +3,7 @@ import discord
 from discord import app_commands
 from bot.setup.command import Command
 from bot.commands.debt_display import handle_debts_with_user, handle_get_all_debts, handle_get_debts
-from bot.commands.debt_management import handle_owe, handle_settle
+from bot.commands.debt_management import handle_owe, handle_settle, handle_cashout
 from bot.commands.games import handle_roll
 from bot.commands.support import handle_help_command
 from bot.commands.bot_settings import handle_settings
@@ -53,7 +53,16 @@ def define_command_details() -> None:
         key="settle",
         name="settle",
         description=(
-            f"Settle {config.CURRENCY_NAME} debts with someone, starting with the oldest debts."
+            f"Settle {config.CURRENCY_NAME} debts you owe someone."
+        ),
+        category="Debts"
+    )
+
+    Command(
+        key="cashout",
+        name="cashout",
+        description=(
+            f"Cashout your {config.CURRENCY_NAME} debts from someone."
         ),
         category="Debts"
     )
@@ -172,6 +181,18 @@ def register_commands(bot):
     )
     async def settle(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
         await handle_settle(interaction, user, amount, message=message)
+
+    @bot.tree.command(
+            name=Command.get("cashout").name,
+            description=Command.get("cashout").description
+        )
+    @app_commands.describe(
+        user="Who you want to cashout debts from",
+        amount=f"How many {config.CURRENCY_NAME_PLURAL} to cashout",
+        message="Message to show with this transaction (optional)"
+    )
+    async def cashout(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
+        await handle_cashout(interaction, user, amount, message=message)
 
     @bot.tree.command(
         name=Command.get("set_unicode_preference").name,

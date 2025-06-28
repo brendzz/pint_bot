@@ -85,3 +85,42 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
         title="Debt Settled Successfully",
         description= f"Settled {settled_amount} with {user.mention}.\n*{message}*\nRemaining debt: {remaining_amount}."
     )
+
+async def handle_cashout(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
+    debtor = user.id
+    creditor = interaction.user.id
+
+    if debtor == creditor:
+        await handle_error(interaction, error_code="CANNOT_SETTLE_SELF")
+        return
+
+    # Defer the response to avoid timeout
+    await interaction.response.defer()
+
+    # Call the external API to settle debts
+    try:
+        # Use the SettleRequest Pydantic model to validate the payload
+        settle_request = SettleRequest(
+            debtor=debtor,
+            creditor=creditor,
+            amount=amount
+        )
+        payload = settle_request.model_dump()
+
+        # Send the request to the API
+        data = api_client.settle_debt(payload)
+
+    except Exception as e:
+        await handle_error(interaction, e, title="Error Cashing Out Debt")
+        return
+
+    use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
+
+    # Send confirmation message
+    settled_amount = currency_formatter(data["settled_amount"], use_unicode)
+    remaining_amount = currency_formatter(data["remaining_amount"], use_unicode)
+    await send_messages.send_success_message(
+        interaction,
+        title="Debt Cashed Out Successfully",
+        description= f"Cashed out {settled_amount} from {user.mention}.\n*{message}*\nRemaining debt: {remaining_amount}."
+    )
