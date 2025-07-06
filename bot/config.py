@@ -23,6 +23,13 @@ GET_ALL_DEBTS_COMMAND: str = "all_pints"
 DEBTS_WITH_USER_COMMAND: str = "pints_with_user"
 ROLL_COMMAND: str = "volcano"
 
+# Command Categories
+DEBT_DISPLAY_COMMAND_CATEGORY: str = "Debt Display"
+DEBT_TRANSACTIONS_COMMAND_CATEGORY: str = "Debt Transactions"
+SUPPORT_COMMAND_CATEGORY: str = "Support"
+SETTINGS_COMMAND_CATEGORY: str = "Settings"
+GAMES_COMMAND_CATEGORY: str = "Games"
+
 # Display
 USE_DECIMAL_OUTPUT: bool = False
 USE_TABLE_FORMAT_DEFAULT: bool = False

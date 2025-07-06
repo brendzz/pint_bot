@@ -7,6 +7,7 @@ import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from models.owe_request import OweRequest
 from models.settle_request import SettleRequest
+from fractions import Fraction
 
 async def handle_owe(interaction: discord.Interaction, user: discord.User, amount: str, *, reason: str = ""):
     debtor = interaction.user.id
@@ -38,13 +39,17 @@ async def handle_owe(interaction: discord.Interaction, user: discord.User, amoun
 
     use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
 
+    debts_remaining = api_client.debts_with_user(debtor, creditor)
+    if debts_remaining["owed_by_you"]:
+        total_debt=Fraction(debts_remaining['total_owed_by_you'])
+
     await send_messages.send_success_message(
             interaction,
             title=f"{config.CURRENCY_NAME} Debt Added - {config.CURRENCY_NAME} Economy Thriving",
-            description= f"Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}"
+            description= f"Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}\nNew total debt: {currency_formatter(total_debt, use_unicode)}."
         )
 
-async def handle_settle(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
+async def handle_settle(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
     debtor = interaction.user.id
     creditor = user.id
 
@@ -64,7 +69,8 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
         settle_request = SettleRequest(
             debtor=debtor,
             creditor=creditor,
-            amount=amount
+            amount=amount,
+            reason=reason
         )
         payload = settle_request.model_dump()
 
@@ -83,10 +89,10 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
     await send_messages.send_success_message(
         interaction,
         title="Debt Settled Successfully",
-        description= f"Settled {settled_amount} with {user.mention}.\n*{message}*\nRemaining debt: {remaining_amount}."
+        description= f"Settled {settled_amount} with {user.mention}.\n*{reason}*\nRemaining debt: {remaining_amount}."
     )
 
-async def handle_cashout(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
+async def handle_cashout(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
     debtor = user.id
     creditor = interaction.user.id
 
@@ -103,7 +109,8 @@ async def handle_cashout(interaction: discord.Interaction, user: discord.User, a
         settle_request = SettleRequest(
             debtor=debtor,
             creditor=creditor,
-            amount=amount
+            amount=amount,
+            reason=reason
         )
         payload = settle_request.model_dump()
 
@@ -122,5 +129,5 @@ async def handle_cashout(interaction: discord.Interaction, user: discord.User, a
     await send_messages.send_success_message(
         interaction,
         title="Debt Cashed Out Successfully",
-        description= f"Cashed out {settled_amount} from {user.mention}.\n*{message}*\nRemaining debt: {remaining_amount}."
+        description= f"Cashed out {settled_amount} from {user.mention}.\n*{reason}*\nRemaining debt: {remaining_amount}."
     )
