@@ -18,35 +18,35 @@ def define_command_details() -> None:
         key="help",
         name="help",
         description="Get a list of available commands and their descriptions.",
-        category="Support"
+        category=config.SUPPORT_COMMAND_CATEGORY
     )
 
     Command(
         key="debts_with_user",
         name=config.DEBTS_WITH_USER_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts between yourself and another user.",
-        category="Debt Display"
+        category=config.DEBT_DISPLAY_COMMAND_CATEGORY
     )
 
     Command(
         key="get_debts",
         name=config.GET_DEBTS_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts for yourself or another user.",
-        category="Debt Display"
+        category=config.DEBT_DISPLAY_COMMAND_CATEGORY
     )
 
     Command(
         key="get_all_debts",
         name=config.GET_ALL_DEBTS_COMMAND,
         description=f"See everyone's total {config.CURRENCY_NAME} debts.",
-        category="Debt Display"
+        category=config.DEBT_DISPLAY_COMMAND_CATEGORY
     )
 
     Command(
         key="owe",
         name="owe",
         description=f"Add a number of {config.CURRENCY_NAME_PLURAL} you owe someone.",
-        category="Debt Transactions"
+        category=config.DEBT_TRANSACTIONS_COMMAND_CATEGORY
     )
 
     Command(
@@ -55,7 +55,7 @@ def define_command_details() -> None:
         description=(
             f"Settle {config.CURRENCY_NAME} debts you owe someone."
         ),
-        category="Debt Transactions"
+        category=config.DEBT_TRANSACTIONS_COMMAND_CATEGORY
     )
 
     Command(
@@ -64,28 +64,28 @@ def define_command_details() -> None:
         description=(
             f"Cashout your {config.CURRENCY_NAME} debts from someone."
         ),
-        category="Debt Transactions"
+        category=config.DEBT_TRANSACTIONS_COMMAND_CATEGORY
     )
 
     Command(
         key="set_unicode_preference",
         name="set_unicode_preference",
         description="Set your default preference for using Unicode fractions.",
-        category="Settings"
+        category=config.SETTINGS_COMMAND_CATEGORY
     )
 
     Command(
         key="settings",
         name="settings",
         description="View the current bot settings.",
-        category="Settings"
+        category=config.SETTINGS_COMMAND_CATEGORY
     )
 
     Command(
         key="roll",
         name=config.ROLL_COMMAND,
         description=f"Play {config.ROLL_COMMAND} game.",
-        category="Games"
+        category=config.GAMES_COMMAND_CATEGORY
     )
 
 def register_commands(bot):
