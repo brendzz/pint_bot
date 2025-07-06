@@ -139,11 +139,11 @@ async def add_debt(request: OweRequest):
     save_debts(data)
 
     transaction_entry= TransactionEntry(
-        type="owe",
-        debtor= debtor_id,
-        creditor= creditor_id,
-        amount= amount,
-        reason= request.reason
+        type = "owe",
+        debtor = debtor_id,
+        creditor = creditor_id,
+        amount = amount,
+        reason = request.reason
     )
 
     # Append the transaction entry
@@ -278,10 +278,11 @@ async def settle_debt(request: SettleRequest):
     save_debts(data)
 
     transaction_entry= TransactionEntry(
-        type="settle",
-        debtor= debtor_id,
-        creditor= creditor_id,
-        amount= amount,
+        type = "settle",
+        debtor = debtor_id,
+        creditor = creditor_id,
+        amount = amount,
+        reason = request.reason
     )
 
     # Append the transaction entry
@@ -293,6 +294,8 @@ async def settle_debt(request: SettleRequest):
     return {
         "settled_amount": str(settled_amount),
         "remaining_amount": str(total_remaining_debt),
+        "reason": request.reason,
+        "timestamp": current_timestamp()
     }
 
 @app.get("/users/{user_id}/unicode_preference")

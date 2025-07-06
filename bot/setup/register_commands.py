@@ -22,31 +22,31 @@ def define_command_details() -> None:
     )
 
     Command(
-        key="owe",
-        name="owe",
-        description=f"Add a number of {config.CURRENCY_NAME_PLURAL} you owe someone.",
-        category="Debts"
-    )
-
-    Command(
         key="debts_with_user",
         name=config.DEBTS_WITH_USER_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts between yourself and another user.",
-        category="Debts"
+        category="Debt Display"
     )
 
     Command(
         key="get_debts",
         name=config.GET_DEBTS_COMMAND,
         description=f"See current {config.CURRENCY_NAME} debts for yourself or another user.",
-        category="Debts"
+        category="Debt Display"
     )
 
     Command(
         key="get_all_debts",
         name=config.GET_ALL_DEBTS_COMMAND,
         description=f"See everyone's total {config.CURRENCY_NAME} debts.",
-        category="Debts"
+        category="Debt Display"
+    )
+
+    Command(
+        key="owe",
+        name="owe",
+        description=f"Add a number of {config.CURRENCY_NAME_PLURAL} you owe someone.",
+        category="Debt Transactions"
     )
 
     Command(
@@ -55,7 +55,7 @@ def define_command_details() -> None:
         description=(
             f"Settle {config.CURRENCY_NAME} debts you owe someone."
         ),
-        category="Debts"
+        category="Debt Transactions"
     )
 
     Command(
@@ -64,7 +64,7 @@ def define_command_details() -> None:
         description=(
             f"Cashout your {config.CURRENCY_NAME} debts from someone."
         ),
-        category="Debts"
+        category="Debt Transactions"
     )
 
     Command(
@@ -177,10 +177,10 @@ def register_commands(bot):
     @app_commands.describe(
         user="Who you want to settle debts with",
         amount=f"How many {config.CURRENCY_NAME_PLURAL} to settle",
-        message="Message to show with this transaction (optional)"
+        reason="Reason to show with this transaction (optional)"
     )
-    async def settle(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
-        await handle_settle(interaction, user, amount, message=message)
+    async def settle(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
+        await handle_settle(interaction, user, amount, reason=reason)
 
     @bot.tree.command(
             name=Command.get("cashout").name,
@@ -189,10 +189,10 @@ def register_commands(bot):
     @app_commands.describe(
         user="Who you want to cashout debts from",
         amount=f"How many {config.CURRENCY_NAME_PLURAL} to cashout",
-        message="Message to show with this transaction (optional)"
+        reason="Reason to show with this transaction (optional)"
     )
-    async def cashout(interaction: discord.Interaction, user: discord.User, amount: str, message: str = ""):
-        await handle_cashout(interaction, user, amount, message=message)
+    async def cashout(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
+        await handle_cashout(interaction, user, amount, reason=reason)
 
     @bot.tree.command(
         name=Command.get("set_unicode_preference").name,

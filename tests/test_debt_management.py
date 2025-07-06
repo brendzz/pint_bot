@@ -57,10 +57,10 @@ class TestSettleCommand:
     async def test_settle_success_and_defer(self, bot, shared):
         interaction = DummyInteraction(DummyUser(1), bot)
         target = DummyUser(2)
-        await bot.tree.commands['settle'](interaction, target, '5')
+        await bot.tree.commands['settle'](interaction, target, '5', 'Test')
         assert interaction.response.deferred
         assert shared.fake_api.calls['settle_debt'] == {
-            'debtor': 1, 'creditor': 2, 'amount': '5'
+            'debtor': 1, 'creditor': 2, 'amount': '5', 'reason': 'Test'
         }
         calls = interaction.send_success_message_calls
         assert calls
