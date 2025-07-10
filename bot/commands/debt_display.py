@@ -72,7 +72,7 @@ def find_net_difference(owed_to_you: Fraction,
     elif net_difference<0:
         return(f"\n__**NET DIFFERENCE - YOU OWE:**__ {net_difference_formatted}\nYou are in the negative!")
     else:
-        return(f"\nPerfectly balanced!")
+        return("\nPerfectly balanced!")
 
 
 async def handle_get_debts(interaction: discord.Interaction, 
