@@ -73,23 +73,12 @@ async def handle_get_debts(interaction: discord.Interaction,
                            show_conversion_currency: bool = None,
                            show_emoji_visuals: bool = None):
     """Handle fetching and displaying user debts for one user."""
-    if show_details is None:
-        show_details = config.SHOW_DETAILS_DEFAULT
-
-    if show_percentages is None:
-        show_percentages = config.SHOW_PERCENTAGES_DEFAULT
-
-    if show_conversion_currency is None:
-        show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
-
-    if user is None:
-        user_id = str(interaction.user.id)
-    else:
-        user_id = str(user.id)
+    table_format = config.USE_TABLE_FORMAT_DEFAULT if table_format is None else table_format
+    show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
+    show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
+    show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
+    user_id = str(interaction.user.id) if user is None else str(user.id)
     
-    if show_emoji_visuals is None:
-        show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT
-
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
     # Call the external API to fetch debts
@@ -169,22 +158,18 @@ async def handle_get_all_debts(
     show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts for all users."""
-    if table_format is None:
-        table_format = config.USE_TABLE_FORMAT_DEFAULT
-    if show_percentages is None:
-        show_percentages = config.SHOW_PERCENTAGES_DEFAULT
-    if show_conversion_currency is None:
-        show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
-    if show_emoji_visuals is None:
-        show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT
+    table_format = config.USE_TABLE_FORMAT_DEFAULT if table_format is None else table_format
+    show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
+    show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
+    show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
+
+    # Emoji visuals and table format are mutually exclusive
     if table_format:
-            show_emoji_visuals = False
+        show_emoji_visuals = False
     
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
 
-    if table_format and show_emoji_visuals:
-        await send_messages
     # Call the external API to fetch all debts
     try:
         data = api_client.get_all_debts()
@@ -259,17 +244,10 @@ async def handle_debts_with_user(
     show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts between two users."""
-    if show_details is None:
-        show_details = config.SHOW_DETAILS_DEFAULT
-
-    if show_percentages is None:
-        show_percentages = config.SHOW_PERCENTAGES_DEFAULT
-
-    if show_conversion_currency is None:
-        show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
-
-    if show_emoji_visuals is None:
-        show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT
+    table_format = config.USE_TABLE_FORMAT_DEFAULT if table_format is None else table_format
+    show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
+    show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
+    show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
 
     user_id1 = str(interaction.user.id)
     user_id2 = str(user.id)
@@ -341,7 +319,8 @@ async def handle_debts_with_user(
     lines.append(find_net_difference(total_owed_to_you,
                                      total_owed_by_you,
                                      use_unicode,
-                                     show_conversion_currency))
+                                     show_conversion_currency,
+                                     show_emoji_visuals))
 
     # Send the formatted response
     await send_messages.send_info_message(
