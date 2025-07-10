@@ -27,6 +27,8 @@ def format_debt_entries(
     total_formatted = currency_formatter(total_amount, use_unicode)
     if show_conversion_currency:
         total_formatted = with_conversion_currency(total_amount, total_formatted)
+    if show_emoji_visuals:
+        total_formatted = with_emoji_visuals(total_amount, total_formatted)
     lines.append(total_formatted)
     
     if show_details:
@@ -47,11 +49,14 @@ def format_debt_entries(
 def find_net_difference(owed_to_you: Fraction,
         owed_by_you: Fraction,
         use_unicode: bool,
-        show_conversion_currency: bool) -> str:
+        show_conversion_currency: bool,
+        show_emoji_visuals: bool) -> str:
     net_difference = owed_to_you - owed_by_you
     net_difference_formatted = currency_formatter(abs(net_difference), use_unicode)
     if show_conversion_currency:
          net_difference_formatted = with_conversion_currency(net_difference, net_difference_formatted)
+    if show_emoji_visuals:
+         net_difference_formatted = with_emoji_visuals(net_difference, net_difference_formatted)
     
     if net_difference>0:
         return(f"\n__**NET DIFFERENCE - OWED TO YOU:**__ {net_difference_formatted}\nYou are in the positive!")
