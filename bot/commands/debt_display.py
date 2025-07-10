@@ -2,7 +2,7 @@ from fractions import Fraction
 import discord
 from bot import api_client, config
 from bot.utilities.error_handling import handle_error
-from bot.utilities.formatter import currency_formatter, to_percentage, with_conversion_currency
+from bot.utilities.formatter import currency_formatter, to_percentage, with_conversion_currency, with_emoji_visuals
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from bot.utilities.user_utils import get_display_name
@@ -39,11 +39,29 @@ def format_debt_entries(
             lines.append(f"- {amount} for *{entry['reason']}* on {entry['timestamp']}")
     return lines
 
+def find_net_difference(owed_to_you: Fraction,
+        owed_by_you: Fraction,
+        use_unicode: bool,
+        show_conversion_currency: bool) -> str:
+    net_difference = owed_to_you - owed_by_you
+    net_difference_formatted = currency_formatter(abs(net_difference), use_unicode)
+    if show_conversion_currency:
+         net_difference_formatted = with_conversion_currency(net_difference, net_difference_formatted)
+    
+    if net_difference>0:
+        return(f"\n__**NET DIFFERENCE - OWED TO YOU:**__ {net_difference_formatted}\nYou are in the positive!")
+    elif net_difference<0:
+        return(f"\n__**NET DIFFERENCE - YOU OWE:**__ {net_difference_formatted}\nYou are in the negative!")
+    else:
+        return(f"\nPerfectly balanced!")
+
+
 async def handle_get_debts(interaction: discord.Interaction, 
                            user: discord.User = None, 
                            show_details: bool = None, 
                            show_percentages: bool = None,
-                           show_conversion_currency: bool = None):
+                           show_conversion_currency: bool = None,
+                           show_emoji_visuals: bool = None):
     """Handle fetching and displaying user debts for one user."""
     if show_details is None:
         show_details = config.SHOW_DETAILS_DEFAULT
@@ -58,6 +76,9 @@ async def handle_get_debts(interaction: discord.Interaction,
         user_id = str(interaction.user.id)
     else:
         user_id = str(user.id)
+    
+    if show_emoji_visuals is None:
+        show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT
 
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
@@ -89,6 +110,8 @@ async def handle_get_debts(interaction: discord.Interaction,
         if show_conversion_currency:
             total_owed_by_you_formatted=with_conversion_currency(total_owed_by_you, total_owed_by_you_formatted)
    
+        if show_emoji_visuals:
+            total_owed_by_you_formatted=with_emoji_visuals(total_owed_by_you, total_owed_by_you_formatted)
         lines.append(f"__**{config.CURRENCY_NAME_PLURAL} {'YOU' if user is None else 'THEY'} OWE:**__ {total_owed_by_you_formatted}")
         for creditor_id, entries in data["owed_by_you"].items():
             creditor_name = await get_display_name(interaction.client, creditor_id)
@@ -102,7 +125,8 @@ async def handle_get_debts(interaction: discord.Interaction,
         total_owed_to_you_formatted = currency_formatter(total_owed_to_you, use_unicode).upper()
         if show_conversion_currency:
             total_owed_to_you_formatted=with_conversion_currency(total_owed_to_you, total_owed_to_you_formatted)
-  
+        if show_emoji_visuals:
+            total_owed_to_you_formatted=with_emoji_visuals(total_owed_to_you, total_owed_to_you_formatted)
         lines.append(f"\n__**{config.CURRENCY_NAME_PLURAL} OWED TO {'YOU' if user is None else 'THEM'}:**__ {total_owed_to_you_formatted}")
         for debtor_id, entries in data["owed_to_you"].items():
             debtor_name = await get_display_name(interaction.client, debtor_id)
@@ -124,7 +148,8 @@ async def handle_get_all_debts(
     interaction: discord.Interaction,
     table_format: bool = None,
     show_percentages: bool = None,
-    show_conversion_currency: bool = None
+    show_conversion_currency: bool = None,
+    show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts for all users."""
     if table_format is None:
@@ -133,9 +158,16 @@ async def handle_get_all_debts(
         show_percentages = config.SHOW_PERCENTAGES_DEFAULT
     if show_conversion_currency is None:
         show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
+    if show_emoji_visuals is None:
+        show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT
+    if table_format:
+            show_emoji_visuals = False
+    
     # Defer the interaction to avoid timeout
     await interaction.response.defer()
 
+    if table_format and show_emoji_visuals:
+        await send_messages
     # Call the external API to fetch all debts
     try:
         data = api_client.get_all_debts()
@@ -165,6 +197,10 @@ async def handle_get_all_debts(
         if show_percentages:
             owes = with_percentage(totals['owes'], total_in_circulation, owes)
             is_owed = with_percentage(totals['is_owed'], total_in_circulation, is_owed)
+
+        if show_emoji_visuals:
+            owes = with_emoji_visuals(totals['owes'], owes)
+            is_owed = with_emoji_visuals(totals['is_owed'], is_owed)
 
         table_data.append({
             "name": user_name,
@@ -201,7 +237,8 @@ async def handle_debts_with_user(
     user: discord.User,
     show_details: bool = None,
     show_percentages: bool = None,
-    show_conversion_currency: bool = None
+    show_conversion_currency: bool = None,
+    show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts between two users."""
     if show_details is None:
@@ -212,6 +249,9 @@ async def handle_debts_with_user(
 
     if show_conversion_currency is None:
         show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT
+
+    if show_emoji_visuals is None:
+        show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT
 
     user_id1 = str(interaction.user.id)
     user_id2 = str(user.id)
@@ -244,11 +284,14 @@ async def handle_debts_with_user(
     lines = []
 
     # Debts owed by the user
+    total_owed_by_you = Fraction(data['total_owed_by_you'])
     if data["owed_by_you"]:
-        total_owed_by_you = Fraction(data['total_owed_by_you'])
         total_owed_by_you_formatted = currency_formatter(total_owed_by_you, use_unicode).upper()
         if show_conversion_currency:
             total_owed_by_you_formatted=with_conversion_currency(total_owed_by_you, total_owed_by_you_formatted)
+        if show_emoji_visuals:
+            total_owed_by_you_formatted=with_emoji_visuals(total_owed_by_you, total_owed_by_you_formatted)
+
         lines.append(
             f"__**{config.CURRENCY_NAME_PLURAL} YOU OWE THEM:**__ "
             f"{total_owed_by_you_formatted}"
@@ -256,18 +299,27 @@ async def handle_debts_with_user(
         if show_details:
             lines.extend(format_debt_entries(data["owed_by_you"], total_owed_by_you, use_unicode, show_details, show_percentages, show_conversion_currency))
 
+    total_owed_to_you = Fraction(data['total_owed_to_you'])
     # Debts owed to the user
     if data["owed_to_you"]:
-        total_owed_to_you = Fraction(data['total_owed_to_you'])
         total_owed_to_you_formatted = currency_formatter(total_owed_to_you, use_unicode).upper()
         if show_conversion_currency:
             total_owed_to_you_formatted=with_conversion_currency(total_owed_to_you, total_owed_to_you_formatted)
+        if show_emoji_visuals:
+            total_owed_to_you_formatted=with_emoji_visuals(total_owed_to_you, total_owed_to_you_formatted)
+
         lines.append(
             f"__**{config.CURRENCY_NAME_PLURAL} THEY OWE YOU:**__ "
             f"{total_owed_to_you_formatted}"
         )
         if show_details:
             lines.extend(format_debt_entries(data["owed_to_you"], total_owed_to_you, use_unicode, show_details, show_percentages, show_conversion_currency))
+
+    # Net difference
+    lines.append(find_net_difference(total_owed_to_you,
+                                     total_owed_by_you,
+                                     use_unicode,
+                                     show_conversion_currency))
 
     # Send the formatted response
     await send_messages.send_info_message(

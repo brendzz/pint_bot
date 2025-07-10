@@ -27,6 +27,8 @@ PATCHED_CONFIG = {
     "TRANSFERABLE_ITEMS": ["Beer", "Wine"],
     "SHOW_PERCENTAGES_DEFAULT": False,
     "USE_TABLE_FORMAT_DEFAULT": True,
+    "SHOW_EMOJI_VISUALS_DEFAULT": False,
+    "CURRENCY_DISPLAY_EMOJI": "🍺",
     "ECONOMY_HEALTH_MESSAGES": [
         {"threshold": 1, "message": "Economy active"},
         {"threshold": 0, "message": "Economy is dead"}

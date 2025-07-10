@@ -37,6 +37,8 @@ SHOW_PERCENTAGES_DEFAULT: bool = False
 PERCENTAGE_DECIMAL_PLACES: int = 1
 SHOW_DETAILS_DEFAULT: bool = False
 SORT_OWES_FIRST: bool = True
+SHOW_EMOJI_VISUALS_DEFAULT: bool = False
+CURRENCY_DISPLAY_EMOJI: str = "🍺"
 
 # Display - Conversion Currency
 CONVERSION_CURRENCY: str = "£"

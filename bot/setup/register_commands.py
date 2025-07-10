@@ -119,13 +119,22 @@ def register_commands(bot):
         user="Another user to view debts for",
         show_details=f"Show details of each individual debt (Default:{config.SHOW_DETAILS_DEFAULT})",
         show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})",
-         show_conversion_currency=(
+        show_conversion_currency=(
             f"Show the equivalent value of the debts in {config.CONVERSION_CURRENCY} "
             f"(Default: {config.SHOW_CONVERSION_CURRENCY_DEFAULT})"
+        ),
+        show_emoji_visuals=(
+                f"Visualise the worth of the debts with {config.CURRENCY_DISPLAY_EMOJI} emojis "
+                f"(Default: {config.SHOW_EMOJI_VISUALS_DEFAULT})"
         )
     )
-    async def get_debts(interaction: discord.Interaction, user: discord.User = None, show_details: bool = None, show_percentages: bool = None, show_conversion_currency: bool = None):
-        await handle_get_debts(interaction, user, show_details, show_percentages, show_conversion_currency)
+    async def get_debts(interaction: discord.Interaction, 
+                        user: discord.User = None, 
+                        show_details: bool = None, 
+                        show_percentages: bool = None, 
+                        show_conversion_currency: bool = None, 
+                        show_emoji_visuals: bool = None):
+        await handle_get_debts(interaction, user, show_details, show_percentages, show_conversion_currency, show_emoji_visuals)
 
     @bot.tree.command(
         name=Command.get("get_all_debts").name,
@@ -133,14 +142,21 @@ def register_commands(bot):
     )
     @app_commands.describe(
         table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT}).",
-        show_percentages=f"Display percentages of how much of the economy each person owes/is owed (Default: {config.SHOW_PERCENTAGES_DEFAULT})",
+        show_percentages=(
+            "Display percentages of how much of the economy each person owes/is owed "
+            f"(Default: {config.SHOW_PERCENTAGES_DEFAULT})"
+        ),
         show_conversion_currency=(
                 f"Show the worth of the debts in {config.CONVERSION_CURRENCY} "
                 f"(Default: {config.SHOW_CONVERSION_CURRENCY_DEFAULT})"
+            ),
+        show_emoji_visuals=(
+                f"Visualise the worth of the debts with {config.CURRENCY_DISPLAY_EMOJI} emojis "
+                f"(Default: {config.SHOW_EMOJI_VISUALS_DEFAULT})"
             )
     )
-    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_conversion_currency: bool = None):
-        await handle_get_all_debts(interaction, table_format, show_percentages, show_conversion_currency)
+    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_conversion_currency: bool = None, show_emoji_visuals: bool = None):
+        await handle_get_all_debts(interaction, table_format, show_percentages, show_conversion_currency, show_emoji_visuals)
 
     @bot.tree.command(
         name=Command.get("debts_with_user").name,
@@ -159,6 +175,10 @@ def register_commands(bot):
         show_conversion_currency=(
             f"Show the worth of the debts in {config.CONVERSION_CURRENCY} "
             f"(Default: {config.SHOW_CONVERSION_CURRENCY_DEFAULT})"
+        ),
+        show_emoji_visuals=(
+                f"Visualise the worth of the debts with {config.CURRENCY_DISPLAY_EMOJI} emojis "
+                f"(Default: {config.SHOW_EMOJI_VISUALS_DEFAULT})"
         )
     )
     async def debts_with_user(
@@ -166,9 +186,10 @@ def register_commands(bot):
         user: discord.User,
         show_details: bool = None,
         show_percentages: bool = None,
-        show_conversion_currency: bool = None
+        show_conversion_currency: bool = None,
+        show_emoji_visuals: bool = None
     ):
-        await handle_debts_with_user(interaction, user, show_details, show_percentages, show_conversion_currency)
+        await handle_debts_with_user(interaction, user, show_details, show_percentages, show_conversion_currency, show_emoji_visuals)
 
     @bot.tree.command(
         name=Command.get("settle").name,
