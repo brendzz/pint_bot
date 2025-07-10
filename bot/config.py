@@ -38,6 +38,7 @@ PERCENTAGE_DECIMAL_PLACES: int = 1
 SHOW_DETAILS_DEFAULT: bool = False
 SORT_OWES_FIRST: bool = True
 SHOW_EMOJI_VISUALS_DEFAULT: bool = False
+SHOW_EMOJI_VISUALS_ON_DETAILS_DEFAULT: bool = True
 CURRENCY_DISPLAY_EMOJI: str = "🍺"
 
 # Display - Conversion Currency
