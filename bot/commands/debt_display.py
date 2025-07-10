@@ -73,7 +73,6 @@ async def handle_get_debts(interaction: discord.Interaction,
                            show_conversion_currency: bool = None,
                            show_emoji_visuals: bool = None):
     """Handle fetching and displaying user debts for one user."""
-    table_format = config.USE_TABLE_FORMAT_DEFAULT if table_format is None else table_format
     show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
     show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
     show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
@@ -244,7 +243,6 @@ async def handle_debts_with_user(
     show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts between two users."""
-    table_format = config.USE_TABLE_FORMAT_DEFAULT if table_format is None else table_format
     show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
     show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
     show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
