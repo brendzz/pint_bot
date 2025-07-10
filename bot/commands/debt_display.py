@@ -24,12 +24,8 @@ def format_individual_debt_entries(
     """Format debt entries for display."""
     lines = []
     total_amount = sum(Fraction(entry['amount']) for entry in entries)
-    total_formatted = currency_formatter(total_amount, use_unicode)
-    if show_conversion_currency:
-        total_formatted = with_conversion_currency(total_amount, total_formatted)
-    if show_emoji_visuals:
-        total_formatted = with_emoji_visuals(total_amount, total_formatted)
-    lines.append(total_formatted)
+
+    lines.append(format_overall_debts(total_amount,show_conversion_currency,show_emoji_visuals,use_unicode))
     
     if show_details:
         for entry in entries:
@@ -40,10 +36,8 @@ def format_individual_debt_entries(
                 amount = with_percentage(entry["amount"], total, amount)
             if show_emoji_visuals:
                 amount = with_emoji_visuals(entry["amount"], amount, False)
-            if entry['reason']!="":
-                lines.append(f"- {amount} for *{entry['reason']}* on {entry['timestamp']}")
-            else:
-                lines.append(f"- {amount} for *[No Reason Given]* on {entry['timestamp']}")
+            reason = entry['reason'] or "[No Reason Given]"
+            lines.append(f"- {amount} for *{reason}* on {entry['timestamp']}")
     return lines
 
 def format_overall_debts(
