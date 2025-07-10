@@ -19,12 +19,12 @@ async def handle_help_command(interaction: discord.Interaction):
     for category, commands in categorised_commands.items():
 
         # Add a header for each category
-        help_message += f"\n**{category}:**\n"
+        help_message += f"\n__**{category}:**__\n"
         for command in commands:
             # Add the command name and description to the help message
             help_message += f"**/{command.name}** — {command.description}\n"
 
-    help_message += f"\n__**What can you redeem each {config.CURRENCY_NAME} for?**__\n"
+    help_message += f"\n\n__**What can you redeem each {config.CURRENCY_NAME} for?**__\n"
     for item in config.TRANSFERABLE_ITEMS:
         help_message += f"- {item}\n"
 

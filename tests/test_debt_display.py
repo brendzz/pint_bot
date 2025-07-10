@@ -35,26 +35,29 @@ class TestGetDebtsCommand:
         title = info_calls[0]['kwargs']['title']
         assert expected_title in title
     
-    @pytest.mark.parametrize("show_details, show_percentages, show_conversion_currency, expected_checks", [
+    @pytest.mark.parametrize("show_details, show_percentages, show_conversion_currency, show_emoji_visuals, expected_checks", [
         # Each tuple is: (expected_text, should_be_present)
         # Used to verify whether specific content appears in the command output.
         # For example, if show_details=False, then detailed lines shouldn't appear.
 
         # Summary only (no detail lines)
-        (False, False, False, [("**User4**: 2", True), ("- 1 testcoins for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
+        (False, False, False, False, [("**User4**: 2", True), ("- 1 testcoins for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
 
         # Detailed breakdown without percentages or conversion currency
-        (True, False, False, [("- 1 for *Coffee* on 2025-01-01", True), ("- 1 for *Beer* on 2025-01-02", True), ("50", False), ("£6", False)]),
+        (True, False, False, False, [("- 1 for *Coffee* on 2025-01-01", True), ("- 1 for *Beer* on 2025-01-02", True), ("50", False), ("£6", False), ("🍺", False)]),
 
         # Detailed breakdown with percentages (mocked to '50')
-        (True, True, False, [("- 1 50 for *Coffee* on 2025-01-01", True), ("- 1 50 for *Beer* on 2025-01-02", True), ("£6", False)]),
+        (True, True, False, False, [("- 1 50 for *Coffee* on 2025-01-01", True), ("- 1 50 for *Beer* on 2025-01-02", True), ("£6", False)]),
 
         # Breakdown with conversion currency but no details or percentage
-        (False, False, True, [("- 1 £6", True), ("- 1 £6", True), ("50", False)]),
+        (False, False, True, False, [("- 1 £6", True), ("- 1 £6", True), ("50", False)]),
 
-    ], ids=["summary_only", "details_no_percentages", "details_with_percentages", "with_conversion_currency"])
+        # Breakdown with conversion currency but no details or percentage
+        (False, False, False, True, [("🍺🍺", True), ("- 1 testcoins for *Coffee*", False), ("50", False)]),
+
+    ], ids=["summary_only", "details_no_percentages", "details_with_percentages", "with_conversion_currency", "with_emoji_visual"])
     @pytest.mark.asyncio
-    async def test_get_debts_optional_variants(self, bot, shared, show_details, show_percentages, show_conversion_currency, expected_checks):
+    async def test_get_debts_optional_variants(self, bot, shared, show_details, show_percentages, show_conversion_currency, show_emoji_visuals, expected_checks):
         """
         Tests combinations of 'show_details' and 'show_percentages' flags for get_debts.
 
@@ -75,7 +78,11 @@ class TestGetDebtsCommand:
 
         interaction = DummyInteraction(DummyUser(1), bot)
         cmd = bot.tree.commands[config.GET_DEBTS_COMMAND]
-        await cmd(interaction, show_details=show_details, show_percentages=show_percentages, show_conversion_currency=show_conversion_currency)
+        await cmd(interaction,
+                  show_details=show_details,
+                  show_percentages=show_percentages,
+                  show_conversion_currency=show_conversion_currency,
+                  show_emoji_visuals=show_emoji_visuals)
         description = interaction.send_info_message_calls[0]['kwargs']['description']
 
         for text, should_exist in expected_checks:
@@ -144,9 +151,9 @@ class TestDebtsWithUserCommand:
             ],
             'total_owed_by_you': '1',
             'owed_to_you': [
-                {'amount': '2', 'reason': 'for passing exams', 'timestamp': '2025-01-02'}
+                {'amount': '3', 'reason': 'for passing exams', 'timestamp': '2025-01-02'}
             ],
-            'total_owed_to_you': '2',
+            'total_owed_to_you': '3',
         }
         shared.debts_response = shared.api_response
 
@@ -168,8 +175,9 @@ class TestDebtsWithUserCommand:
         assert "Bob" in kwargs["title"]
         description = kwargs["description"]
         assert "1" in description and "being silly" in description
-        assert "2" in description and "for passing exams" in description
+        assert "3" in description and "for passing exams" in description
         assert "50" in description  # mocked percentage
+        assert "2" in description and "positive" in description # net total
 
     @patch("bot.commands.debt_display.handle_error")
     @pytest.mark.asyncio

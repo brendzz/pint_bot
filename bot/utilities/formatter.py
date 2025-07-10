@@ -66,6 +66,12 @@ def with_conversion_currency(value, string_amount) -> str:
         formatted = f"{string_amount} [{converted}{config.CONVERSION_CURRENCY}]"
     return formatted
 
+def with_emoji_visuals(value, string_amount, new_line = True) -> str:
+    value = round(Fraction(value))
+    emojis = config.CURRENCY_DISPLAY_EMOJI*value
+    formatted = f"{string_amount}{"\n" if new_line else ""}{emojis}"
+    return formatted
+
 def currency_formatter(amount, use_unicode: bool=False) -> str:
     """Format the currency amount based on the configuration."""
     fraction = Fraction(amount)
