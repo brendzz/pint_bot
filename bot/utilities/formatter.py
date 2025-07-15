@@ -56,6 +56,11 @@ def to_percentage(part, whole, decimal_places) -> str:
     percentage = fraction * 100
     return f"({percentage:.{decimal_places}f}%)"
 
+def with_percentage(value: Fraction, total: Fraction, string_amount:str) -> str:
+    """Format a debt with its percentage of the total."""
+    formatted = f"{string_amount} {to_percentage(value, total, config.PERCENTAGE_DECIMAL_PLACES)}"
+    return formatted
+
 def with_conversion_currency(value, string_amount) -> str:
     value = Fraction(value)
     ratio = Fraction(config.EXCHANGE_RATE_TO_CONVERSION_CURRENCY)
@@ -101,3 +106,58 @@ def currency_formatter(amount, use_unicode: bool=False) -> str:
     if whole_number == 0:
         return f"{final_fraction} {currency}"
     return f"{whole_number} {final_fraction} {currency}"
+
+def format_individual_debt_entries(
+    entries,
+    total: Fraction,
+    use_unicode: bool,
+    show_details: bool,
+    show_percentages: bool,
+    show_conversion_currency: bool,
+    show_emoji_visuals: bool
+) -> list[str]:
+    """Format debt entries for display."""
+    total_amount = sum(Fraction(entry['amount']) for entry in entries)
+    lines = [format_amount(
+        total_amount, total, use_unicode,
+        show_percentages, show_conversion_currency, show_emoji_visuals, emoji_on_total=True
+    )]
+
+    if show_details:
+        for entry in entries:
+            amount = format_amount(
+                entry["amount"], total, use_unicode,
+                show_percentages, show_conversion_currency, show_emoji_visuals, emoji_on_total=False
+            )
+            reason = entry['reason'] or "[No Reason Given]"
+            lines.append(f"- {amount} for *{reason}* on {entry['timestamp']}")
+    return lines
+
+def format_overall_debts(
+    total_owed: Fraction,
+    show_conversion_currency: bool,
+    show_emoji_visuals: bool,
+    use_unicode: bool
+):
+    return format_amount(
+        total_owed, total_owed, use_unicode,
+        False, show_conversion_currency, show_emoji_visuals, emoji_on_total=True
+    ).upper()
+
+def format_amount(
+    value,
+    total,
+    use_unicode,
+    show_percentages,
+    show_conversion_currency,
+    show_emoji_visuals,
+    emoji_on_total=True
+):
+    amt = currency_formatter(value, use_unicode)
+    if show_conversion_currency:
+        amt = with_conversion_currency(value, amt)
+    if show_percentages:
+        amt = with_percentage(value, total, amt)
+    if show_emoji_visuals:
+        amt = with_emoji_visuals(value, amt, emoji_on_total)
+    return amt

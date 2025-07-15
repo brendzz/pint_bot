@@ -41,19 +41,19 @@ class TestGetDebtsCommand:
         # For example, if show_details=False, then detailed lines shouldn't appear.
 
         # Summary only (no detail lines)
-        (False, False, False, False, [("**User4**: 2", True), ("- 1 testcoins for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
+        (False, False, False, False, [("__**TestCoins YOU OWE:**__ 2 TESTCOINS", True), ("**User4:** 2 testcoins", True), ("- 1 testcoin for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
 
         # Detailed breakdown without percentages or conversion currency
-        (True, False, False, False, [("- 1 for *Coffee* on 2025-01-01", True), ("- 1 for *Beer* on 2025-01-02", True), ("50", False), ("£6", False), ("🍺", False)]),
+        (True, False, False, False, [("- 1 testcoin for *Coffee* on 2025-01-01", True), ("- 1 testcoin for *Beer* on 2025-01-02", True), ("50", False), ("£6", False), ("🍺", False)]),
 
         # Detailed breakdown with percentages (mocked to '50')
-        (True, True, False, False, [("- 1 50 for *Coffee* on 2025-01-01", True), ("- 1 50 for *Beer* on 2025-01-02", True), ("£6", False)]),
+        (True, True, False, False, [("- 1 testcoin 50 for *Coffee* on 2025-01-01", True), ("- 1 testcoin 50 for *Beer* on 2025-01-02", True), ("£6", False)]),
 
-        # Breakdown with conversion currency but no details or percentage
-        (False, False, True, False, [("- 1 £6", True), ("- 1 £6", True), ("50", False)]),
+        # Breakdown with conversion currency and details
+        (True, False, True, False, [("__**TestCoins YOU OWE:**__ 2 TESTCOINS [£12]", True), ("- 1 testcoin [£6]", True), ("- 1 testcoin [£6]", True), ("50", False)]),
 
-        # Breakdown with conversion currency but no details or percentage
-        (False, False, False, True, [("🍺🍺", True), ("- 1 testcoins for *Coffee*", False), ("50", False)]),
+        # Breakdown with everything
+        (True, True, True, True, [("[£12]\n🍺🍺", True), ("- 1 testcoin [£6] 50🍺 for *Coffee*", True)]),
 
     ], ids=["summary_only", "details_no_percentages", "details_with_percentages", "with_conversion_currency", "with_emoji_visual"])
     @pytest.mark.asyncio

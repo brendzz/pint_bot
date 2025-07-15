@@ -2,78 +2,12 @@ from fractions import Fraction
 import discord
 from bot import api_client, config
 from bot.utilities.error_handling import handle_error
-from bot.utilities.formatter import currency_formatter, to_percentage, with_conversion_currency, with_emoji_visuals
+from bot.utilities.formatter import currency_formatter, with_percentage, with_conversion_currency, with_emoji_visuals, format_overall_debts, format_individual_debt_entries
+from bot.utilities.debt_processor import find_net_difference
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from bot.utilities.user_utils import get_display_name
-
-def with_percentage(value: Fraction, total: Fraction, string_amount:str) -> str:
-    """Format a debt with its percentage of the total."""
-    formatted = f"{string_amount} {to_percentage(value, total, config.PERCENTAGE_DECIMAL_PLACES)}"
-    return formatted
-
-def format_individual_debt_entries(
-    entries,
-    total: Fraction,
-    use_unicode: bool,
-    show_details: bool,
-    show_percentages: bool,
-    show_conversion_currency: bool,
-    show_emoji_visuals: bool
-) -> list[str]:
-    """Format debt entries for display."""
-    lines = []
-    total_amount = sum(Fraction(entry['amount']) for entry in entries)
-
-    lines.append(format_overall_debts(total_amount,show_conversion_currency,show_emoji_visuals,use_unicode))
-    
-    if show_details:
-        for entry in entries:
-            amount = currency_formatter(entry["amount"], use_unicode)
-            if show_conversion_currency:
-                amount = with_conversion_currency(entry["amount"], amount)
-            if show_percentages:
-                amount = with_percentage(entry["amount"], total, amount)
-            if show_emoji_visuals:
-                amount = with_emoji_visuals(entry["amount"], amount, False)
-            reason = entry['reason'] or "[No Reason Given]"
-            lines.append(f"- {amount} for *{reason}* on {entry['timestamp']}")
-    return lines
-
-def format_overall_debts(
-        total_owed: Fraction,
-        show_conversion_currency: bool,
-        show_emoji_visuals: bool,
-        use_unicode: bool):
-    total_owed_formatted = currency_formatter(total_owed, use_unicode).upper()
-    if show_conversion_currency:
-        total_owed_formatted=with_conversion_currency(total_owed, total_owed)
-    if show_emoji_visuals:
-        total_owed_formatted=with_emoji_visuals(total_owed, total_owed_formatted)
-
-    return(
-        f"{total_owed_formatted}"
-    )
-
-def find_net_difference(owed_to_you: Fraction,
-        owed_by_you: Fraction,
-        use_unicode: bool,
-        show_conversion_currency: bool,
-        show_emoji_visuals: bool) -> str:
-    net_difference = owed_to_you - owed_by_you
-    net_difference_formatted = currency_formatter(abs(net_difference), use_unicode)
-    if show_conversion_currency:
-         net_difference_formatted = with_conversion_currency(net_difference, net_difference_formatted)
-    if show_emoji_visuals:
-         net_difference_formatted = with_emoji_visuals(net_difference, net_difference_formatted)
-    
-    if net_difference>0:
-        return(f"\n__**NET DIFFERENCE - OWED TO YOU:**__ {net_difference_formatted}\nYou are in the positive!")
-    elif net_difference<0:
-        return(f"\n__**NET DIFFERENCE - YOU OWE:**__ {net_difference_formatted}\nYou are in the negative!")
-    else:
-        return("\nPerfectly balanced!")
-
+from bot.utilities.misc_utils import default_unless_included
 
 async def handle_get_debts(interaction: discord.Interaction, 
                            user: discord.User = None, 
@@ -82,9 +16,9 @@ async def handle_get_debts(interaction: discord.Interaction,
                            show_conversion_currency: bool = None,
                            show_emoji_visuals: bool = None):
     """Handle fetching and displaying user debts for one user."""
-    show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
-    show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
-    show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
+    show_percentages = default_unless_included(show_percentages, config.SHOW_PERCENTAGES_DEFAULT)
+    show_conversion_currency = default_unless_included(show_conversion_currency, config.SHOW_CONVERSION_CURRENCY_DEFAULT)
+    show_emoji_visuals = default_unless_included(show_emoji_visuals, config.SHOW_EMOJI_VISUALS_DEFAULT)
     user_id = str(interaction.user.id) if user is None else str(user.id)
     
     # Defer the interaction to avoid timeout
@@ -123,7 +57,7 @@ async def handle_get_debts(interaction: discord.Interaction,
         for creditor_id, entries in data["owed_by_you"].items():
             creditor_name = await get_display_name(interaction.client, creditor_id)
             entry_lines = format_individual_debt_entries(entries, total_owed_by_you, use_unicode, show_details, show_percentages, show_conversion_currency, show_emoji_visuals_on_details)
-            lines.append(f"\n**{creditor_name}**: {entry_lines[0]}")
+            lines.append(f"\n**{creditor_name}:** {entry_lines[0]}")
             lines.extend(entry_lines[1:])
 
     # Debts owed to the user
@@ -134,7 +68,7 @@ async def handle_get_debts(interaction: discord.Interaction,
         for debtor_id, entries in data["owed_to_you"].items():
             debtor_name = await get_display_name(interaction.client, debtor_id)
             entry_lines = format_individual_debt_entries(entries, total_owed_to_you, use_unicode, show_details, show_percentages, show_conversion_currency, show_emoji_visuals_on_details)
-            lines.append(f"\n**{debtor_name}**: {entry_lines[0]}")
+            lines.append(f"\n**{debtor_name}:** {entry_lines[0]}")
             lines.extend(entry_lines[1:])
 
     # Send the formatted response
@@ -155,10 +89,10 @@ async def handle_get_all_debts(
     show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts for all users."""
-    table_format = config.USE_TABLE_FORMAT_DEFAULT if table_format is None else table_format
-    show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
-    show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
-    show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
+    show_emoji_visuals = default_unless_included(table_format, config.USE_TABLE_FORMAT_DEFAULT)
+    show_percentages = default_unless_included(show_percentages, config.SHOW_PERCENTAGES_DEFAULT)
+    show_conversion_currency = default_unless_included(show_conversion_currency, config.SHOW_CONVERSION_CURRENCY_DEFAULT)
+    show_emoji_visuals = default_unless_included(show_emoji_visuals, config.SHOW_EMOJI_VISUALS_DEFAULT)
 
     # Emoji visuals and table format are mutually exclusive
     if table_format:
@@ -236,9 +170,9 @@ async def handle_debts_with_user(
     show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts between two users."""
-    show_percentages = config.SHOW_PERCENTAGES_DEFAULT if show_percentages is None else show_percentages
-    show_conversion_currency = config.SHOW_CONVERSION_CURRENCY_DEFAULT if show_conversion_currency is None else show_conversion_currency
-    show_emoji_visuals = config.SHOW_EMOJI_VISUALS_DEFAULT if show_emoji_visuals is None else show_emoji_visuals
+    show_percentages = default_unless_included(show_percentages, config.SHOW_PERCENTAGES_DEFAULT)
+    show_conversion_currency = default_unless_included(show_conversion_currency, config.SHOW_CONVERSION_CURRENCY_DEFAULT)
+    show_emoji_visuals = default_unless_included(show_emoji_visuals, config.SHOW_EMOJI_VISUALS_DEFAULT)
 
     user_id1 = str(interaction.user.id)
     user_id2 = str(user.id)
