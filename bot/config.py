@@ -8,6 +8,7 @@ import bot.configuration.constants as constants
 
 # API Connection
 API_URL: str = os.getenv("API_URL", "http://api:8000")
+API_TIMEOUT: int = 10
 
 # Misc
 RANDOM_NUMBER_GENERATOR = SystemRandom()
@@ -53,6 +54,7 @@ QUANTIZE_OWING_DEBTS:  bool = True
 MAXIMUM_PER_DEBT: int = 10
 SMALLEST_UNIT: Fraction = Fraction(1, 6)
 MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
+TRANSACTIONS_DEFAULT_TIME_PERIOD: int = 30
 
 # Reactions
 REACT_TO_MESSAGES_MENTIONING_CURRENCY: bool = True

@@ -246,3 +246,48 @@ async def handle_debts_with_user(
     ),
         description="\n".join(lines)
     )
+
+async def handle_get_transactions(
+    interaction: discord.Interaction,
+    start_date: str = None,
+    end_date: str = None,
+    user_id: str = None,
+    transaction_type: str = None
+):
+    """Fetch and display transactions from the API."""
+    await interaction.response.defer()
+    try:
+        transactions = api_client.get_transactions(
+            start_date=start_date,
+            end_date=end_date,
+            user_id=user_id,
+            transaction_type=transaction_type
+        )
+    except Exception as e:
+        await send_messages.send_error_message(
+            interaction,
+            title=f"Error Fetching {config.CURRENCY_NAME} Transactions",
+            description=str(e)
+        )
+        return
+
+    if not transactions:
+        await send_messages.send_info_message(
+            interaction,
+            title="No Transactions Found",
+            description="No transactions found for the specified criteria."
+        )
+        return
+
+    lines = []
+    for tx in transactions:
+        lines.append(
+            f"**{tx['timestamp']}**: {tx['type'].capitalize()} {tx['amount']} {config.CURRENCY_NAME} "
+            f"from <@{tx['debtor']}> to <@{tx['creditor']}> ({tx.get('reason', 'No reason')})"
+        )
+
+    await send_messages.send_info_message(
+        interaction,
+        title=f"{config.CURRENCY_NAME} Transactions",
+        description="\n".join(lines)
+    )

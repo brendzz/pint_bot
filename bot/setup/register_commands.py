@@ -2,7 +2,7 @@
 import discord
 from discord import app_commands
 from bot.setup.command import Command
-from bot.commands.debt_display import handle_debts_with_user, handle_get_all_debts, handle_get_debts
+from bot.commands.debt_display import handle_debts_with_user, handle_get_all_debts, handle_get_debts, handle_get_transactions
 from bot.commands.debt_management import handle_owe, handle_settle, handle_cashout
 from bot.commands.games import handle_roll
 from bot.commands.support import handle_help_command
@@ -39,6 +39,13 @@ def define_command_details() -> None:
         key="get_all_debts",
         name=config.GET_ALL_DEBTS_COMMAND,
         description=f"See everyone's total {config.CURRENCY_NAME} debts.",
+        category=config.DEBT_DISPLAY_COMMAND_CATEGORY
+    )
+
+    Command(
+        key="transactions",
+        name="transactions",
+        description=f"See debt transactions and stats between specified dates",
         category=config.DEBT_DISPLAY_COMMAND_CATEGORY
     )
 
@@ -165,11 +172,11 @@ def register_commands(bot):
     @app_commands.describe(
         user="The user to view your debts with",
         show_details=(
-            f"Show details of each debt "
+            "Show details of each debt "
             f"(Default: {config.SHOW_DETAILS_DEFAULT})"
         ),
         show_percentages=(
-            f"Display percentages of how much each person owes/is owed "
+            "Display percentages of how much each person owes/is owed "
             f"(Default: {config.SHOW_PERCENTAGES_DEFAULT})"
         ),
         show_conversion_currency=(
@@ -191,6 +198,32 @@ def register_commands(bot):
     ):
         await handle_debts_with_user(interaction, user, show_details, show_percentages, show_conversion_currency, show_emoji_visuals)
 
+    @bot.tree.command(
+        name=Command.get("transactions").name,
+        description=Command.get("transactions").description
+    )
+    @app_commands.describe(
+        start_date=(
+            "Start Date (YYYY-MM-DD) "
+            f"(Default: {config.TRANSACTIONS_DEFAULT_TIME_PERIOD} days in the past)"
+        ),
+        end_date=(
+            "End Date (YYYY-MM-DD) "
+            "(Default: Today)"
+        ),
+        user_id="User to get transactions for (optional)",
+        transaction_type="Type: owe or settle (optional)"
+    )
+    async def transactions_command(
+        interaction: discord.Interaction,
+        start_date: str = None,
+        end_date: str = None,
+        user_id: str = None,
+        transaction_type: str = None
+    ):
+        await handle_get_transactions(interaction, start_date, end_date, user_id, transaction_type)
+
+                                    
     @bot.tree.command(
         name=Command.get("settle").name,
         description=Command.get("settle").description
