@@ -7,7 +7,7 @@ from bot.commands.debt_management import handle_owe, handle_settle, handle_casho
 from bot.commands.games import handle_roll
 from bot.commands.support import handle_help_command
 from bot.commands.bot_settings import handle_settings
-from bot.commands.user_settings import handle_set_unicode_preference
+from bot.commands.user_settings import handle_set_unicode_preference, handle_refresh_name
 import bot.config as config
 
 def define_command_details() -> None:
@@ -85,6 +85,15 @@ def define_command_details() -> None:
         key="settings",
         name="settings",
         description="View the current bot settings.",
+        category=config.SETTINGS_COMMAND_CATEGORY
+    )
+
+    Command(
+        key="refresh_name",
+        name="refresh_name",
+        description=(
+            f"Refresh the name the bot stores for you"
+        ),
         category=config.SETTINGS_COMMAND_CATEGORY
     )
 
@@ -212,16 +221,27 @@ def register_commands(bot):
             "(Default: Today)"
         ),
         user_id="User to get transactions for (optional)",
-        transaction_type="Type: owe or settle (optional)"
+        transaction_type="Type: owe or settle (optional)",
+        show_conversion_currency=(
+            f"Show the worth of the debts in {config.CONVERSION_CURRENCY} "
+            f"(Default: {config.SHOW_CONVERSION_CURRENCY_DEFAULT})"
+        ),
+        show_emoji_visuals=(
+                f"Visualise the worth of the debts with {config.CURRENCY_DISPLAY_EMOJI} emojis "
+                f"(Default: {config.SHOW_EMOJI_VISUALS_DEFAULT})"
+        )
     )
     async def transactions_command(
         interaction: discord.Interaction,
         start_date: str = None,
         end_date: str = None,
         user_id: str = None,
-        transaction_type: str = None
+        transaction_type: str = None,
+        show_conversion_currency: bool = None,
+        show_emoji_visuals: bool = None
+
     ):
-        await handle_get_transactions(interaction, start_date, end_date, user_id, transaction_type)
+        await handle_get_transactions(interaction, start_date, end_date, user_id, transaction_type, show_conversion_currency, show_emoji_visuals)
 
                                     
     @bot.tree.command(
@@ -259,13 +279,6 @@ def register_commands(bot):
         await handle_set_unicode_preference(interaction, use_unicode)
 
     @bot.tree.command(
-        name=Command.get("roll").name,
-        description=Command.get("roll").description
-    )
-    async def roll(interaction: discord.Interaction):
-        await handle_roll(interaction)
-
-    @bot.tree.command(
         name=Command.get("settings").name,
         description=Command.get("settings").description
     )
@@ -274,3 +287,17 @@ def register_commands(bot):
     )
     async def settings(interaction: discord.Interaction, table_format: bool = None):
         await handle_settings(interaction, table_format)
+
+    @bot.tree.command(
+        name=Command.get("refresh_name").name,
+        description=Command.get("refresh_name").description
+    )
+    async def refresh_name(interaction: discord.Interaction):
+        await handle_refresh_name(interaction)
+
+    @bot.tree.command(
+        name=Command.get("roll").name,
+        description=Command.get("roll").description
+    )
+    async def roll(interaction: discord.Interaction):
+        await handle_roll(interaction)

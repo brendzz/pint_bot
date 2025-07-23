@@ -11,6 +11,7 @@ class TestRegistration:
             'settle',
             'cashout',
             'set_unicode_preference',
+            'refresh_name',
             config.ROLL_COMMAND,
             'settings',
         }
