@@ -4,6 +4,7 @@ from bot import api_client, config
 from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter, with_percentage, with_conversion_currency, with_emoji_visuals, format_overall_debts, format_individual_debt_entries, format_date, sanitize_dates
 from bot.utilities.debt_processor import find_net_difference
+from bot.utilities.transactions_processor import process_transaction
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from bot.utilities.user_utils import get_display_name
@@ -266,7 +267,7 @@ async def handle_get_transactions(
     display_as_settle = default_unless_included(display_as_settle, config.DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT)
     
     start_date, end_date = sanitize_dates(start_date, end_date)
-    
+
     if transaction_type and transaction_type.strip().lower() == "cashout":
         display_as_settle = False
 
@@ -297,29 +298,17 @@ async def handle_get_transactions(
     grouped = defaultdict(list)
     transactions = data["transactions"]
     for tx in transactions:
-        dt = isoparse(tx['timestamp'])
-        date_str = dt.strftime(config.DATE_FORMAT)
-        time_str = dt.strftime(config.TIME_FORMAT)
-        tx_type = tx['type'].capitalize()
-        fraction_amount = Fraction(tx['amount'])
-        amount = format_overall_debts(fraction_amount, show_conversion_currency, show_emoji_visuals, use_unicode, False)
-        debtor = await get_display_name(interaction.client, tx['debtor'])
-        creditor = await get_display_name(interaction.client, tx['creditor'])
-        reason = tx.get('reason', '')
-        
-        if(tx_type=="Owe"):
-            line = f"`{time_str}`: **Owe:** {amount} owed from {debtor} to {creditor}"
-            total_owed+=fraction_amount
-        elif (tx_type=="Settle"):
-            if display_as_settle:
-                line = f"`{time_str}`: **Settle:** {amount} settled from {debtor} to {creditor}"
-            else: 
-                line = f"`{time_str}`: **Cashout:** {amount} cashed out by {creditor} from {debtor}"
-            total_settled+=fraction_amount
-        
-        if reason:
-            line += f" *({reason})*"
-        
+        date_str, tx_type, amount, line = await process_transaction(
+        tx, config, interaction,
+        show_conversion_currency, show_emoji_visuals,
+        use_unicode, display_as_settle
+    )
+
+        if tx_type == "Owe":
+            total_owed += amount
+        elif tx_type == "Settle":
+            total_settled += amount
+
         grouped[date_str].append(line)
 
     lines = []

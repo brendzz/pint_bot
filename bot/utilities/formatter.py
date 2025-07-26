@@ -26,6 +26,9 @@ def sanitize_dates(start_date, end_date):
         end_date = format_date(end_date, True)
     return start_date, end_date
 
+def should_display_as_settle(transaction_type: str, display_as_settle: bool) -> bool:
+    return False if transaction_type and transaction_type.strip().lower() == "cashout" else display_as_settle
+
 def fraction_to_unicode(fraction_str: str) -> str:
     """
     Convert a fraction in string form to its Unicode representation.
