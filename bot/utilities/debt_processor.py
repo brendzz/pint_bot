@@ -24,7 +24,6 @@ def find_net_difference(owed_to_you: Fraction,
         message_start = f"\nNet Difference - {'You Owe' if individual_user else 'Cashed out of Economy'}: {net_difference_formatted}"
         message_end = f"\n{'You' if individual_user else 'Transactions in this period'} are in the negative!"
     else:
-        upper = False
         message_start = "\nYou owe as much as you are owed."
         message_end = "Perfectly balanced!"
     

@@ -19,6 +19,13 @@ def format_date(date_str: str, normalise_for_api: bool = False) -> str:
     except (ValueError, TypeError):
         return "Invalid date"
 
+def sanitize_dates(start_date, end_date):
+    if start_date is not None:
+        start_date = format_date(start_date, True)
+    if end_date is not None:
+        end_date = format_date(end_date, True)
+    return start_date, end_date
+
 def fraction_to_unicode(fraction_str: str) -> str:
     """
     Convert a fraction in string form to its Unicode representation.

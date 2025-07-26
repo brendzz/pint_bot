@@ -2,7 +2,7 @@ from fractions import Fraction
 import discord
 from bot import api_client, config
 from bot.utilities.error_handling import handle_error
-from bot.utilities.formatter import currency_formatter, with_percentage, with_conversion_currency, with_emoji_visuals, format_overall_debts, format_individual_debt_entries, format_date
+from bot.utilities.formatter import currency_formatter, with_percentage, with_conversion_currency, with_emoji_visuals, format_overall_debts, format_individual_debt_entries, format_date, sanitize_dates
 from bot.utilities.debt_processor import find_net_difference
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
@@ -92,7 +92,7 @@ async def handle_get_all_debts(
     show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts for all users."""
-    show_emoji_visuals = default_unless_included(table_format, config.USE_TABLE_FORMAT_DEFAULT)
+    table_format = default_unless_included(table_format, config.USE_TABLE_FORMAT_DEFAULT)
     show_percentages = default_unless_included(show_percentages, config.SHOW_PERCENTAGES_DEFAULT)
     show_conversion_currency = default_unless_included(show_conversion_currency, config.SHOW_CONVERSION_CURRENCY_DEFAULT)
     show_emoji_visuals = default_unless_included(show_emoji_visuals, config.SHOW_EMOJI_VISUALS_DEFAULT)
@@ -265,13 +265,11 @@ async def handle_get_transactions(
     show_emoji_visuals = default_unless_included(show_emoji_visuals, config.SHOW_EMOJI_VISUALS_DEFAULT)
     display_as_settle = default_unless_included(display_as_settle, config.DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT)
     
-    if start_date != None:
-        start_date = format_date(start_date, True)
-    if end_date != None:
-        end_date = format_date(end_date, True)
-
+    start_date, end_date = sanitize_dates(start_date, end_date)
+    
     if transaction_type and transaction_type.strip().lower() == "cashout":
         display_as_settle = False
+
     try:
         data = api_client.get_transactions(
             start_date=start_date,

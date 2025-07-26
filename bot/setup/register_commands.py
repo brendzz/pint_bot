@@ -52,7 +52,7 @@ def define_command_details() -> None:
     Command(
         key="transactions",
         name="transactions",
-        description=f"See debt transactions and stats between specified dates",
+        description="See debt transactions between specified dates",
         category=config.DEBT_DISPLAY_COMMAND_CATEGORY
     )
 
@@ -99,7 +99,7 @@ def define_command_details() -> None:
         key="refresh_name",
         name="refresh_name",
         description=(
-            f"Refresh the name the bot stores for you"
+            "Refresh the name the bot stores for you for if you update your discord username"
         ),
         category=config.SETTINGS_COMMAND_CATEGORY
     )

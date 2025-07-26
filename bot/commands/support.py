@@ -40,6 +40,6 @@ async def handle_repeat_that_command(interaction: discord.Interaction):
 
     await send_messages.send_info_message(
         interaction,
-        title=f"REPEAT THAT",
+        title="REPEAT THAT",
         description="This command does not do anything yet sorry!"
     )

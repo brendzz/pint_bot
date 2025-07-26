@@ -42,7 +42,6 @@ async def handle_owe(interaction: discord.Interaction, user: discord.User, amoun
 
     debts_remaining = api_client.debts_with_user(debtor, creditor)
     total_owed_by_you = Fraction(debts_remaining['total_owed_by_you'])
-    total_owed_to_you = Fraction(debts_remaining['total_owed_to_you'])
     formatted_reason = f" for: *'{data['reason']}'*" if data['reason'] else ""
 
     message = (f"**Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention}**{formatted_reason}"
