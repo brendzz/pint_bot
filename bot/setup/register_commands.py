@@ -5,7 +5,7 @@ from bot.setup.command import Command
 from bot.commands.debt_display import handle_debts_with_user, handle_get_all_debts, handle_get_debts, handle_get_transactions
 from bot.commands.debt_management import handle_owe, handle_settle, handle_cashout
 from bot.commands.games import handle_roll
-from bot.commands.support import handle_help_command
+from bot.commands.support import handle_help_command, handle_repeat_that_command
 from bot.commands.bot_settings import handle_settings
 from bot.commands.user_settings import handle_set_unicode_preference, handle_refresh_name
 import bot.config as config
@@ -18,6 +18,13 @@ def define_command_details() -> None:
         key="help",
         name="help",
         description="Get a list of available commands and their descriptions.",
+        category=config.SUPPORT_COMMAND_CATEGORY
+    )
+
+    Command(
+        key="repeat_that",
+        name="repeat_that",
+        description="Resend the last bot message for this channel but in all capitals",
         category=config.SUPPORT_COMMAND_CATEGORY
     )
 
@@ -114,6 +121,13 @@ def register_commands(bot):
     )
     async def help_command(interaction: discord.Interaction):
         await handle_help_command(interaction)
+
+    @bot.tree.command(
+        name=Command.get("repeat_that").name,
+        description=Command.get("repeat_that").description
+    )
+    async def repeat_that_command(interaction: discord.Interaction):
+        await handle_repeat_that_command(interaction)
 
     @bot.tree.command(
         name=Command.get("owe").name,
@@ -213,11 +227,11 @@ def register_commands(bot):
     )
     @app_commands.describe(
         start_date=(
-            "Start Date (YYYY-MM-DD) "
+            "Start Date "
             f"(Default: {config.TRANSACTIONS_DEFAULT_TIME_PERIOD} days in the past)"
         ),
         end_date=(
-            "End Date (YYYY-MM-DD) "
+            "End Date  "
             "(Default: Today)"
         ),
         user_id="User to get transactions for (optional)",
@@ -229,6 +243,10 @@ def register_commands(bot):
         show_emoji_visuals=(
                 f"Visualise the worth of the debts with {config.CURRENCY_DISPLAY_EMOJI} emojis "
                 f"(Default: {config.SHOW_EMOJI_VISUALS_DEFAULT})"
+        ),
+        display_as_settle=(
+                f"Display as 'Settles' rather than 'Cashouts'"
+                f"(Default: {config.DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT})"
         )
     )
     async def transactions_command(
@@ -238,10 +256,10 @@ def register_commands(bot):
         user_id: str = None,
         transaction_type: str = None,
         show_conversion_currency: bool = None,
-        show_emoji_visuals: bool = None
-
+        show_emoji_visuals: bool = None,
+        display_as_settle: bool = None
     ):
-        await handle_get_transactions(interaction, start_date, end_date, user_id, transaction_type, show_conversion_currency, show_emoji_visuals)
+        await handle_get_transactions(interaction, start_date, end_date, user_id, transaction_type, show_conversion_currency, show_emoji_visuals, display_as_settle)
 
                                     
     @bot.tree.command(

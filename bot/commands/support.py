@@ -34,3 +34,12 @@ async def handle_help_command(interaction: discord.Interaction):
         title=f"{config.BOT_NAME} Help",
         description=help_message
     )
+
+async def handle_repeat_that_command(interaction: discord.Interaction):
+    await interaction.response.defer()
+
+    await send_messages.send_info_message(
+        interaction,
+        title=f"REPEAT THAT",
+        description="This command does not do anything yet sorry!"
+    )
