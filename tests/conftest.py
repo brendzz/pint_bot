@@ -38,7 +38,8 @@ PATCHED_CONFIG = {
     "MAXIMUM_DEBT_CHARACTER_LIMIT": 200,
     "QUANTIZE_SETTLING_DEBTS": True,
     "SHOW_DETAILS_DEFAULT": True,
-    "EXCHANGE_RATE_TO_CONVERSION_CURRENCY": 6
+    "EXCHANGE_RATE_TO_CONVERSION_CURRENCY": 6,
+    "DATE_FORMAT": "%d-%m-%Y"
 }
 
 @pytest.fixture(autouse=True, scope="session")
@@ -134,6 +135,9 @@ class FakeAPI:
 
     def debts_with_user(self, user_id1, user_id2):
         return self.shared.debts_response
+    
+    def get_transactions(self, *args, **kwargs):
+        return self.shared.transactions_response
 
     def settle_debt(self, payload):
         self.calls['settle_debt'] = payload
@@ -156,6 +160,7 @@ def shared():
     shared = Shared()
     shared.debts_response = {'message': 'No debts'}
     shared.all_debts_response = {}
+    shared.transactions_response = {}
     shared.fake_api = FakeAPI(shared)
     return shared
 
