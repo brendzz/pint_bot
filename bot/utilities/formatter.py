@@ -1,7 +1,23 @@
 """Formatter module for converting fractions and formatting currency."""
 from fractions import Fraction
+from datetime import datetime
+from dateutil import parser
 import bot.config as config
 from bot.utilities.fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT
+
+def format_date(date_str: str, normalise_for_api: bool = False) -> str:
+    """
+    Format into specified date format
+    """
+    try:
+        if normalise_for_api:
+            parsed_date = parser.parse(date_str, dayfirst=True)  # allows dd-mm-yyyy
+            return parsed_date.strftime("%Y-%m-%d")
+        else:
+            parsed_date = parser.parse(date_str)
+            return parsed_date.strftime(config.DATE_FORMAT)
+    except (ValueError, TypeError):
+        return "Invalid date"
 
 def fraction_to_unicode(fraction_str: str) -> str:
     """
@@ -130,19 +146,24 @@ def format_individual_debt_entries(
                 show_percentages, show_conversion_currency, show_emoji_visuals, emoji_on_total=False
             )
             reason = entry['reason'] or "[No Reason Given]"
-            lines.append(f"- {amount} for *{reason}* on {entry['timestamp']}")
+            lines.append(f"- {amount} for *{reason}* on {format_date(entry['timestamp'])}")
     return lines
 
 def format_overall_debts(
     total_owed: Fraction,
     show_conversion_currency: bool,
     show_emoji_visuals: bool,
-    use_unicode: bool
+    use_unicode: bool,
+    use_upper_case: bool = True
 ):
-    return format_amount(
+    formatted_amount = format_amount(
         total_owed, total_owed, use_unicode,
         False, show_conversion_currency, show_emoji_visuals, emoji_on_total=True
-    ).upper()
+    )
+    if (use_upper_case):
+        return formatted_amount.upper()
+    else:
+        return formatted_amount
 
 def format_amount(
     value,
