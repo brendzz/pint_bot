@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 from fractions import Fraction
 import logging
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from dateutil.parser import isoparse
 import api.config as config
 import api.fraction_functions as fraction_functions
@@ -22,6 +22,10 @@ from api.utilities.debt_helpers import (
     debts_owed_by,
     debts_owed_to,
     settle_debts_between_users
+)
+from api.utilities.transaction_helpers import (
+    ensure_aware_utc,
+    normalize_transaction_type
 )
 from models import (
     DebtEntry,
@@ -52,12 +56,14 @@ async def get_transactions(
     start_date: date = Query(default_factory=lambda: date.today() - timedelta(days=config.TRANSACTIONS_DEFAULT_TIME_PERIOD)),
     end_date: date = Query(default_factory=date.today),
     user_id: Optional[str] = None,
-    transaction_type: Optional[str] = Query(None, alias="type", regex="^(owe|settle)$"),
+    type: Optional[str] = Query(None),
 ):
+    
     """
     Get all transactions in a date range (default: last 30 days).
     Optionally filtered by type and/or user.
     """
+    transaction_type = normalize_transaction_type(type)
     transactions = load_transactions().transactions
 
     if start_date > end_date:
@@ -65,7 +71,7 @@ async def get_transactions(
             status_code=HTTP_BAD_REQUEST_CODE,
             detail="VALIDATION_ERROR"
         )
-
+    
     # Convert date to datetime boundaries
     start_datetime = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc)
     end_datetime = datetime.combine(end_date, datetime.max.time(), tzinfo=timezone.utc)
@@ -73,7 +79,7 @@ async def get_transactions(
     # Filter by date range
     transactions = [
         t for t in transactions
-        if start_datetime <= isoparse(t.timestamp) <= end_datetime
+        if start_datetime <= ensure_aware_utc(isoparse(t.timestamp)) <= end_datetime
     ]
 
     # Apply user ID filter
@@ -85,15 +91,20 @@ async def get_transactions(
 
     # Apply type filter
     if transaction_type:
+        if transaction_type == "cashout":
+            transaction_type = "settle"
+            
         transactions = [
             t for t in transactions
             if t.type == transaction_type
         ]
-
+    
     # Convert each transaction to a dictionary for JSON serialization
-    response = [transaction.model_dump() for transaction in transactions]
-
-    return response
+    return {
+        "start_date": str(start_date),
+        "end_date": str(end_date),
+        "transactions": [transaction.model_dump() for transaction in transactions]
+    }
 
 @app.post("/debts")
 async def add_debt(request: OweRequest):

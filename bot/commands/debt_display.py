@@ -2,12 +2,15 @@ from fractions import Fraction
 import discord
 from bot import api_client, config
 from bot.utilities.error_handling import handle_error
-from bot.utilities.formatter import currency_formatter, with_percentage, with_conversion_currency, with_emoji_visuals, format_overall_debts, format_individual_debt_entries
+from bot.utilities.formatter import currency_formatter, with_percentage, with_conversion_currency, with_emoji_visuals, format_overall_debts, format_individual_debt_entries, format_date
 from bot.utilities.debt_processor import find_net_difference
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
 from bot.utilities.user_utils import get_display_name
 from bot.utilities.misc_utils import default_unless_included
+from collections import defaultdict
+from dateutil import parser
+from dateutil.parser import isoparse
 
 async def handle_get_debts(interaction: discord.Interaction, 
                            user: discord.User = None, 
@@ -170,6 +173,8 @@ async def handle_debts_with_user(
     show_emoji_visuals: bool = None
 ):
     """Handle fetching and displaying user debts between two users."""
+    await interaction.response.defer()
+    
     show_percentages = default_unless_included(show_percentages, config.SHOW_PERCENTAGES_DEFAULT)
     show_conversion_currency = default_unless_included(show_conversion_currency, config.SHOW_CONVERSION_CURRENCY_DEFAULT)
     show_emoji_visuals = default_unless_included(show_emoji_visuals, config.SHOW_EMOJI_VISUALS_DEFAULT)
@@ -177,10 +182,6 @@ async def handle_debts_with_user(
     user_id1 = str(interaction.user.id)
     user_id2 = str(user.id)
 
-    # Defer the interaction to avoid timeout
-    await interaction.response.defer()
-
-    # Call the external API to fetch debts
     try:
         data = api_client.debts_with_user(user_id1, user_id2)
     except Exception as e:
@@ -252,42 +253,97 @@ async def handle_get_transactions(
     start_date: str = None,
     end_date: str = None,
     user_id: str = None,
-    transaction_type: str = None
+    transaction_type: str = None,
+    show_conversion_currency: bool = None,
+    show_emoji_visuals: bool = None,
+    display_as_settle: bool = True
 ):
     """Fetch and display transactions from the API."""
     await interaction.response.defer()
+
+    show_conversion_currency = default_unless_included(show_conversion_currency, config.SHOW_CONVERSION_CURRENCY_DEFAULT)
+    show_emoji_visuals = default_unless_included(show_emoji_visuals, config.SHOW_EMOJI_VISUALS_DEFAULT)
+    display_as_settle = default_unless_included(display_as_settle, config.DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT)
+    
+    if start_date != None:
+        start_date = format_date(start_date, True)
+    if end_date != None:
+        end_date = format_date(end_date, True)
+
+    if transaction_type and transaction_type.strip().lower() == "cashout":
+        display_as_settle = False
     try:
-        transactions = api_client.get_transactions(
+        data = api_client.get_transactions(
             start_date=start_date,
             end_date=end_date,
             user_id=user_id,
             transaction_type=transaction_type
         )
     except Exception as e:
-        await send_messages.send_error_message(
-            interaction,
-            title=f"Error Fetching {config.CURRENCY_NAME} Transactions",
-            description=str(e)
-        )
+        await handle_error(interaction, e, title=f"Error Fetching {config.CURRENCY_NAME} Transactions")
         return
 
-    if not transactions:
+    if not data:
         await send_messages.send_info_message(
             interaction,
             title="No Transactions Found",
             description="No transactions found for the specified criteria."
         )
         return
+        
+    use_unicode = await fetch_unicode_preference(interaction, str(interaction.user.id))
+    start_date = format_date(data["start_date"])
+    end_date = format_date(data["end_date"])
+    total_owed = Fraction(0)
+    total_settled = Fraction(0)
+    grouped = defaultdict(list)
+    transactions = data["transactions"]
+    for tx in transactions:
+        dt = isoparse(tx['timestamp'])
+        date_str = dt.strftime(config.DATE_FORMAT)
+        time_str = dt.strftime(config.TIME_FORMAT)
+        tx_type = tx['type'].capitalize()
+        fraction_amount = Fraction(tx['amount'])
+        amount = format_overall_debts(fraction_amount, show_conversion_currency, show_emoji_visuals, use_unicode, False)
+        debtor = await get_display_name(interaction.client, tx['debtor'])
+        creditor = await get_display_name(interaction.client, tx['creditor'])
+        reason = tx.get('reason', '')
+        
+        if(tx_type=="Owe"):
+            line = f"`{time_str}`: **Owe:** {amount} owed from {debtor} to {creditor}"
+            total_owed+=fraction_amount
+        elif (tx_type=="Settle"):
+            if display_as_settle:
+                line = f"`{time_str}`: **Settle:** {amount} settled from {debtor} to {creditor}"
+            else: 
+                line = f"`{time_str}`: **Cashout:** {amount} cashed out by {creditor} from {debtor}"
+            total_settled+=fraction_amount
+        
+        if reason:
+            line += f" *({reason})*"
+        
+        grouped[date_str].append(line)
 
     lines = []
-    for tx in transactions:
-        lines.append(
-            f"**{tx['timestamp']}**: {tx['type'].capitalize()} {tx['amount']} {config.CURRENCY_NAME} "
-            f"from <@{tx['debtor']}> to <@{tx['creditor']}> ({tx.get('reason', 'No reason')})"
-        )
 
+    for date, txs in sorted(grouped.items()):
+        lines.append(f"**{format_date(date)}**")
+        lines.extend(txs)
+        lines.append("")
+
+    owed_str = format_overall_debts(total_owed, show_conversion_currency, show_emoji_visuals, use_unicode)
+    settled_str = format_overall_debts(total_settled, show_conversion_currency, show_emoji_visuals, use_unicode)
+
+    lines.append(f"**Total Owed In Period: {owed_str}**")
+    lines.append(f"**Total {'Settled' if display_as_settle else 'Cashed Out'} In Period: {settled_str}**")
+    lines.append(find_net_difference(total_owed,
+                                     total_settled,
+                                     use_unicode,
+                                     show_conversion_currency,
+                                     show_emoji_visuals,
+                                     False))
     await send_messages.send_info_message(
         interaction,
-        title=f"{config.CURRENCY_NAME} Transactions",
+        title=f"{config.CURRENCY_NAME} Transactions from {start_date} until {end_date}",
         description="\n".join(lines)
     )

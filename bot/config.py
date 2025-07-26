@@ -41,6 +41,9 @@ SORT_OWES_FIRST: bool = True
 SHOW_EMOJI_VISUALS_DEFAULT: bool = False
 SHOW_EMOJI_VISUALS_ON_DETAILS_DEFAULT: bool = True
 CURRENCY_DISPLAY_EMOJI: str = "🍺"
+DATE_FORMAT: str = "%d-%m-%Y" #add %A for day of the week
+TIME_FORMAT: str = "%H:%M" #24 hour time, use "%I:%M %p" instead for 12 hour time"
+DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT: bool = True #if false, will display as 'cashout' instead
 
 # Display - Conversion Currency
 CONVERSION_CURRENCY: str = "£"
