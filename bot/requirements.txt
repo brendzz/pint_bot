@@ -3,4 +3,5 @@ propcache==0.3.1
 py-cord==2.6.1
 pydantic==2.11.3
 python-dotenv==1.1.0
-requests==2.32.3
+python-dateutil==2.9.0
+requests==2.32.4

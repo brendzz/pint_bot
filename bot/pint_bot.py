@@ -33,6 +33,7 @@ async def on_message(message: discord.Message):
     """Called when a message is sent in a channel the bot can see."""
     # Ignore messages sent by the bot itself
     if message.author == bot.user:
+        # last_bot_message[message.channel.id] = message.content
         return
 
     # React to messages containing the currency name if the feature is enabled
