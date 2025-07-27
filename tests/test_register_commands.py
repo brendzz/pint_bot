@@ -3,13 +3,16 @@ class TestRegistration:
         import bot.config as config
         expected = {
             'help',
+            'repeat_that',
             'owe',
             config.GET_DEBTS_COMMAND,
             config.GET_ALL_DEBTS_COMMAND,
             config.DEBTS_WITH_USER_COMMAND,
+            'transactions',
             'settle',
             'cashout',
             'set_unicode_preference',
+            'refresh_name',
             config.ROLL_COMMAND,
             'settings',
         }

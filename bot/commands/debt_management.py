@@ -5,6 +5,7 @@ from bot.utilities.error_handling import handle_error
 from bot.utilities.formatter import currency_formatter
 import bot.utilities.send_messages as send_messages
 from bot.utilities.user_preferences import fetch_unicode_preference
+from bot.utilities.debt_processor import find_net_difference
 from models.owe_request import OweRequest
 from models.settle_request import SettleRequest
 from fractions import Fraction
@@ -40,13 +41,16 @@ async def handle_owe(interaction: discord.Interaction, user: discord.User, amoun
     use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
 
     debts_remaining = api_client.debts_with_user(debtor, creditor)
-    if debts_remaining["owed_by_you"]:
-        total_debt=Fraction(debts_remaining['total_owed_by_you'])
+    total_owed_by_you = Fraction(debts_remaining['total_owed_by_you'])
+    formatted_reason = f" for: *'{data['reason']}'*" if data['reason'] else ""
 
+    message = (f"**Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention}**{formatted_reason}"
+            f"\n\nNew Total Debt to {user.mention} - You Owe {currency_formatter(total_owed_by_you, use_unicode)}")
+    
     await send_messages.send_success_message(
             interaction,
-            title=f"{config.CURRENCY_NAME} Debt Added - {config.CURRENCY_NAME} Economy Thriving",
-            description= f"Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention} for: *{data['reason']}* at {data['timestamp']}\nNew total debt: {currency_formatter(total_debt, use_unicode)}."
+            title=f"{currency_formatter(data["amount"], False)} Debt Added - {config.CURRENCY_NAME} Economy Thriving",
+            description=message
         )
 
 async def handle_settle(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
@@ -86,10 +90,11 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
     # Send confirmation message
     settled_amount = currency_formatter(data["settled_amount"], use_unicode)
     remaining_amount = currency_formatter(data["remaining_amount"], use_unicode)
+    formatted_reason = f"\n*{reason}*" if reason else ""
     await send_messages.send_success_message(
         interaction,
         title="Debt Settled Successfully",
-        description= f"Settled {settled_amount} with {user.mention}.\n*{reason}*\nRemaining debt: {remaining_amount}."
+        description= f"Settled {settled_amount} with {user.mention}.{formatted_reason}\n\nRemaining debt: {remaining_amount}."
     )
 
 async def handle_cashout(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
@@ -126,8 +131,9 @@ async def handle_cashout(interaction: discord.Interaction, user: discord.User, a
     # Send confirmation message
     settled_amount = currency_formatter(data["settled_amount"], use_unicode)
     remaining_amount = currency_formatter(data["remaining_amount"], use_unicode)
+    formatted_reason = f"\n*{reason}*" if reason else ""
     await send_messages.send_success_message(
         interaction,
-        title="Debt Cashed Out Successfully",
-        description= f"Cashed out {settled_amount} from {user.mention}.\n*{reason}*\nRemaining debt: {remaining_amount}."
+        title=f"{currency_formatter(data["settled_amount"], False)} Debt Cashed Out Successfully",
+        description= f"Cashed out {settled_amount} from {user.mention}.{formatted_reason}\n\nRemaining debt: {remaining_amount}."
     )

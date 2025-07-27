@@ -1,5 +1,6 @@
 from unittest.mock import patch
 import pytest
+from datetime import datetime
 
 from bot import config
 from tests.conftest import DummyInteraction, DummyUser
@@ -9,16 +10,16 @@ class TestGetDebtsCommand:
     @pytest.mark.parametrize("response, expected_title", [
         ({'message': 'No debts'}, "you're not currently contributing to the TestCoin economy"),
         ({
-            'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '2025-01-01'}]},
+            'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '02-01-2025'}]},
             'total_owed_by_you': '1',
-            'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
+            'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '02-01-2025'}]},
             'total_owed_to_you': '2'
         }, "Your TestCoin debts"),
         ({'message': 'No debts'}, "they're not currently contributing to the TestCoin economy"),
         ({
-            'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '2025-01-01'}]},
+            'owed_by_you': {'2': [{'amount': '1', 'reason': 'Test', 'timestamp': '02-01-2025'}]},
             'total_owed_by_you': '1',
-            'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '2025-01-02'}]},
+            'owed_to_you': {'3': [{'amount': '2', 'reason': 'Other', 'timestamp': '02-01-2025'}]},
             'total_owed_to_you': '2'
         }, "Here are fake name's TestCoin debts"),
     ], ids=["self_no_debts", "self_with_debts", "other_no_debts", "other_with_debts"])
@@ -30,9 +31,9 @@ class TestGetDebtsCommand:
         cmd = bot.tree.commands[config.GET_DEBTS_COMMAND]
         await cmd(interaction, user=None if 'you' in expected_title.lower() else DummyUser(123, display_name="fake name"))
         assert interaction.response.deferred
-        info_calls = interaction.send_info_message_calls
-        assert info_calls
-        title = info_calls[0]['kwargs']['title']
+        calls = interaction.send_info_message_calls
+        assert calls
+        title = calls[0]['kwargs']['title']
         assert expected_title in title
     
     @pytest.mark.parametrize("show_details, show_percentages, show_conversion_currency, show_emoji_visuals, expected_checks", [
@@ -41,19 +42,19 @@ class TestGetDebtsCommand:
         # For example, if show_details=False, then detailed lines shouldn't appear.
 
         # Summary only (no detail lines)
-        (False, False, False, False, [("**User4**: 2", True), ("- 1 testcoins for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
+        (False, False, False, False, [("__**TestCoins YOU OWE:**__ 2 TESTCOINS", True), ("**User4:** 2 testcoins", True), ("- 1 testcoin for *Coffee*", False), ("- 1 testcoin for *Beer*", False)]),
 
         # Detailed breakdown without percentages or conversion currency
-        (True, False, False, False, [("- 1 for *Coffee* on 2025-01-01", True), ("- 1 for *Beer* on 2025-01-02", True), ("50", False), ("£6", False), ("🍺", False)]),
+        (True, False, False, False, [("- 1 testcoin for *Coffee* on 02-01-2025", True), ("- 1 testcoin for *Beer* on 02-01-2025", True), ("50", False), ("£6", False), ("🍺", False)]),
 
         # Detailed breakdown with percentages (mocked to '50')
-        (True, True, False, False, [("- 1 50 for *Coffee* on 2025-01-01", True), ("- 1 50 for *Beer* on 2025-01-02", True), ("£6", False)]),
+        (True, True, False, False, [("- 1 testcoin 50 for *Coffee* on 02-01-2025", True), ("- 1 testcoin 50 for *Beer* on 02-01-2025", True), ("£6", False)]),
 
-        # Breakdown with conversion currency but no details or percentage
-        (False, False, True, False, [("- 1 £6", True), ("- 1 £6", True), ("50", False)]),
+        # Breakdown with conversion currency and details
+        (True, False, True, False, [("__**TestCoins YOU OWE:**__ 2 TESTCOINS [£12]", True), ("- 1 testcoin [£6]", True), ("- 1 testcoin [£6]", True), ("50", False)]),
 
-        # Breakdown with conversion currency but no details or percentage
-        (False, False, False, True, [("🍺🍺", True), ("- 1 testcoins for *Coffee*", False), ("50", False)]),
+        # Breakdown with everything
+        (True, True, True, True, [("[£12]\n🍺🍺", True), ("- 1 testcoin [£6] 50🍺 for *Coffee*", True)]),
 
     ], ids=["summary_only", "details_no_percentages", "details_with_percentages", "with_conversion_currency", "with_emoji_visual"])
     @pytest.mark.asyncio
@@ -68,7 +69,7 @@ class TestGetDebtsCommand:
 
         shared.debts_response = {
             'owed_by_you': {'4': [
-                {'amount': '1', 'reason': 'Coffee', 'timestamp': '2025-01-01'},
+                {'amount': '1', 'reason': 'Coffee', 'timestamp': '2025-01-02'},
                 {'amount': '1', 'reason': 'Beer', 'timestamp': '2025-01-02'},
             ]},
             'total_owed_by_you': '2',
@@ -147,11 +148,11 @@ class TestDebtsWithUserCommand:
     async def test_debts_with_user_with_details_and_percentages(self, bot, shared):
         shared.api_response = {
             'owed_by_you': [
-                {'amount': '1', 'reason': 'being silly', 'timestamp': '2025-01-01'}
+                {'amount': '1', 'reason': 'being silly', 'timestamp': '02-01-2025'}
             ],
             'total_owed_by_you': '1',
             'owed_to_you': [
-                {'amount': '3', 'reason': 'for passing exams', 'timestamp': '2025-01-02'}
+                {'amount': '3', 'reason': 'for passing exams', 'timestamp': '02-01-2025'}
             ],
             'total_owed_to_you': '3',
         }
@@ -193,3 +194,51 @@ class TestDebtsWithUserCommand:
         await bot.tree.commands[config.DEBTS_WITH_USER_COMMAND](interaction, user=other_user)
 
         mock_handle_error.assert_called_once()
+
+class TestTransactionsCommand:
+    @pytest.mark.asyncio
+    async def test_transactions_command_basic(self, bot, shared):
+        # Mock API response for transactions
+       
+        shared.transactions_response = {
+            "start_date": "2025-01-01",
+            "end_date": "2025-01-31",
+            "transactions": [
+                {
+                    "type": "owe",
+                    "debtor": "1",
+                    "creditor": "2",
+                    "amount": "5",
+                    "reason": "Lunch",
+                    "timestamp": "2025-01-02T12:00:00"
+                },
+                {
+                    "type": "settle",
+                    "debtor": "2",
+                    "creditor": "1",
+                    "amount": "3",
+                    "reason": "Repayment",
+                    "timestamp": "2025-01-03T15:30:00"
+                }
+            ]
+        }
+        
+        interaction = DummyInteraction(DummyUser(1), bot)
+        cmd = bot.tree.commands["transactions"]
+        await cmd(interaction)
+
+        # Check that the response was deferred
+        assert interaction.response.deferred
+
+        # Check that an info message was sent
+        calls = interaction.send_info_message_calls
+        assert calls
+        title = calls[0]['kwargs']['title']
+        description = calls[0]['kwargs']['description']
+
+        # Basic checks for expected content
+        assert "Transactions from" in title
+        assert "Lunch" in description
+        assert "Repayment" in description
+        assert "Total Owed In Period" in description
+        assert "Total Settled In Period" in description

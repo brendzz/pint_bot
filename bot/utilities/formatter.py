@@ -1,7 +1,33 @@
 """Formatter module for converting fractions and formatting currency."""
 from fractions import Fraction
+from datetime import datetime
+from dateutil import parser
 import bot.config as config
 from bot.utilities.fraction_list import UNICODE_FRACTIONS, SUPERSCRIPT, SUBSCRIPT
+
+def format_date(date_str: str, normalise_for_api: bool = False) -> str:
+    """
+    Format into specified date format
+    """
+    try:
+        if normalise_for_api:
+            parsed_date = parser.parse(date_str, dayfirst=True)  # allows dd-mm-yyyy
+            return parsed_date.strftime("%Y-%m-%d")
+        else:
+            parsed_date = parser.parse(date_str)
+            return parsed_date.strftime(config.DATE_FORMAT)
+    except (ValueError, TypeError):
+        return "Invalid date"
+
+def sanitize_dates(start_date, end_date):
+    if start_date is not None:
+        start_date = format_date(start_date, True)
+    if end_date is not None:
+        end_date = format_date(end_date, True)
+    return start_date, end_date
+
+def should_display_as_settle(transaction_type: str, display_as_settle: bool) -> bool:
+    return False if transaction_type and transaction_type.strip().lower() == "cashout" else display_as_settle
 
 def fraction_to_unicode(fraction_str: str) -> str:
     """
@@ -56,6 +82,11 @@ def to_percentage(part, whole, decimal_places) -> str:
     percentage = fraction * 100
     return f"({percentage:.{decimal_places}f}%)"
 
+def with_percentage(value: Fraction, total: Fraction, string_amount:str) -> str:
+    """Format a debt with its percentage of the total."""
+    formatted = f"{string_amount} {to_percentage(value, total, config.PERCENTAGE_DECIMAL_PLACES)}"
+    return formatted
+
 def with_conversion_currency(value, string_amount) -> str:
     value = Fraction(value)
     ratio = Fraction(config.EXCHANGE_RATE_TO_CONVERSION_CURRENCY)
@@ -101,3 +132,63 @@ def currency_formatter(amount, use_unicode: bool=False) -> str:
     if whole_number == 0:
         return f"{final_fraction} {currency}"
     return f"{whole_number} {final_fraction} {currency}"
+
+def format_individual_debt_entries(
+    entries,
+    total: Fraction,
+    use_unicode: bool,
+    show_details: bool,
+    show_percentages: bool,
+    show_conversion_currency: bool,
+    show_emoji_visuals: bool
+) -> list[str]:
+    """Format debt entries for display."""
+    total_amount = sum(Fraction(entry['amount']) for entry in entries)
+    lines = [format_amount(
+        total_amount, total, use_unicode,
+        show_percentages, show_conversion_currency, show_emoji_visuals, emoji_on_total=True
+    )]
+
+    if show_details:
+        for entry in entries:
+            amount = format_amount(
+                entry["amount"], total, use_unicode,
+                show_percentages, show_conversion_currency, show_emoji_visuals, emoji_on_total=False
+            )
+            reason = entry['reason'] or "[No Reason Given]"
+            lines.append(f"- {amount} for *{reason}* on {format_date(entry['timestamp'])}")
+    return lines
+
+def format_overall_debts(
+    total_owed: Fraction,
+    show_conversion_currency: bool,
+    show_emoji_visuals: bool,
+    use_unicode: bool,
+    use_upper_case: bool = True
+):
+    formatted_amount = format_amount(
+        total_owed, total_owed, use_unicode,
+        False, show_conversion_currency, show_emoji_visuals, emoji_on_total=True
+    )
+    if (use_upper_case):
+        return formatted_amount.upper()
+    else:
+        return formatted_amount
+
+def format_amount(
+    value,
+    total,
+    use_unicode,
+    show_percentages,
+    show_conversion_currency,
+    show_emoji_visuals,
+    emoji_on_total=True
+):
+    amt = currency_formatter(value, use_unicode)
+    if show_conversion_currency:
+        amt = with_conversion_currency(value, amt)
+    if show_percentages:
+        amt = with_percentage(value, total, amt)
+    if show_emoji_visuals:
+        amt = with_emoji_visuals(value, amt, emoji_on_total)
+    return amt

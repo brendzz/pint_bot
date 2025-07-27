@@ -8,6 +8,7 @@ import bot.configuration.constants as constants
 
 # API Connection
 API_URL: str = os.getenv("API_URL", "http://api:8000")
+API_TIMEOUT: int = 10
 
 # Misc
 RANDOM_NUMBER_GENERATOR = SystemRandom()
@@ -40,6 +41,9 @@ SORT_OWES_FIRST: bool = True
 SHOW_EMOJI_VISUALS_DEFAULT: bool = False
 SHOW_EMOJI_VISUALS_ON_DETAILS_DEFAULT: bool = True
 CURRENCY_DISPLAY_EMOJI: str = "🍺"
+DATE_FORMAT: str = "%d-%m-%Y" #add %A for day of the week
+TIME_FORMAT: str = "%H:%M" #24 hour time, use "%I:%M %p" instead for 12 hour time"
+DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT: bool = True #if false, will display as 'cashout' instead
 
 # Display - Conversion Currency
 CONVERSION_CURRENCY: str = "£"
@@ -53,6 +57,7 @@ QUANTIZE_OWING_DEBTS:  bool = True
 MAXIMUM_PER_DEBT: int = 10
 SMALLEST_UNIT: Fraction = Fraction(1, 6)
 MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
+TRANSACTIONS_DEFAULT_TIME_PERIOD: int = 30
 
 # Reactions
 REACT_TO_MESSAGES_MENTIONING_CURRENCY: bool = True

@@ -26,3 +26,6 @@ QUANTIZE_OWING_DEBTS: bool = True
 
 # True = sort debts most owed by user to least owed, false = sort by most owed to user to least
 SORT_OWES_FIRST: bool = True
+
+TRANSACTIONS_DEFAULT_TIME_PERIOD: int = 30
+VALID_TRANSACTION_TYPES: set[str] = {"owe", "settle", "cashout"}
