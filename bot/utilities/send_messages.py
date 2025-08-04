@@ -1,19 +1,18 @@
 """Discord bot message sending functions."""
 import discord
+import bot.config as config
+
 async def send_error_message(interaction: discord.Interaction, title: str, description: str):
     """Sends an error message to the user."""
-    embed = discord.Embed(title=title, description=description, color=discord.Color.red())
-    await interaction.followup.send(embed=embed)
+    await send_message(interaction, title, description, discord.Color.red())
 
 async def send_success_message(interaction: discord.Interaction, title: str, description: str):
     """Sends a success message to the user."""
-    embed = discord.Embed(title=title, description=description, color=discord.Color.green())
-    await interaction.followup.send(embed=embed)
+    await send_message(interaction, title, description, discord.Color.green())
 
 async def send_info_message(interaction: discord.Interaction, title: str, description: str):
     """Sends an informational message to the user."""
-    embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
-    await interaction.followup.send(embed=embed)
+    await send_message(interaction, title, description, discord.Color.blue())
 
 async def send_one_column_table_message(interaction: discord.Interaction, title: str, description: str, data: list, table_format: bool):
     """Sends a one-column table message to the user."""
@@ -90,3 +89,57 @@ async def send_two_column_table_message(interaction: discord.Interaction, title:
         else:
             # For subsequent embeds, send them as additional messages
             await interaction.channel.send(embed=embed)
+
+async def send_message(
+    interaction: discord.Interaction,
+    title: str,
+    description: str,
+    color: discord.Color
+):
+    """Sends an embed message, splitting into multiple messages if the description is too long.
+    Splits at newlines only if needed."""
+
+    if len(title) > config.DISCORD_EMBED_TITLE_LIMIT:
+        await send_error_message(
+            interaction,
+            "Formatting Error",
+            "Title exceeds Discord's 256 character limit. Sorry about that"
+        )
+        return
+
+    # If description fits, send directly without splitting
+    if len(description) <= config.DISCORD_EMBED_DESCRIPTION_LIMIT:
+        embed = discord.Embed(title=title, description=description, color=color)
+        await interaction.followup.send(embed=embed)
+        return
+
+    # Otherwise split by newlines and chunk
+    paragraphs = description.split('\n')
+    chunks = []
+    current_chunk = ""
+
+    for para in paragraphs:
+        to_add = ("" if current_chunk == "" else "\n") + para
+        if len(current_chunk) + len(to_add) > config.DISCORD_EMBED_DESCRIPTION_LIMIT:
+            if current_chunk:
+                chunks.append(current_chunk)
+            if len(para) > config.DISCORD_EMBED_DESCRIPTION_LIMIT:
+                for i in range(0, len(para), config.DISCORD_EMBED_DESCRIPTION_LIMIT):
+                    chunks.append(para[i:i + config.DISCORD_EMBED_DESCRIPTION_LIMIT])
+                current_chunk = ""
+            else:
+                current_chunk = para
+        else:
+            current_chunk += to_add
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    # Send first embed with title
+    first_embed = discord.Embed(title=title, description=chunks[0], color=color)
+    await interaction.followup.send(embed=first_embed)
+
+    # Send remaining embeds without title
+    for chunk in chunks[1:]:
+        embed = discord.Embed(description=chunk, color=color)
+        await interaction.followup.send(embed=embed)

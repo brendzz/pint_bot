@@ -10,6 +10,10 @@ import bot.configuration.constants as constants
 API_URL: str = os.getenv("API_URL", "http://api:8000")
 API_TIMEOUT: int = 10
 
+# Discord Constants
+DISCORD_EMBED_TITLE_LIMIT = 256
+DISCORD_EMBED_DESCRIPTION_LIMIT = 4096
+
 # Misc
 RANDOM_NUMBER_GENERATOR = SystemRandom()
 
@@ -43,7 +47,7 @@ SHOW_EMOJI_VISUALS_ON_DETAILS_DEFAULT: bool = True
 CURRENCY_DISPLAY_EMOJI: str = "🍺"
 DATE_FORMAT: str = "%d-%m-%Y" #add %A for day of the week
 TIME_FORMAT: str = "%H:%M" #24 hour time, use "%I:%M %p" instead for 12 hour time"
-DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT: bool = True #if false, will display as 'cashout' instead
+DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT: bool = False #if false, will display as 'cashout' instead
 
 # Display - Conversion Currency
 CONVERSION_CURRENCY: str = "£"
