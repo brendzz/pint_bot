@@ -241,4 +241,4 @@ class TestTransactionsCommand:
         assert "Lunch" in description
         assert "Repayment" in description
         assert "Total Owed In Period" in description
-        assert "Total Settled In Period" in description
+        assert "Total Cashed Out In Period" in description
