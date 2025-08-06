@@ -103,7 +103,7 @@ async def send_message(
         await send_error_message(
             interaction,
             "Formatting Error",
-            "Title exceeds Discord's 256 character limit. Sorry about that"
+            f"Title exceeds Discord's {config.DISCORD_EMBED_TITLE_LIMIT} character limit. Sorry about that"
         )
         return
 
