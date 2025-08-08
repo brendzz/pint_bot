@@ -16,11 +16,11 @@ async def send_message(
     if len(description) <= config.DISCORD_EMBED_DESCRIPTION_LIMIT:
         embed = discord.Embed(title=title, description=description, color=color)
         await interaction.followup.send(embed=embed)
-        return
     else:
         await split_message_and_send(interaction,title,description,color)
 
 async def check_title_length(interaction: discord.Interaction, title: str):
+    """Checks the title matches discord character limits"""
     if len(title) > config.DISCORD_EMBED_TITLE_LIMIT:
             await send_message(
                 interaction,
@@ -35,35 +35,61 @@ async def split_message_and_send(
     description: str,
     color: discord.Color,
 ):
-    def chunk_paragraph(paragraph: str, limit: int) -> list[str]:
-        """Split a long paragraph into chunks that fit within the character limit."""
-        return [paragraph[i:i + limit] for i in range(0, len(paragraph), limit)]
+    """Sends a split message across multiple embeds"""
+    chunks = split_text_into_chunks(description, config.DISCORD_EMBED_DESCRIPTION_LIMIT)
 
-    def build_chunks(text: str, limit: int) -> list[str]:
-        """Split full text into chunks that respect the embed description limit."""
-        chunks = []
-        current_chunk = ""
-        for para in text.split('\n'):
-            to_add = ("" if not current_chunk else "\n") + para
-            if len(current_chunk) + len(to_add) > limit:
-                if current_chunk:
-                    chunks.append(current_chunk)
-                if len(para) > limit:
-                    chunks.extend(chunk_paragraph(para, limit))
-                    current_chunk = ""
-                else:
-                    current_chunk = para
-            else:
-                current_chunk += to_add
+    await send_embed_chunks(interaction, title, chunks, color)
+
+
+def split_text_into_chunks(text: str, limit: int) -> list[str]:
+    """Splits a long text into chunks that fit within Discord embed limits."""
+    chunks = []
+    current_chunk = ""
+
+    for paragraph in text.split('\n'):
+        current_chunk, new_chunks = process_paragraph(paragraph, current_chunk, limit)
+        chunks.extend(new_chunks)
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    return chunks
+
+
+def process_paragraph(paragraph: str, current_chunk: str, limit: int) -> tuple[str, list[str]]:
+    """Processes a paragraph and decides whether to start a new chunk or continue the current one."""
+    chunks = []
+    to_add = ("\n" if current_chunk else "") + paragraph
+
+    if len(current_chunk) + len(to_add) > limit:
         if current_chunk:
             chunks.append(current_chunk)
-        return chunks
 
-    chunks = build_chunks(description, config.DISCORD_EMBED_DESCRIPTION_LIMIT)
+        if len(paragraph) > limit:
+            chunks.extend(chunk_paragraph(paragraph, limit))
+            return "", chunks
 
-    # Send first embed with title
-    await interaction.followup.send(embed=discord.Embed(title=title, description=chunks[0], color=color))
+        return paragraph, chunks
 
-    # Send remaining embeds without title
-    for chunk in chunks[1:]:
-        await interaction.followup.send(embed=discord.Embed(description=chunk, color=color))
+    return current_chunk + to_add, chunks
+
+
+def chunk_paragraph(paragraph: str, limit: int) -> list[str]:
+    """Splits a single long paragraph into smaller parts."""
+    return [paragraph[i:i + limit] for i in range(0, len(paragraph), limit)]
+
+
+async def send_embed_chunks(
+    interaction: discord.Interaction,
+    title: str,
+    chunks: list[str],
+    color: discord.Color,
+):
+    """Sends the embed messages one by one, including the title only in the first."""
+    for i, chunk in enumerate(chunks):
+        embed = discord.Embed(
+            title=title if i == 0 else None,
+            description=chunk,
+            color=color
+        )
+        await interaction.followup.send(embed=embed)
