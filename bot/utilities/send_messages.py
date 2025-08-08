@@ -1,19 +1,19 @@
-"""Discord bot message sending functions."""
+"""Discord bot message sending functions to be called by other parts of the bot."""
 import discord
+import bot.config as config
+from bot.utilities.message_processor import send_message
+
 async def send_error_message(interaction: discord.Interaction, title: str, description: str):
     """Sends an error message to the user."""
-    embed = discord.Embed(title=title, description=description, color=discord.Color.red())
-    await interaction.followup.send(embed=embed)
+    await send_message(interaction, title, description, discord.Color.red())
 
 async def send_success_message(interaction: discord.Interaction, title: str, description: str):
     """Sends a success message to the user."""
-    embed = discord.Embed(title=title, description=description, color=discord.Color.green())
-    await interaction.followup.send(embed=embed)
+    await send_message(interaction, title, description, discord.Color.green())
 
 async def send_info_message(interaction: discord.Interaction, title: str, description: str):
     """Sends an informational message to the user."""
-    embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
-    await interaction.followup.send(embed=embed)
+    await send_message(interaction, title, description, discord.Color.blue())
 
 async def send_one_column_table_message(interaction: discord.Interaction, title: str, description: str, data: list, table_format: bool):
     """Sends a one-column table message to the user."""

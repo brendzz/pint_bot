@@ -39,7 +39,8 @@ PATCHED_CONFIG = {
     "QUANTIZE_SETTLING_DEBTS": True,
     "SHOW_DETAILS_DEFAULT": True,
     "EXCHANGE_RATE_TO_CONVERSION_CURRENCY": 6,
-    "DATE_FORMAT": "%d-%m-%Y"
+    "DATE_FORMAT": "%d-%m-%Y",
+    "DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT": False
 }
 
 @pytest.fixture(autouse=True, scope="session")
