@@ -7,24 +7,24 @@ async def send_message(
     title: str,
     description: str,
     color: discord.Color,
-    ephermal: bool = False
+    ephemeral: bool = False
 ):
     """Sends an embed message, splitting into multiple messages if the description is too long.
     Splits at newlines only if needed."""
-    await check_title_length(interaction, title, ephermal)
+    await check_title_length(interaction, title, ephemeral)
 
     # If description fits, send directly without splitting
     if len(description) <= config.DISCORD_EMBED_DESCRIPTION_LIMIT:
         embed = discord.Embed(title=title, description=description, color=color)
 
         if not interaction.response.is_done():
-            await interaction.response.send_message(embed=embed, ephemeral=ephermal)
+            await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
         else:
-            await interaction.followup.send(embed=embed, ephemeral=ephermal)
+            await interaction.followup.send(embed=embed, ephemeral=ephemeral)
     else:
-        await split_message_and_send(interaction,title,description,color,ephermal)
+        await split_message_and_send(interaction,title,description,color,ephemeral)
 
-async def check_title_length(interaction: discord.Interaction, title: str, ephermal:bool):
+async def check_title_length(interaction: discord.Interaction, title: str, ephemeral:bool):
     """Checks the title matches discord character limits"""
     if len(title) > config.DISCORD_EMBED_TITLE_LIMIT:
         await send_message(
@@ -32,7 +32,7 @@ async def check_title_length(interaction: discord.Interaction, title: str, epher
             "", #this is blank to prevent infinite loop if DISCORD_EMBED_TITLE_LIMIT is set to a low number
             f"Title exceeds Discord's {config.DISCORD_EMBED_TITLE_LIMIT} character limit. Sorry about that",
             discord.Color.red(),
-            ephermal
+            ephemeral
         )
 
 
@@ -41,12 +41,12 @@ async def split_message_and_send(
     title: str,
     description: str,
     color: discord.Color,
-    ephermal: bool
+    ephemeral: bool
 ):
     """Sends a split message across multiple embeds"""
     chunks = split_text_into_chunks(description, config.DISCORD_EMBED_DESCRIPTION_LIMIT)
 
-    await send_embed_chunks(interaction, title, chunks, color, ephermal)
+    await send_embed_chunks(interaction, title, chunks, color, ephemeral)
 
 
 def split_text_into_chunks(text: str, limit: int) -> list[str]:
@@ -92,7 +92,7 @@ async def send_embed_chunks(
     title: str,
     chunks: list[str],
     color: discord.Color,
-    ephermal: bool = False
+    ephemeral: bool = False
     ):
     """Sends the embed messages one by one, including the title only in the first."""
     for i, chunk in enumerate(chunks):
@@ -102,6 +102,6 @@ async def send_embed_chunks(
             color=color
         )
         if not interaction.response.is_done():
-            await interaction.response.send_message(embed=embed, ephemeral=ephermal)
+            await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
         else:
-            await interaction.followup.send(embed=embed, ephemeral=ephermal)
+            await interaction.followup.send(embed=embed, ephemeral=ephemeral)

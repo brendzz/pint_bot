@@ -69,8 +69,8 @@ class TestGetDebtsCommand:
 
         shared.debts_response = {
             'owed_by_you': {'4': [
-                {'amount': '1', 'reason': 'Coffee', 'timestamp': '2025-01-02'},
-                {'amount': '1', 'reason': 'Beer', 'timestamp': '2025-01-02'},
+                {'amount': '1', 'reason': 'Coffee', 'timestamp': '02-01-2025'},
+                {'amount': '1', 'reason': 'Beer', 'timestamp': '02-01-2025'},
             ]},
             'total_owed_by_you': '2',
             'owed_to_you': {},
