@@ -253,7 +253,7 @@ async def handle_get_transactions(
     interaction: discord.Interaction,
     start_date: str = None,
     end_date: str = None,
-    user_id: str = None,
+    user: discord.User = None,
     transaction_type: str = None,
     show_conversion_currency: bool = None,
     show_emoji_visuals: bool = None,
@@ -267,6 +267,7 @@ async def handle_get_transactions(
     display_as_settle = default_unless_included(display_as_settle, config.DISPLAY_TRANSACTIONS_AS_SETTLE_DEFAULT)
     
     start_date, end_date = sanitize_dates(start_date, end_date)
+    user_id = None if user is None else str(user.id)
 
     if transaction_type and transaction_type.strip().lower() == "cashout":
         display_as_settle = False

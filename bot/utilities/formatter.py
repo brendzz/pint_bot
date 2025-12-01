@@ -10,11 +10,10 @@ def format_date(date_str: str, normalise_for_api: bool = False) -> str:
     Format into specified date format
     """
     try:
+        parsed_date = parser.parse(date_str, dayfirst=True)
         if normalise_for_api:
-            parsed_date = parser.parse(date_str, dayfirst=True)  # allows dd-mm-yyyy
             return parsed_date.strftime("%Y-%m-%d")
         else:
-            parsed_date = parser.parse(date_str)
             return parsed_date.strftime(config.DATE_FORMAT)
     except (ValueError, TypeError):
         return "Invalid date"
