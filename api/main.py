@@ -292,7 +292,7 @@ async def settle_debt(request: SettleRequest):
         type = "settle",
         debtor = debtor_id,
         creditor = creditor_id,
-        amount = amount,
+        amount = settled_amount,
         reason = request.reason
     )
 
