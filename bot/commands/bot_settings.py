@@ -1,13 +1,12 @@
-import discord
+from bot.platform.context import CommandContext
 from bot import config
-import bot.utilities.send_messages as send_messages
 
-async def handle_settings(interaction: discord.Interaction, table_format: bool = None):
+async def handle_settings(ctx: CommandContext, table_format: bool = None):
     if table_format is None:
         table_format = config.USE_TABLE_FORMAT_DEFAULT
 
     # Defer the interaction to avoid timeout
-    await interaction.response.defer()
+    await ctx.defer()
 
     # Prepare the bot settings data
     bot_settings_data = [
@@ -55,7 +54,14 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
             {"Setting": "Maximum Debt Description Character Limit", "Value": config.MAXIMUM_DEBT_CHARACTER_LIMIT},
             {"Setting": "Smallest Unit Allowed/Quantization", "Value": config.SMALLEST_UNIT},
             {"Setting": "Enforce Quantization when Owing Debts", "Value": config.QUANTIZE_OWING_DEBTS},
-            {"Setting": "Enforce Quantization when Settling Debts", "Value": config.QUANTIZE_SETTLING_DEBTS}
+            {"Setting": "Enforce Quantization when Settling Debts", "Value": config.QUANTIZE_SETTLING_DEBTS},
+            {"Setting": "Auto-reverse Excess Cashouts", "Value": config.AUTO_REVERSE_EXCESS_CASHOUTS}
+        ]
+    },
+    {
+        "Category": "Audit Log - API Setting",
+        "Settings": [
+            {"Setting": "Transactions Posted to Audit Channel", "Value": config.AUDIT_LOG_ENABLED}
         ]
     },
     {
@@ -90,8 +96,8 @@ async def handle_settings(interaction: discord.Interaction, table_format: bool =
         formatted_data.pop()
         
 
-    await send_messages.send_one_column_table_message(
-        interaction,
+    await ctx.messenger.one_column_table(
+        ctx,
         title=f"Current {config.BOT_NAME} Settings (Customizable)",
         description="Here are the current Bot settings:",
         data=formatted_data,

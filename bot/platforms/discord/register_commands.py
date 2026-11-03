@@ -1,6 +1,17 @@
-"""Module for defining bot commands."""
+"""Module for defining the Discord slash commands.
+
+This module is Discord-specific. It adapts Discord's
+``discord.Interaction`` to the platform-agnostic ``CommandContext``
+and delegates to the platform-agnostic handlers in ``bot.commands``.
+A Telegram adapter would provide an equivalent module with Telegram's
+command registration mechanism.
+"""
+from typing import Optional
 import discord
 from discord import app_commands
+
+from bot.platform.context import PlatformUser
+from bot.platforms.discord.context import DiscordCommandContext, platform_user_from_discord
 from bot.setup.command import Command
 from bot.commands.debt_display import handle_debts_with_user, handle_get_all_debts, handle_get_debts, handle_get_transactions
 from bot.commands.debt_management import handle_owe, handle_settle, handle_cashout
@@ -120,14 +131,14 @@ def register_commands(bot):
         description=Command.get("help").description
     )
     async def help_command(interaction: discord.Interaction):
-        await handle_help_command(interaction)
+        await handle_help_command(DiscordCommandContext(interaction))
 
     @bot.tree.command(
         name=Command.get("repeat_that").name,
         description=Command.get("repeat_that").description
     )
     async def repeat_that_command(interaction: discord.Interaction):
-        await handle_repeat_that_command(interaction)
+        await handle_repeat_that_command(DiscordCommandContext(interaction))
 
     @bot.tree.command(
         name=Command.get("owe").name,
@@ -139,7 +150,7 @@ def register_commands(bot):
         reason="Why you owe them (optional)"
     )
     async def owe(interaction: discord.Interaction, user: discord.User, amount: str, *, reason: str = ""):
-        await handle_owe(interaction, user, amount, reason=reason)
+        await handle_owe(DiscordCommandContext(interaction), platform_user_from_discord(user), amount, reason=reason)
 
     @bot.tree.command(
         name=Command.get("get_debts").name,
@@ -159,12 +170,13 @@ def register_commands(bot):
         )
     )
     async def get_debts(interaction: discord.Interaction, 
-                        user: discord.User = None, 
-                        show_details: bool = None, 
-                        show_percentages: bool = None, 
-                        show_conversion_currency: bool = None, 
-                        show_emoji_visuals: bool = None):
-        await handle_get_debts(interaction, user, show_details, show_percentages, show_conversion_currency, show_emoji_visuals)
+                        user: Optional[discord.User] = None, 
+                        show_details: Optional[bool] = None, 
+                        show_percentages: Optional[bool] = None, 
+                        show_conversion_currency: Optional[bool] = None, 
+                        show_emoji_visuals: Optional[bool] = None):
+        target_user = platform_user_from_discord(user) if user is not None else None
+        await handle_get_debts(DiscordCommandContext(interaction), target_user, show_details, show_percentages, show_conversion_currency, show_emoji_visuals)
 
     @bot.tree.command(
         name=Command.get("get_all_debts").name,
@@ -185,8 +197,8 @@ def register_commands(bot):
                 f"(Default: {config.SHOW_EMOJI_VISUALS_DEFAULT})"
             )
     )
-    async def get_all_debts(interaction: discord.Interaction, table_format: bool = None, show_percentages: bool = None, show_conversion_currency: bool = None, show_emoji_visuals: bool = None):
-        await handle_get_all_debts(interaction, table_format, show_percentages, show_conversion_currency, show_emoji_visuals)
+    async def get_all_debts(interaction: discord.Interaction, table_format: Optional[bool] = None, show_percentages: Optional[bool] = None, show_conversion_currency: Optional[bool] = None, show_emoji_visuals: Optional[bool] = None):
+        await handle_get_all_debts(DiscordCommandContext(interaction), table_format, show_percentages, show_conversion_currency, show_emoji_visuals)
 
     @bot.tree.command(
         name=Command.get("debts_with_user").name,
@@ -214,12 +226,12 @@ def register_commands(bot):
     async def debts_with_user(
         interaction: discord.Interaction,
         user: discord.User,
-        show_details: bool = None,
-        show_percentages: bool = None,
-        show_conversion_currency: bool = None,
-        show_emoji_visuals: bool = None
+        show_details: Optional[bool] = None,
+        show_percentages: Optional[bool] = None,
+        show_conversion_currency: Optional[bool] = None,
+        show_emoji_visuals: Optional[bool] = None
     ):
-        await handle_debts_with_user(interaction, user, show_details, show_percentages, show_conversion_currency, show_emoji_visuals)
+        await handle_debts_with_user(DiscordCommandContext(interaction), platform_user_from_discord(user), show_details, show_percentages, show_conversion_currency, show_emoji_visuals)
 
     @bot.tree.command(
         name=Command.get("transactions").name,
@@ -251,15 +263,15 @@ def register_commands(bot):
     )
     async def transactions_command(
         interaction: discord.Interaction,
-        start_date: str = None,
-        end_date: str = None,
-        user_id: str = None,
-        transaction_type: str = None,
-        show_conversion_currency: bool = None,
-        show_emoji_visuals: bool = None,
-        display_as_settle: bool = None
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        user_id: Optional[str] = None,
+        transaction_type: Optional[str] = None,
+        show_conversion_currency: Optional[bool] = None,
+        show_emoji_visuals: Optional[bool] = None,
+        display_as_settle: Optional[bool] = None
     ):
-        await handle_get_transactions(interaction, start_date, end_date, user_id, transaction_type, show_conversion_currency, show_emoji_visuals, display_as_settle)
+        await handle_get_transactions(DiscordCommandContext(interaction), start_date, end_date, user_id, transaction_type, show_conversion_currency, show_emoji_visuals, display_as_settle)
 
                                     
     @bot.tree.command(
@@ -272,7 +284,7 @@ def register_commands(bot):
         reason="Reason to show with this transaction (optional)"
     )
     async def settle(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
-        await handle_settle(interaction, user, amount, reason=reason)
+        await handle_settle(DiscordCommandContext(interaction), platform_user_from_discord(user), amount, reason=reason)
 
     @bot.tree.command(
             name=Command.get("cashout").name,
@@ -284,7 +296,7 @@ def register_commands(bot):
         reason="Reason to show with this transaction (optional)"
     )
     async def cashout(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
-        await handle_cashout(interaction, user, amount, reason=reason)
+        await handle_cashout(DiscordCommandContext(interaction), platform_user_from_discord(user), amount, reason=reason)
 
     @bot.tree.command(
         name=Command.get("set_unicode_preference").name,
@@ -294,7 +306,7 @@ def register_commands(bot):
         use_unicode="Set to True to use Unicode fractions, False otherwise."
     )
     async def set_unicode_preference(interaction: discord.Interaction, use_unicode: bool):
-        await handle_set_unicode_preference(interaction, use_unicode)
+        await handle_set_unicode_preference(DiscordCommandContext(interaction), use_unicode)
 
     @bot.tree.command(
         name=Command.get("settings").name,
@@ -303,19 +315,19 @@ def register_commands(bot):
     @app_commands.describe(
         table_format=f"Display in table format (not recommended for mobile, Default: {config.USE_TABLE_FORMAT_DEFAULT})."
     )
-    async def settings(interaction: discord.Interaction, table_format: bool = None):
-        await handle_settings(interaction, table_format)
+    async def settings(interaction: discord.Interaction, table_format: Optional[bool] = None):
+        await handle_settings(DiscordCommandContext(interaction), table_format)
 
     @bot.tree.command(
         name=Command.get("refresh_name").name,
         description=Command.get("refresh_name").description
     )
     async def refresh_name(interaction: discord.Interaction):
-        await handle_refresh_name(interaction)
+        await handle_refresh_name(DiscordCommandContext(interaction))
 
     @bot.tree.command(
         name=Command.get("roll").name,
         description=Command.get("roll").description
     )
     async def roll(interaction: discord.Interaction):
-        await handle_roll(interaction)
+        await handle_roll(DiscordCommandContext(interaction))

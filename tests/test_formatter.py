@@ -94,6 +94,6 @@ class TestToPercentage:
     def test_large_numbers(self):
         assert to_percentage(2000, 8000, 2) == "(25.00%)"
 
-    def test_zero_division_handling(self):
-        with pytest.raises(ZeroDivisionError):
-            to_percentage(5, 0, 1)
+    def test_zero_total_returns_zero_percentage(self):
+        # A zero total must not crash the caller; show 0.0% instead
+        assert to_percentage(5, 0, 1) == "(0.0%)"

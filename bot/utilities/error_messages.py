@@ -60,6 +60,22 @@ ERROR_MESSAGES = {
         "title": "Invalid Amount",
         "description": "The amount you entered is invalid. Please enter a valid number."
     },
+    "INVALID_TRANSACTION_TYPE": {
+        "title": "Invalid Transaction Type",
+        "description": "That is not a valid transaction type. Valid types are: owe, settle, cashout."
+    },
+    "INVALID_DATE": {
+        "title": "Invalid Date",
+        "description": "One of the dates you entered could not be understood. Please use a date like 25-12-2025."
+    },
+    "INVALID_API_KEY": {
+        "title": "Not Authorised",
+        "description": "The bot is not authorised to talk to the API. Please check the API_KEY configuration."
+    },
+    "DATA_STORE_UNAVAILABLE": {
+        "title": "Economy on Fire",
+        "description": "The economy data store is unavailable right now. Please try again later."
+    },
     "REQUEST_ERROR": {
         "title": "Request Error",
         "description": "There was an error processing your request. Please try again later."

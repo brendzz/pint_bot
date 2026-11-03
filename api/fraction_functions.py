@@ -1,43 +1,54 @@
 """Module for fraction conversion functions."""
 from fractions import Fraction
+import re
 from fastapi import HTTPException
 import api.config as config
 
+# Accepts: "3", "-3", "2.5", ".5", "7/3", "-7/3", "2 1/3", "-2 1/3"
+# Rejects: "3 -1/2", "2 7/3", "1_000", "1e3", "1/0", "", "abc"
+_PLAIN_NUMBER = re.compile(r"^-?(\d+(\.\d+)?|\.\d+)$")
+_SIMPLE_FRACTION = re.compile(r"^(-?)(\d+)/(\d+)$")
+_MIXED_NUMBER = re.compile(r"^(-?)(\d+)\s+(\d+)/(\d+)$")
+
 def mixed_number_to_fraction(input_str: str) -> Fraction:
     """Function to convert a mixed number or fraction string to a Fraction object
-    
+
     Raises:
         HTTPException: with appropriate error detail if the input is invalid.
     """
     if input_str is None:
         raise HTTPException(status_code=400, detail="VALIDATION_ERROR")
-    
-    try:
-        # Split the input into whole number and fractional part
-        input_str = input_str.strip()
 
-        if " " in input_str:
-            # Handle mixed number format
-            whole_str, fraction_str = input_str.split()
-            whole = int(whole_str)
-            numerator, denominator = map(int, fraction_str.split("/"))
-        elif "/" in input_str:
-            # If there's no whole number, treat it as a simple fraction
-            whole = 0
-            numerator, denominator = map(int, input_str.split("/"))
-        else:
-            # If there's no fraction, treat it as a number
-            return Fraction(input_str)
+    input_str = input_str.strip()
 
-        if denominator == 0:
+    # Plain number (integer or decimal)
+    if _PLAIN_NUMBER.match(input_str):
+        return Fraction(input_str)
+
+    # Simple fraction, e.g. "7/3" (improper fractions are allowed)
+    simple = _SIMPLE_FRACTION.match(input_str)
+    if simple:
+        sign, numerator, denominator = simple.groups()
+        den = int(denominator)
+        if den == 0:
             raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
+        numerator = int(numerator)
+        return Fraction(-numerator if sign == "-" else numerator, den)
 
-        return Fraction(whole * denominator + numerator, denominator)
+    # Mixed number, e.g. "2 1/3" — the fractional part must be a proper fraction
+    mixed = _MIXED_NUMBER.match(input_str)
+    if mixed:
+        sign, whole_str, numerator_str, denominator_str = mixed.groups()
+        den = int(denominator_str)
+        num = int(numerator_str)
+        if den == 0:
+            raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
+        if num >= den:
+            raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
+        value = Fraction(int(whole_str) * den + num, den)
+        return -value if sign == "-" else value
 
-    except (ValueError, ZeroDivisionError) as exc:
-        raise HTTPException(status_code=400, detail="INVALID_AMOUNT") from exc
-    except TypeError as exc:
-        raise HTTPException(status_code=400, detail="VALIDATION_ERROR") from exc
+    raise HTTPException(status_code=400, detail="INVALID_AMOUNT")
 
 def check_quantization(amount: Fraction):
     """Check if the fraction is quantized to the smallest unit using modulo"""

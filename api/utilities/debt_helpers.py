@@ -1,8 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fractions import Fraction
 from models import DebtEntry
-
-DATE_FORMAT = "%d-%m-%Y"
 
 def serialize_debt_entry(entry: DebtEntry) -> dict:
     """Serialize a DebtEntry object to a dictionary."""
@@ -17,8 +15,8 @@ def sum_debts(entries: list[DebtEntry]) -> Fraction:
     return sum(Fraction(entry.amount) for entry in entries)
 
 def current_timestamp() -> str:
-    """Get the current timestamp in the specified format."""
-    return datetime.now().strftime(DATE_FORMAT)
+    """Get the current timestamp as an ISO-8601 UTC string."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def build_debt_summary(entries: list[DebtEntry]) -> tuple[list[dict], Fraction]:
     """Returns serialized debt entries and their total sum."""

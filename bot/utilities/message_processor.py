@@ -1,56 +1,11 @@
-"""Discord bot message processor that processes and actually sends messages."""
-import discord
-import bot.config as config
+"""Platform-agnostic text chunking helpers.
 
-async def send_message(
-    interaction: discord.Interaction,
-    title: str,
-    description: str,
-    color: discord.Color,
-    ephemeral: bool = False
-):
-    """Sends an embed message, splitting into multiple messages if the description is too long.
-    Splits at newlines only if needed."""
-    await check_title_length(interaction, title, ephemeral)
-
-    # If description fits, send directly without splitting
-    if len(description) <= config.DISCORD_EMBED_DESCRIPTION_LIMIT:
-        embed = discord.Embed(title=title, description=description, color=color)
-
-        if not interaction.response.is_done():
-            await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
-        else:
-            await interaction.followup.send(embed=embed, ephemeral=ephemeral)
-    else:
-        await split_message_and_send(interaction,title,description,color,ephemeral)
-
-async def check_title_length(interaction: discord.Interaction, title: str, ephemeral:bool):
-    """Checks the title matches discord character limits"""
-    if len(title) > config.DISCORD_EMBED_TITLE_LIMIT:
-        await send_message(
-            interaction,
-            "", #this is blank to prevent infinite loop if DISCORD_EMBED_TITLE_LIMIT is set to a low number
-            f"Title exceeds Discord's {config.DISCORD_EMBED_TITLE_LIMIT} character limit. Sorry about that",
-            discord.Color.red(),
-            ephemeral
-        )
-
-
-async def split_message_and_send(
-    interaction: discord.Interaction,
-    title: str,
-    description: str,
-    color: discord.Color,
-    ephemeral: bool
-):
-    """Sends a split message across multiple embeds"""
-    chunks = split_text_into_chunks(description, config.DISCORD_EMBED_DESCRIPTION_LIMIT)
-
-    await send_embed_chunks(interaction, title, chunks, color, ephemeral)
-
+Used by platform adapters to split long descriptions into chunks that
+fit their platform limits. Contains no platform-specific code.
+"""
 
 def split_text_into_chunks(text: str, limit: int) -> list[str]:
-    """Splits a long text into chunks that fit within Discord embed limits."""
+    """Splits a long text into chunks that fit within a character limit."""
     chunks = []
     current_chunk = ""
 
@@ -62,7 +17,6 @@ def split_text_into_chunks(text: str, limit: int) -> list[str]:
         chunks.append(current_chunk)
 
     return chunks
-
 
 def process_paragraph(paragraph: str, current_chunk: str, limit: int) -> tuple[str, list[str]]:
     """Processes a paragraph and decides whether to start a new chunk or continue the current one."""
@@ -81,27 +35,6 @@ def process_paragraph(paragraph: str, current_chunk: str, limit: int) -> tuple[s
 
     return current_chunk + to_add, chunks
 
-
 def chunk_paragraph(paragraph: str, limit: int) -> list[str]:
     """Splits a single long paragraph into smaller parts."""
     return [paragraph[i:i + limit] for i in range(0, len(paragraph), limit)]
-
-
-async def send_embed_chunks(
-    interaction: discord.Interaction,
-    title: str,
-    chunks: list[str],
-    color: discord.Color,
-    ephemeral: bool = False
-    ):
-    """Sends the embed messages one by one, including the title only in the first."""
-    for i, chunk in enumerate(chunks):
-        embed = discord.Embed(
-            title=title if i == 0 else None,
-            description=chunk,
-            color=color
-        )
-        if not interaction.response.is_done():
-            await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
-        else:
-            await interaction.followup.send(embed=embed, ephemeral=ephemeral)

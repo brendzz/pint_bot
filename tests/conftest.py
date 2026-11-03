@@ -6,12 +6,12 @@ import pytest
 
 # Setup paths
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bot')))
 
 # Imports
-import bot.setup.register_commands as register_commands
+import bot.platforms.discord.register_commands as register_commands
 from bot.commands import bot_settings, debt_display, debt_management, user_settings
-from bot.utilities import send_messages, user_preferences, formatter
+from bot.utilities import user_preferences, formatter
+from bot.platforms.discord.messenger import DiscordMessenger as REAL_DISCORD_MESSENGER
 
 # -------------------------------
 # Global test configuration
@@ -47,7 +47,7 @@ PATCHED_CONFIG = {
 def patch_config_before_tests():
     with patch.multiple("bot.utilities.error_handling.config", **PATCHED_CONFIG), \
          patch.multiple("bot.utilities.formatter.config", **PATCHED_CONFIG), \
-         patch.multiple("bot.setup.register_commands.config", **PATCHED_CONFIG):
+         patch.multiple("bot.platforms.discord.register_commands.config", **PATCHED_CONFIG):
         yield
 
 @pytest.fixture(autouse=True)
@@ -71,6 +71,10 @@ class DummyResponse:
         self.deferred = False
     async def defer(self):
         self.deferred = True
+    def is_done(self):
+        return self.deferred
+    async def send_message(self, *args, **kwargs):
+        self.deferred = True
 
 class DummyFollowup:
     def __init__(self):
@@ -78,17 +82,75 @@ class DummyFollowup:
     async def send(self, *args, **kwargs):
         self.sent = True
 
+class RecordingMessenger:
+    """Stand-in for DiscordMessenger that records what would have been sent.
+
+    Calls are recorded on the originating (dummy) interaction so tests can
+    assert on them with attribute names such as ``send_info_message_calls``.
+    """
+
+    _SINK_KEYS = {
+        "info": "send_info_message_calls",
+        "success": "send_success_message_calls",
+        "error": "send_error_message_calls",
+        "one_column_table": "send_one_column_table_message_calls",
+        "two_column_table": "send_two_column_table_message_calls",
+    }
+
+    def _record(self, ctx, name, args, kwargs):
+        sink = getattr(ctx, "raw", ctx) or ctx
+        calls = getattr(sink, self._SINK_KEYS[name], [])
+        calls.append({'args': args, 'kwargs': kwargs})
+        setattr(sink, self._SINK_KEYS[name], calls)
+
+    async def info(self, ctx, *args, **kwargs):
+        self._record(ctx, "info", args, kwargs)
+
+    async def success(self, ctx, *args, **kwargs):
+        self._record(ctx, "success", args, kwargs)
+
+    async def error(self, ctx, *args, **kwargs):
+        self._record(ctx, "error", args, kwargs)
+
+    async def one_column_table(self, ctx, *args, **kwargs):
+        self._record(ctx, "one_column_table", args, kwargs)
+
+    async def two_column_table(self, ctx, *args, **kwargs):
+        self._record(ctx, "two_column_table", args, kwargs)
+
 class DummyInteraction:
+    """Duck-typed stand-in for discord.Interaction used by the tests.
+
+    The registered command wrappers adapt this to a real
+    ``DiscordCommandContext``.
+    """
+
     def __init__(self, user, bot):
         self.user = user
         self.client = bot
+        self.raw = self
+
+        # Protocol members (used when a dummy is passed directly as a ctx)
+        self.user_id = str(user.id)
+        self.user_display_name = user.display_name
+        self.user_mention = user.mention
+        self.bot_user_id = str(bot.user.id)
+        self.messenger = RecordingMessenger()
+
         self.response = DummyResponse()
         self.followup = DummyFollowup()
         self.send_info_message_calls = []
         self.send_success_message_calls = []
+        self.send_error_message_calls = []
         self.send_two_column_table_message_calls = []
         self.send_one_column_table_message_calls = []
         self.error = None
+
+    async def defer(self):
+        await self.response.defer()
+
+    async def display_name(self, user_id, *, force_refresh: bool = False):
+        return f"User{user_id}"
 
 class DummyTree:
     def __init__(self):
@@ -120,7 +182,7 @@ class FakeAPI:
         self.shared = shared
         self.calls = {}
 
-    def add_debt(self, payload):
+    async def add_debt(self, payload):
         self.calls['add_debt'] = payload
         return {
             'amount': payload['amount'],
@@ -128,23 +190,23 @@ class FakeAPI:
             'timestamp': '2025-01-01T00:00:00Z'
         }
 
-    def get_debts(self, user_id):
+    async def get_debts(self, user_id):
         return self.shared.debts_response
 
-    def get_all_debts(self):
+    async def get_all_debts(self):
         return self.shared.all_debts_response
 
-    def debts_with_user(self, user_id1, user_id2):
+    async def debts_with_user(self, user_id1, user_id2):
         return self.shared.debts_response
-    
-    def get_transactions(self, *args, **kwargs):
+
+    async def get_transactions(self, *args, **kwargs):
         return self.shared.transactions_response
 
-    def settle_debt(self, payload):
+    async def settle_debt(self, payload):
         self.calls['settle_debt'] = payload
         return {'settled_amount': payload['amount'], 'remaining_amount': '0'}
 
-    def set_unicode_preference(self, user_id, payload):
+    async def set_unicode_preference(self, user_id, payload):
         self.calls['set_unicode_preference'] = {
             'user_id': user_id,
             'use_unicode': payload['use_unicode']
@@ -171,11 +233,12 @@ def shared():
 
 @pytest.fixture(autouse=True)
 def mock_bot_dependencies(monkeypatch, shared):
-    async def fake_fetch_unicode(interaction, user_id):
+    async def fake_fetch_unicode(ctx, user_id):
         return True
 
-    async def fake_handle_error(interaction, *args, **kwargs):
-        interaction.error = {'args': args, 'kwargs': kwargs}
+    async def fake_handle_error(ctx, *args, **kwargs):
+        sink = getattr(ctx, "raw", ctx) or ctx
+        sink.error = {'args': args, 'kwargs': kwargs}
 
     monkeypatch.setattr(user_preferences, 'fetch_unicode_preference', fake_fetch_unicode)
     monkeypatch.setattr(debt_management, 'handle_error', fake_handle_error)
@@ -183,6 +246,13 @@ def mock_bot_dependencies(monkeypatch, shared):
     monkeypatch.setattr(debt_display, 'currency_formatter', lambda amount, use_unicode: str(amount))
     monkeypatch.setattr(formatter, 'to_percentage', lambda amount, total, config : '50')
     monkeypatch.setattr(debt_display, 'with_conversion_currency', lambda value, string_amount : '- 1 £6')
+
+    # The command wrappers build a real DiscordCommandContext; swap its
+    # messenger for the recording test double.
+    monkeypatch.setattr(
+        "bot.platforms.discord.messenger.DiscordMessenger",
+        RecordingMessenger,
+    )
 
     for module, model_names in {
         debt_management: ['OweRequest', 'SettleRequest'],
@@ -194,33 +264,6 @@ def mock_bot_dependencies(monkeypatch, shared):
     monkeypatch.setattr(debt_management, 'api_client', shared.fake_api)
     monkeypatch.setattr(debt_display, 'api_client', shared.fake_api)
     monkeypatch.setattr(user_settings, 'api_client', shared.fake_api)
-
-# -------------------------------
-# Intercept message functions
-# -------------------------------
-
-@pytest.fixture(autouse=True)
-def patch_all_message_senders(monkeypatch):
-    def make_stub(name):
-        async def stub(interaction, *args, **kwargs):
-            calls = getattr(interaction, f"{name}_calls", [])
-            calls.append({'args': args, 'kwargs': kwargs})
-            setattr(interaction, f"{name}_calls", calls)
-        return stub
-
-    for fn in (
-        "send_info_message",
-        "send_success_message",
-        "send_two_column_table_message",
-        "send_one_column_table_message",
-        "send_error_message",
-    ):
-        monkeypatch.setattr(send_messages, fn, make_stub(fn))
-
-    # Ensure help command sees stubbed send_messages
-    import importlib
-    import bot.commands.support
-    importlib.reload(bot.commands.support)
 
 # -------------------------------
 # Bot fixture with commands

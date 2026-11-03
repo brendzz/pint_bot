@@ -100,7 +100,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 1
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -133,7 +133,14 @@ jobs:
             cat > bot/.env <<EOF
             BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}
             API_URL=${{ secrets.PROD_API_URL }}
+            API_KEY=${{ secrets.PROD_API_KEY }}
             EOF
+
+            # Write the API key for the api service (compose reads it from the environment)
+            export API_KEY=${{ secrets.PROD_API_KEY }}
+            if [ -z "$API_KEY" ]; then
+              echo "::warning::PROD_API_KEY is not set; the API will run WITHOUT authentication"
+            fi
 
             echo "Starting deployment script at $(date)"
             export PATH="$HOME/.local/bin:$PATH"
@@ -152,24 +159,6 @@ jobs:
               pip install --user podman-compose
             fi
 
-            # Clean stale locks
-            echo "Removing stale CNI lock..."
-            rm -f ~/.config/cni/net.d/cni.lock || true
-
-            # Free port 8000
-            echo "Killing processes on port 8000..."
-            lsof -ti:8000 | xargs -r kill -9 || true
-
-            echo "Waiting for port 8000 to become free..."
-            for i in {1..10}; do
-              if ! lsof -ti:8000 > /dev/null; then
-                echo "Port 8000 is now free."
-                break
-              fi
-              echo "Still in use, retrying ($i/10)..."
-              sleep 1
-            done
-
             # Set env vars for image tags
             export GITHUB_OWNER=${{ github.repository_owner }}
             export REF=$(echo "${{ github.sha }}" | cut -c1-7)
@@ -183,53 +172,16 @@ jobs:
               echo "Network pint_bot_default exists"
             fi
 
-            # Attempt graceful shutdown
+            # Graceful shutdown of THIS project's containers only
             echo "podman-compose down..."
             podman-compose -f docker-compose.prod.yml down || true
 
-            # Extra container/pod cleanup
-            echo "Forcibly removing containers and pods..."
-            podman ps -a -q | tee /tmp/containers.txt | xargs -r podman rm -f || echo "No containers to remove"
-            podman pod ps -q | tee /tmp/pods.txt | xargs -r podman pod rm -f || echo "No pods to remove"
-
-            # Deep port check again
-            echo "Double-checking port 8000..."
-            for i in {1..10}; do
-              CONTAINERS_USING_PORT=$(podman ps --format '{{.ID}}: {{.Ports}}' | grep '8000/tcp' || true)
-              if [ -z "$CONTAINERS_USING_PORT" ]; then
-                echo "No containers using port 8000"
-                break
-              fi
-              echo "Still blocked: $CONTAINERS_USING_PORT"
-              sleep 2
-            done
-
-            # Final check
-            if [ -n "$CONTAINERS_USING_PORT" ]; then
-              echo "Error: Port 8000 is still in use after 10 retries"
-              exit 1
-            fi
-
-            # Pull and deploy
+            # Pull latest images (image pruning is left to the host operator;
+            # host-wide prune/rm can delete unrelated images on shared hosts)
             echo "Pulling latest images..."
             podman-compose -f docker-compose.prod.yml pull
 
-            echo "Pruning unused images..."
-            podman image prune -f || true
-
-            # Cleaning up lingering container systemd units...
-            echo "Cleaning up Podman user services and timers…"
-            systemctl --user stop           podman*  '*.timer' '*.service' || true
-            systemctl --user disable        podman*  '*.timer' '*.service' || true
-            systemctl --user reset-failed   podman*  '*.timer' '*.service' || true
-
-            echo "Reloading systemd user daemon to forget old units..."
-            systemctl --user daemon-reexec || true
-            systemctl --user daemon-reload || true
-
-            systemctl --user list-units --type=service --all --no-pager | grep -E '^[a-f0-9]{64}\.service$' || echo "No lingering services"
-            systemctl --user list-units --type=timer --all --no-pager | grep -E '^[a-f0-9]{64}\.timer$' || echo "No lingering timers"
-
+            # Bring the project up
             echo "Starting containers..."
             podman-compose -f docker-compose.prod.yml up -d
 

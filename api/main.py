@@ -6,10 +6,15 @@ import logging
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query, Depends
 from dateutil.parser import isoparse
+from fastapi import Request
+from fastapi.responses import JSONResponse
 import api.config as config
+import api.audit as audit
 import api.fraction_functions as fraction_functions
+from api.auth import require_api_key
 from api.data_manager import (
     append_transaction,
+    DataStoreError,
     load_debts,
     load_preferences,
     load_transactions,
@@ -38,10 +43,23 @@ from models import (
 )
 
 # Setup
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Set up FastAPI
-app = FastAPI()
+app = FastAPI(title="Pint Bot Economy API")
+
+@app.exception_handler(DataStoreError)
+async def data_store_exception_handler(request: Request, exc: DataStoreError):
+    """Return a controlled error when the data files cannot be read/written."""
+    logger.error("Data store failure on %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(status_code=503, content={"detail": "DATA_STORE_UNAVAILABLE"})
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Catch-all handler so unhandled errors return JSON instead of a traceback."""
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "INTERNAL_ERROR"})
 
 NO_DEBTS_MESSAGE = "No debts found owed to or from this user."
 HTTP_BAD_REQUEST_CODE = 400
@@ -53,6 +71,7 @@ async def health_check():
 
 @app.get("/transactions")
 async def get_transactions(
+    _: None = Depends(require_api_key),
     start_date: date = Query(default_factory=lambda: date.today() - timedelta(days=config.TRANSACTIONS_DEFAULT_TIME_PERIOD)),
     end_date: date = Query(default_factory=date.today),
     user_id: Optional[str] = None,
@@ -107,7 +126,7 @@ async def get_transactions(
     }
 
 @app.post("/debts")
-async def add_debt(request: OweRequest):
+async def add_debt(request: OweRequest, _: None = Depends(require_api_key)):
     """Add pint debts between a pair of users."""
 
     data = load_debts()
@@ -134,16 +153,15 @@ async def add_debt(request: OweRequest):
     if creditor_id not in debtor.creditors:
         debtor.creditors[creditor_id] = []
 
+    timestamp = current_timestamp()
     try:
-        {
-            debtor.creditors[creditor_id].append(
-                DebtEntry(
-                    amount=amount,
-                    reason=request.reason,
-                    timestamp=current_timestamp()
-                )
+        debtor.creditors[creditor_id].append(
+            DebtEntry(
+                amount=amount,
+                reason=request.reason,
+                timestamp=timestamp
             )
-        }
+        )
     except ValueError as exc:
         raise HTTPException(status_code=HTTP_BAD_REQUEST_CODE, detail="EXCEEDS_MAXIMUM") from exc
     # Save the updated data
@@ -160,14 +178,17 @@ async def add_debt(request: OweRequest):
     # Append the transaction entry
     append_transaction(transaction_entry)
 
+    # Audit log (best effort; never blocks the transaction)
+    await audit.record_transaction(transaction_entry)
+
     return {
         "amount": str(amount),
         "reason": request.reason,
-        "timestamp": current_timestamp()
+        "timestamp": timestamp
     }
 
 @app.get("/users/{user_id}/debts")
-async def get_debts(user_id: str):
+async def get_debts(user_id: str, _: None = Depends(require_api_key)):
     """See a user's current pint debts."""
     data = load_debts()
 
@@ -185,11 +206,10 @@ async def get_debts(user_id: str):
     }
 
 @app.get("/debts")
-async def get_all_debts():
+async def get_all_debts(_: None = Depends(require_api_key)):
     """See all current debts."""
     debts_data = load_debts()
 
-    result = {}
     total_in_circulation = Fraction(0)
     summary = {}
 
@@ -225,11 +245,13 @@ async def get_all_debts():
         }
         for user_id, summary_data in sorted_items
     }
-    result["total_in_circulation"] = str(total_in_circulation)
-    return result
+    return {
+        "users": result,
+        "total_in_circulation": str(total_in_circulation),
+    }
 
 @app.get("/debts/between")
-async def debts_with_user(requester_id: str, target_id: str):
+async def debts_with_user(requester_id: str, target_id: str, _: None = Depends(require_api_key)):
     """See current debts between the requester and one other user."""
     data = load_debts()
 
@@ -246,7 +268,7 @@ async def debts_with_user(requester_id: str, target_id: str):
     return debts
 
 @app.patch("/debts")
-async def settle_debt(request: SettleRequest):
+async def settle_debt(request: SettleRequest, _: None = Depends(require_api_key)):
     """Settle debt between a pair of users."""
     data = load_debts()
     debtor_id = str(request.debtor)
@@ -275,6 +297,26 @@ async def settle_debt(request: SettleRequest):
     # Settle debts
     updated_entries, settled_amount = settle_debts_between_users(creditor_entries, amount)
 
+    # If the settle/cashout exceeds the outstanding debt, optionally turn the
+    # excess into a new debt in the OPPOSITE direction (instead of discarding it).
+    # Example: Alice owes Bob 1 pint, Bob cashes out 2 pints
+    #   default        -> settles 1 pint, nothing else happens
+    #   auto-reverse   -> Alice's debt is settled AND Bob now owes Alice 1 pint
+    excess = amount - settled_amount
+    reversal_entry = None
+    reverse_reason = None
+    if excess > 0 and config.AUTO_REVERSE_EXCESS_CASHOUTS:
+        reverse_reason = "Auto-reversal of excess cashout"
+        if request.reason:
+            reverse_reason += f" ({request.reason})"
+        reversal_entry = DebtEntry(
+            amount=excess,
+            reason=reverse_reason,
+            timestamp=current_timestamp()
+        )
+        reverse_debtor = data.debtors.setdefault(creditor_id, UserDebts())
+        reverse_debtor.creditors.setdefault(debtor_id, []).append(reversal_entry)
+
     # Update debts
     if updated_entries:
         debtor.creditors[creditor_id] = updated_entries
@@ -285,7 +327,7 @@ async def settle_debt(request: SettleRequest):
         # Remove debtor if no debts remain
         del data.debtors[debtor_id]
 
-    # Save the updated data
+    # Save the updated data (single all-or-nothing write)
     save_debts(data)
 
     transaction_entry= TransactionEntry(
@@ -299,18 +341,34 @@ async def settle_debt(request: SettleRequest):
     # Append the transaction entry
     append_transaction(transaction_entry)
 
+    # Audit log the settle (best effort)
+    await audit.record_transaction(transaction_entry)
+
+    # Audit log the auto-reversed excess as its own (opposite-direction) transaction
+    if reversal_entry is not None:
+        reverse_transaction = TransactionEntry(
+            type="owe",
+            debtor=creditor_id,
+            creditor=debtor_id,
+            amount=excess,
+            reason=reverse_reason,
+        )
+        append_transaction(reverse_transaction)
+        await audit.record_transaction(reverse_transaction)
+
     # Calculate the total remaining debt for the creditor
     total_remaining_debt = sum(entry.amount for entry in updated_entries)
 
     return {
         "settled_amount": str(settled_amount),
         "remaining_amount": str(total_remaining_debt),
+        "auto_reversed_amount": str(excess if reversal_entry is not None else Fraction(0)),
         "reason": request.reason,
         "timestamp": current_timestamp()
     }
 
 @app.get("/users/{user_id}/unicode_preference")
-async def get_unicode_preference(user_id: str) -> bool:
+async def get_unicode_preference(user_id: str, _: None = Depends(require_api_key)) -> bool:
     """Get a user's preference on whether they want fractions to be displayed in Unicode format."""
     all_preferences = load_preferences()
 
@@ -324,7 +382,7 @@ async def get_unicode_preference(user_id: str) -> bool:
     return user_preferences.use_unicode
 
 @app.post("/users/{user_id}/unicode_preference")
-async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequest):
+async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequest, _: None = Depends(require_api_key)):
     """Set a user's preference on whether they want fractions to be displayed in Unicode format."""
     all_preferences = load_preferences()
 
@@ -338,7 +396,7 @@ async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequ
     return {"message": f"Preference for Unicode fractions set to {unicode_preference}."}
 
 @app.get("/settings")
-async def get_settings():
+async def get_settings(_: None = Depends(require_api_key)):
     """Get current bot settings."""
     # You can customize which config values to expose
     return {
@@ -347,5 +405,7 @@ async def get_settings():
         "SMALLEST_UNIT": str(config.SMALLEST_UNIT),
         "QUANTIZE_SETTLING_DEBTS": config.QUANTIZE_SETTLING_DEBTS,
         "QUANTIZE_OWING_DEBTS": config.QUANTIZE_OWING_DEBTS,
-        "SORT_OWES_FIRST": config.SORT_OWES_FIRST
+        "SORT_OWES_FIRST": config.SORT_OWES_FIRST,
+        "AUTO_REVERSE_EXCESS_CASHOUTS": config.AUTO_REVERSE_EXCESS_CASHOUTS,
+        "AUDIT_LOG_ENABLED": audit.audit_log_enabled(),
     }

@@ -65,3 +65,36 @@ class TestSettleCommand:
         calls = interaction.send_success_message_calls
         assert calls
         assert 'Settled 5 testcoins with <@2>' in calls[0]['kwargs']['description']
+class TestExcessReverseDisplay:
+    @pytest.mark.asyncio
+    async def test_settle_shows_reverse_line(self, bot, shared, monkeypatch):
+        async def settle_with_reverse(payload):
+            return {'settled_amount': '1', 'remaining_amount': '0', 'auto_reversed_amount': '2'}
+
+        monkeypatch.setattr(shared.fake_api, 'settle_debt', settle_with_reverse)
+        interaction = DummyInteraction(DummyUser(1), bot)
+        await bot.tree.commands['settle'](interaction, DummyUser(2), '4')
+        calls = interaction.send_success_message_calls
+        assert calls
+        assert any('now owes you' in c['kwargs']['description'] for c in calls)
+
+    @pytest.mark.asyncio
+    async def test_cashout_shows_reverse_line(self, bot, shared, monkeypatch):
+        async def settle_with_reverse(payload):
+            return {'settled_amount': '1', 'remaining_amount': '0', 'auto_reversed_amount': '2'}
+
+        monkeypatch.setattr(shared.fake_api, 'settle_debt', settle_with_reverse)
+        interaction = DummyInteraction(DummyUser(1), bot)
+        await bot.tree.commands['cashout'](interaction, DummyUser(2), '4')
+        calls = interaction.send_success_message_calls
+        assert calls
+        assert any('You now owe' in c['kwargs']['description'] for c in calls)
+
+    @pytest.mark.asyncio
+    async def test_settle_without_reverse_omits_reverse_line(self, bot, shared):
+        interaction = DummyInteraction(DummyUser(1), bot)
+        await bot.tree.commands['settle'](interaction, DummyUser(2), '4')
+        calls = interaction.send_success_message_calls
+        assert calls
+        assert all('now owes you' not in c['kwargs']['description'] for c in calls)
+        assert all('You now owe' not in c['kwargs']['description'] for c in calls)

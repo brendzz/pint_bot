@@ -94,11 +94,13 @@ class TestGetDebtsCommand:
 
 class TestGetAllDebtsCommand:
     @pytest.mark.parametrize("response, expect_error, health_msg", [
-        ({'total_in_circulation': '0'}, True, None),
+        ({'users': {}, 'total_in_circulation': '0'}, True, None),
         ({
-            'total_in_circulation': '3',
-            '1': {'owes': '1', 'is_owed': '2'},
-            '2': {'owes': '0', 'is_owed': '1'}
+            'users': {
+                '1': {'owes': '1', 'is_owed': '2'},
+                '2': {'owes': '0', 'is_owed': '1'}
+            },
+            'total_in_circulation': '3'
         }, False, 'Economy active'),
     ],
     ids=["no_debts_in_economy", "debts_in_economy"])

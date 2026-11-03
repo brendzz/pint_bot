@@ -1,7 +1,7 @@
 from unittest.mock import patch, AsyncMock, MagicMock, PropertyMock
 import pytest
 from discord import Message
-from bot.pint_bot import bot, on_message
+from bot.platforms.discord.bot import bot, on_message
 
 class TestOnMessage:
     @pytest.mark.asyncio
@@ -14,7 +14,7 @@ class TestOnMessage:
         ],
         ids=["rare_reaction", "common_reaction","no_reaction"]
     )
-    @patch("pint_bot.random.random")
+    @patch("bot.platforms.discord.bot.random.random")
     async def test_on_message_reacts_to_currency(self, mock_random, random_side_effect, expected_reaction):
         mock_random.side_effect = random_side_effect
 

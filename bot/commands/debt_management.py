@@ -1,27 +1,35 @@
-import discord
-from bot import api_client
-from bot import config
-from bot.utilities.error_handling import handle_error
-from bot.utilities.formatter import currency_formatter
-import bot.utilities.send_messages as send_messages
-from bot.utilities.user_preferences import fetch_unicode_preference
-from bot.utilities.debt_processor import find_net_difference
-from models.owe_request import OweRequest
-from models.settle_request import SettleRequest
+"""Handlers for debt transactions (owe / settle / cashout).
+
+These handlers are platform-agnostic: they speak
+``bot.platform.CommandContext`` and ``PlatformUser`` only.
+"""
+import logging
 from fractions import Fraction
 
-async def handle_owe(interaction: discord.Interaction, user: discord.User, amount: str, *, reason: str = ""):
-    debtor = interaction.user.id
-    creditor = user.id
+from models.owe_request import OweRequest
+from models.settle_request import SettleRequest
+
+from bot import api_client
+from bot import config
+from bot.platform.context import CommandContext, PlatformUser
+from bot.utilities.error_handling import handle_error
+from bot.utilities.formatter import currency_formatter
+from bot.utilities.user_preferences import fetch_unicode_preference
+
+logger = logging.getLogger(__name__)
+
+async def handle_owe(ctx: CommandContext, user: PlatformUser, amount: str, *, reason: str = ""):
+    debtor = int(ctx.user_id)
+    creditor = int(user.id)
 
     # Defer the response to avoid timeout
-    await interaction.response.defer()
+    await ctx.defer()
 
     if debtor == creditor:
-        await handle_error(interaction, error_code="CANNOT_OWE_SELF")
+        await handle_error(ctx, error_code="CANNOT_OWE_SELF")
         return
-    elif creditor == interaction.client.user.id:
-        await handle_error(interaction, error_code="CANNOT_OWE_BOT")
+    elif str(creditor) == ctx.bot_user_id:
+        await handle_error(ctx, error_code="CANNOT_OWE_BOT")
         return
 
     # Call the external API
@@ -33,39 +41,46 @@ async def handle_owe(interaction: discord.Interaction, user: discord.User, amoun
             reason=reason
         )
         payload = owe_request.model_dump()
-        data = api_client.add_debt(payload)
+        data = await api_client.add_debt(payload)
     except Exception as e:
-        await handle_error(interaction, e, title="Error Adding Debt")
+        await handle_error(ctx, e, title="Error Adding Debt")
         return
 
-    use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
+    use_unicode = await fetch_unicode_preference(ctx, ctx.user_id)
 
-    debts_remaining = api_client.debts_with_user(debtor, creditor)
-    total_owed_by_you = Fraction(debts_remaining['total_owed_by_you'])
     formatted_reason = f" for: *'{data['reason']}'*" if data['reason'] else ""
 
+    # Best effort: fetch the updated running total; the debt was added either way
+    try:
+        debts_remaining = await api_client.debts_with_user(str(debtor), str(creditor))
+        total_owed_by_you = Fraction(debts_remaining['total_owed_by_you'])
+        total_line = f"\n\nNew Total Debt to {user.mention} - You Owe {currency_formatter(total_owed_by_you, use_unicode)}"
+    except Exception as e:
+        logger.warning("Failed to fetch updated debt total after adding debt: %s", e)
+        total_line = ""
+
     message = (f"**Added {currency_formatter(data['amount'], use_unicode)} owed to {user.mention}**{formatted_reason}"
-            f"\n\nNew Total Debt to {user.mention} - You Owe {currency_formatter(total_owed_by_you, use_unicode)}")
-    
-    await send_messages.send_success_message(
-            interaction,
-            title=f"{currency_formatter(data["amount"], False)} Debt Added - {config.CURRENCY_NAME} Economy Thriving",
+            f"{total_line}")
+
+    await ctx.messenger.success(
+            ctx,
+            title=f"{currency_formatter(data['amount'], False)} Debt Added - {config.CURRENCY_NAME} Economy Thriving",
             description=message
         )
 
-async def handle_settle(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
-    debtor = interaction.user.id
-    creditor = user.id
+async def handle_settle(ctx: CommandContext, user: PlatformUser, amount: str, reason: str = ""):
+    debtor = int(ctx.user_id)
+    creditor = int(user.id)
 
     if debtor == creditor:
-        await handle_error(interaction, error_code="CANNOT_SETTLE_SELF")
+        await handle_error(ctx, error_code="CANNOT_SETTLE_SELF")
         return
-    elif creditor == interaction.client.user.id:
-        await handle_error(interaction, error_code="CANNOT_SETTLE_BOT")
+    elif str(creditor) == ctx.bot_user_id:
+        await handle_error(ctx, error_code="CANNOT_SETTLE_BOT")
         return
 
     # Defer the response to avoid timeout
-    await interaction.response.defer()
+    await ctx.defer()
 
     # Call the external API to settle debts
     try:
@@ -79,34 +94,39 @@ async def handle_settle(interaction: discord.Interaction, user: discord.User, am
         payload = settle_request.model_dump()
 
         # Send the request to the API
-        data = api_client.settle_debt(payload)
+        data = await api_client.settle_debt(payload)
 
     except Exception as e:
-        await handle_error(interaction, e, title="Error Settling Debt")
+        await handle_error(ctx, e, title="Error Settling Debt")
         return
 
-    use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
+    use_unicode = await fetch_unicode_preference(ctx, ctx.user_id)
 
     # Send confirmation message
     settled_amount = currency_formatter(data["settled_amount"], use_unicode)
     remaining_amount = currency_formatter(data["remaining_amount"], use_unicode)
     formatted_reason = f"\n*{reason}*" if reason else ""
-    await send_messages.send_success_message(
-        interaction,
+    reverse_line = ""
+    reversed_amount = data.get("auto_reversed_amount")
+    if reversed_amount and Fraction(reversed_amount) != 0:
+        formatted_reverse = currency_formatter(reversed_amount, use_unicode)
+        reverse_line = f"\n\n**{user.mention} now owes you {formatted_reverse}** (excess auto-reversed)."
+    await ctx.messenger.success(
+        ctx,
         title="Debt Settled Successfully",
-        description= f"Settled {settled_amount} with {user.mention}.{formatted_reason}\n\nRemaining debt: {remaining_amount}."
+        description= f"Settled {settled_amount} with {user.mention}.{formatted_reason}\n\nRemaining debt: {remaining_amount}.{reverse_line}"
     )
 
-async def handle_cashout(interaction: discord.Interaction, user: discord.User, amount: str, reason: str = ""):
-    debtor = user.id
-    creditor = interaction.user.id
+async def handle_cashout(ctx: CommandContext, user: PlatformUser, amount: str, reason: str = ""):
+    debtor = int(user.id)
+    creditor = int(ctx.user_id)
 
     if debtor == creditor:
-        await handle_error(interaction, error_code="CANNOT_SETTLE_SELF")
+        await handle_error(ctx, error_code="CANNOT_SETTLE_SELF")
         return
 
     # Defer the response to avoid timeout
-    await interaction.response.defer()
+    await ctx.defer()
 
     # Call the external API to settle debts
     try:
@@ -120,20 +140,25 @@ async def handle_cashout(interaction: discord.Interaction, user: discord.User, a
         payload = settle_request.model_dump()
 
         # Send the request to the API
-        data = api_client.settle_debt(payload)
+        data = await api_client.settle_debt(payload)
 
     except Exception as e:
-        await handle_error(interaction, e, title="Error Cashing Out Debt")
+        await handle_error(ctx, e, title="Error Cashing Out Debt")
         return
 
-    use_unicode = await fetch_unicode_preference(interaction, interaction.user.id)
+    use_unicode = await fetch_unicode_preference(ctx, ctx.user_id)
 
     # Send confirmation message
     settled_amount = currency_formatter(data["settled_amount"], use_unicode)
     remaining_amount = currency_formatter(data["remaining_amount"], use_unicode)
     formatted_reason = f"\n*{reason}*" if reason else ""
-    await send_messages.send_success_message(
-        interaction,
-        title=f"{currency_formatter(data["settled_amount"], False)} Debt Cashed Out Successfully",
-        description= f"Cashed out {settled_amount} from {user.mention}.{formatted_reason}\n\nRemaining debt: {remaining_amount}."
+    reverse_line = ""
+    reversed_amount = data.get("auto_reversed_amount")
+    if reversed_amount and Fraction(reversed_amount) != 0:
+        formatted_reverse = currency_formatter(reversed_amount, use_unicode)
+        reverse_line = f"\n\n**You now owe {user.mention} {formatted_reverse}** (excess auto-reversed)."
+    await ctx.messenger.success(
+        ctx,
+        title=f"{currency_formatter(data['settled_amount'], False)} Debt Cashed Out Successfully",
+        description= f"Cashed out {settled_amount} from {user.mention}.{formatted_reason}\n\nRemaining debt: {remaining_amount}.{reverse_line}"
     )

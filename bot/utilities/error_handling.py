@@ -1,10 +1,8 @@
 """Error handling utilities for the bot."""
-import discord
 from pydantic import ValidationError
 import requests
 import bot.config as config
 from bot.utilities.error_messages import ERROR_MESSAGES
-import bot.utilities.send_messages as send_messages
 
 def format_error_message(error_message: str):
     """Formats the error message with values from config."""
@@ -30,17 +28,15 @@ def parse_api_error(e: requests.exceptions.HTTPError):
         # Extract the "detail" field from the response
         error_details = e.response.json().get("detail", "UNKNOWN_ERROR")
         if isinstance(error_details, str):
-            error_code = error_details.split(":")[0]
-
-            # Return the formatted error message
+            error_code = error_details.strip().split(":", 1)[0].strip()
             return get_error_message(error_code)
 
         # Fallback if "detail" is not a string
-        return get_error_message("UNKNOWN_API_ERROR")
+        return get_error_message("UNKNOWN_API_ERROR_FORMAT")
     except Exception:
         return get_error_message("ERROR_PARSING_ERROR")
 
-async def handle_error(interaction: discord.Interaction, error=None, error_code: str=None, title: str=None):
+async def handle_error(ctx, error=None, error_code: str=None, title: str=None):
     """Handles errors and sends appropriate error messages."""
     if error_code:
         error_message = get_error_message(error_code)
@@ -56,4 +52,4 @@ async def handle_error(interaction: discord.Interaction, error=None, error_code:
     if title:
         error_message["title"] = format_error_message(title)
 
-    await send_messages.send_error_message(interaction, error_message["title"], error_message["description"])
+    await ctx.messenger.error(ctx, title=error_message["title"], description=error_message["description"])

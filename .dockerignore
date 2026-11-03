@@ -1,12 +1,36 @@
+# Secrets — never bake into images
+*.env
+.env
+.env.*
+**/.env
+**/.env.*
+secrets.dev.yaml
+values.dev.yaml
+
+# Runtime data (debts, transactions, preferences, backups)
+data/
+api/data/
+**/data/*.json
+**/data/*.bak
+**/data/*.tmp
+
+# VCS & CI
+.git
+.github
+.gitignore
+.dockerignore
+
 # Python artifacts
 __pycache__/
 *.py[cod]
 *.so
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 
 # Virtualenvs
 .venv/
+venv/
 
 # Editor & OS files
 *.log
@@ -14,6 +38,7 @@ __pycache__/
 Thumbs.db
 .vscode/
 .vs/
+.sonar/
 
 # IDE/project files
 .classpath
@@ -33,6 +58,5 @@ bin/
 obj/
 charts/
 
-# Secrets/config for dev only
-secrets.dev.yaml
-values.dev.yaml
+# Tests (not needed at runtime)
+tests/

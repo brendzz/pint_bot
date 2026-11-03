@@ -3,11 +3,23 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
+    # Bind to localhost by default; expose publicly only if you understand the risk
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - .:/app
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
+    environment:
+      # Optional: set to require the X-API-Key header on every request
+      - API_KEY=${API_KEY:-}
+      # Optional: Discord channel webhook for the audit log (leave empty to disable)
+      - AUDIT_LOG_WEBHOOK_URL=${AUDIT_LOG_WEBHOOK_URL:-}
 
   bot:
     build:
@@ -17,5 +29,6 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped

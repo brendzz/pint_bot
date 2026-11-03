@@ -15,6 +15,6 @@ def normalize_transaction_type(type_param: Optional[str]) -> Optional[str]:
     if type_lower not in config.VALID_TRANSACTION_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid transaction type '{type_param}'. Must be one of: {', '.join(config.VALID_TRANSACTION_TYPES)}"
+            detail="INVALID_TRANSACTION_TYPE"
         )
     return type_lower

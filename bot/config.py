@@ -8,6 +8,7 @@ import bot.configuration.constants as constants
 
 # API Connection
 API_URL: str = os.getenv("API_URL", "http://api:8000")
+API_KEY: str | None = os.getenv("API_KEY") or None
 API_TIMEOUT: int = 10
 
 # Discord Constants
@@ -62,6 +63,8 @@ MAXIMUM_PER_DEBT: int = 10
 SMALLEST_UNIT: Fraction = Fraction(1, 6)
 MAXIMUM_DEBT_CHARACTER_LIMIT: int = 200
 TRANSACTIONS_DEFAULT_TIME_PERIOD: int = 30
+AUTO_REVERSE_EXCESS_CASHOUTS: bool = False  # synced from the API
+AUDIT_LOG_ENABLED: bool = False             # synced from the API (webhook URL is a secret, never exposed)
 
 # Reactions
 REACT_TO_MESSAGES_MENTIONING_CURRENCY: bool = True

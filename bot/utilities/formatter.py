@@ -18,11 +18,23 @@ def format_date(date_str: str, normalise_for_api: bool = False) -> str:
     except (ValueError, TypeError):
         return "Invalid date"
 
+def _to_iso_date(value, field: str) -> str:
+    """Parse a user-supplied date into ISO format, or raise ValueError."""
+    try:
+        return parser.parse(str(value).strip(), dayfirst=True).strftime("%Y-%m-%d")
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise ValueError(f"Invalid {field}: {value!r}") from exc
+
 def sanitize_dates(start_date, end_date):
+    """Normalise user-supplied dates to ISO format.
+
+    Raises:
+        ValueError: if a date cannot be parsed.
+    """
     if start_date is not None:
-        start_date = format_date(start_date, True)
+        start_date = _to_iso_date(start_date, "start_date")
     if end_date is not None:
-        end_date = format_date(end_date, True)
+        end_date = _to_iso_date(end_date, "end_date")
     return start_date, end_date
 
 def should_display_as_settle(transaction_type: str, display_as_settle: bool) -> bool:
@@ -77,7 +89,10 @@ def custom_unicode_fraction(fraction: Fraction) -> str:
 
 def to_percentage(part, whole, decimal_places) -> str:
     """Divides two numbers and returns a percentage representation."""
-    fraction = Fraction(part) / Fraction(whole)
+    whole = Fraction(whole)
+    if whole == 0:
+        return f"(0.{'0' * decimal_places}%)"
+    fraction = Fraction(part) / whole
     percentage = fraction * 100
     return f"({percentage:.{decimal_places}f}%)"
 
@@ -97,7 +112,7 @@ def with_conversion_currency(value, string_amount) -> str:
     return formatted
 
 def with_emoji_visuals(value, string_amount, new_line = True) -> str:
-    value = round(Fraction(value))
+    value = max(0, int(Fraction(value) + Fraction(1, 2)))  # round half up, never negative
     emojis = config.CURRENCY_DISPLAY_EMOJI*value
     formatted = f"{string_amount}{"\n" if new_line else ""}{emojis}"
     return formatted
