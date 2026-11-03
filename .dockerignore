@@ -36,3 +36,6 @@ charts/
 # Secrets/config for dev only
 secrets.dev.yaml
 values.dev.yaml
+
+# Local database files
+api/data/

@@ -1,11 +1,15 @@
 """Configuration for the API."""
+import os
 from fractions import Fraction
 from pathlib import Path
 
-# The name of the file where the economy data is stored
-# This file should be in the same directory as the script
 BASE = Path(__file__).parent
-DATA_FILE = BASE / "pint_economy.json"
+
+# Local SQLite database used to persist debts, transactions, and preferences.
+# Override this path with the PINT_BOT_DATABASE_FILE environment variable.
+DATABASE_FILE = Path(
+    os.environ.get("PINT_BOT_DATABASE_FILE", str(BASE / "data" / "pint_bot.db"))
+)
 
 # Set the maximum amount of currency allowed in each individual debt
 # No single debt can be more than this amount

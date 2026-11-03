@@ -4,36 +4,30 @@ from datetime import date, datetime, timedelta, timezone
 from fractions import Fraction
 import logging
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Query, Depends
-from dateutil.parser import isoparse
+from fastapi import FastAPI, HTTPException, Query
 import api.config as config
 import api.fraction_functions as fraction_functions
 from api.data_manager import (
+    add_debt as add_debt_to_db,
     append_transaction,
+    get_transactions as get_transactions_from_db,
+    get_unicode_preference as get_unicode_preference_from_db,
     load_debts,
-    load_preferences,
-    load_transactions,
-    save_debts,
-    save_preferences
+    settle_debt as settle_debt_in_db,
+    set_unicode_preference as set_unicode_preference_in_db,
 )
 from api.utilities.debt_helpers import (
     current_timestamp,
     debts_between,
     debts_owed_by,
     debts_owed_to,
-    settle_debts_between_users
 )
-from api.utilities.transaction_helpers import (
-    ensure_aware_utc,
-    normalize_transaction_type
-)
+from api.utilities.transaction_helpers import normalize_transaction_type
 from models import (
     DebtEntry,
     OweRequest,
     SettleRequest,
     SetUnicodePreferenceRequest,
-    UserPreferences,
-    UserDebts,
     TransactionEntry
 )
 
@@ -64,41 +58,26 @@ async def get_transactions(
     Optionally filtered by type and/or user.
     """
     transaction_type = normalize_transaction_type(type)
-    transactions = load_transactions().transactions
+    if transaction_type == "cashout":
+        transaction_type = "settle"
 
     if start_date > end_date:
         raise HTTPException(
             status_code=HTTP_BAD_REQUEST_CODE,
             detail="VALIDATION_ERROR"
         )
-    
+
     # Convert date to datetime boundaries
     start_datetime = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc)
     end_datetime = datetime.combine(end_date, datetime.max.time(), tzinfo=timezone.utc)
 
-    # Filter by date range
-    transactions = [
-        t for t in transactions
-        if start_datetime <= ensure_aware_utc(isoparse(t.timestamp)) <= end_datetime
-    ]
+    transactions = get_transactions_from_db(
+        start=start_datetime,
+        end=end_datetime,
+        user_id=user_id,
+        transaction_type=transaction_type,
+    )
 
-    # Apply user ID filter
-    if user_id:
-        transactions = [
-            t for t in transactions
-            if t.debtor == user_id or t.creditor == user_id
-        ]
-
-    # Apply type filter
-    if transaction_type:
-        if transaction_type == "cashout":
-            transaction_type = "settle"
-            
-        transactions = [
-            t for t in transactions
-            if t.type == transaction_type
-        ]
-    
     # Convert each transaction to a dictionary for JSON serialization
     return {
         "start_date": str(start_date),
@@ -110,7 +89,6 @@ async def get_transactions(
 async def add_debt(request: OweRequest):
     """Add pint debts between a pair of users."""
 
-    data = load_debts()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
     # Check if valid target to owe
@@ -125,29 +103,16 @@ async def add_debt(request: OweRequest):
     if config.QUANTIZE_OWING_DEBTS:
         fraction_functions.check_quantization(amount)
 
-    # Get or create the debtor's data
-    if debtor_id not in data.debtors:
-        data.debtors[debtor_id] = UserDebts()
-    debtor = data.debtors[debtor_id]
-
-    # Add the debt
-    if creditor_id not in debtor.creditors:
-        debtor.creditors[creditor_id] = []
-
     try:
-        {
-            debtor.creditors[creditor_id].append(
-                DebtEntry(
-                    amount=amount,
-                    reason=request.reason,
-                    timestamp=current_timestamp()
-                )
-            )
-        }
+        debt_entry = DebtEntry(
+            amount=amount,
+            reason=request.reason,
+            timestamp=current_timestamp()
+        )
     except ValueError as exc:
         raise HTTPException(status_code=HTTP_BAD_REQUEST_CODE, detail="EXCEEDS_MAXIMUM") from exc
-    # Save the updated data
-    save_debts(data)
+
+    add_debt_to_db(debtor_id, creditor_id, debt_entry)
 
     transaction_entry= TransactionEntry(
         type = "owe",
@@ -248,7 +213,6 @@ async def debts_with_user(requester_id: str, target_id: str):
 @app.patch("/debts")
 async def settle_debt(request: SettleRequest):
     """Settle debt between a pair of users."""
-    data = load_debts()
     debtor_id = str(request.debtor)
     creditor_id = str(request.creditor)
 
@@ -261,50 +225,27 @@ async def settle_debt(request: SettleRequest):
     if config.QUANTIZE_SETTLING_DEBTS:
         fraction_functions.check_quantization(amount)
 
-    # Check if the debtor owes the creditor
-    debtor = data.debtors.get(debtor_id)
-
-    if debtor is None  or creditor_id not in debtor.creditors:
+    settlement = settle_debt_in_db(debtor_id, creditor_id, amount)
+    if settlement is None:
         raise HTTPException(
             status_code=HTTP_BAD_REQUEST_CODE,
             detail="NO_DEBTS_FOUND"
         )
 
-    creditor_entries = debtor.creditors[creditor_id]
-
-    # Settle debts
-    updated_entries, settled_amount = settle_debts_between_users(creditor_entries, amount)
-
-    # Update debts
-    if updated_entries:
-        debtor.creditors[creditor_id] = updated_entries
-    else:
-        del debtor.creditors[creditor_id]
-
-    if not debtor.creditors:
-        # Remove debtor if no debts remain
-        del data.debtors[debtor_id]
-
-    # Save the updated data
-    save_debts(data)
-
     transaction_entry= TransactionEntry(
         type = "settle",
         debtor = debtor_id,
         creditor = creditor_id,
-        amount = settled_amount,
+        amount = settlement.settled_amount,
         reason = request.reason
     )
 
     # Append the transaction entry
     append_transaction(transaction_entry)
 
-    # Calculate the total remaining debt for the creditor
-    total_remaining_debt = sum(entry.amount for entry in updated_entries)
-
     return {
-        "settled_amount": str(settled_amount),
-        "remaining_amount": str(total_remaining_debt),
+        "settled_amount": str(settlement.settled_amount),
+        "remaining_amount": str(settlement.remaining_amount),
         "reason": request.reason,
         "timestamp": current_timestamp()
     }
@@ -312,28 +253,13 @@ async def settle_debt(request: SettleRequest):
 @app.get("/users/{user_id}/unicode_preference")
 async def get_unicode_preference(user_id: str) -> bool:
     """Get a user's preference on whether they want fractions to be displayed in Unicode format."""
-    all_preferences = load_preferences()
-
-    # Check if the user exists in the data
-    if user_id not in all_preferences.users:
-        return False  # Default value if the user does not exist
-
-    # Retrieve the user's Unicode preference or return the default value
-    user_preferences = all_preferences.users[user_id]
-
-    return user_preferences.use_unicode
+    return get_unicode_preference_from_db(user_id)
 
 @app.post("/users/{user_id}/unicode_preference")
 async def set_unicode_preference(user_id: str, request: SetUnicodePreferenceRequest):
     """Set a user's preference on whether they want fractions to be displayed in Unicode format."""
-    all_preferences = load_preferences()
-
-    if user_id not in all_preferences.users:
-        all_preferences.users[user_id] = UserPreferences()
-
     unicode_preference = request.use_unicode
-    all_preferences.users[user_id].use_unicode = unicode_preference
-    save_preferences(all_preferences)
+    set_unicode_preference_in_db(user_id, unicode_preference)
 
     return {"message": f"Preference for Unicode fractions set to {unicode_preference}."}
 

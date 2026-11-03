@@ -1,5 +1,5 @@
 # Pint Bot
-pint_bot is a Discord bot used for tracking debts between users. By default, this is in the form of pints, but you can customise it to whatever you like. It uses an API that stores the debts in a JSON file.
+pint_bot is a Discord bot used for tracking debts between users. By default, this is in the form of pints, but you can customise it to whatever you like. It uses an API that stores the debts in a local SQLite database.
 
 ## Installation
 Install the dev requirements from `dev-requirements.txt`:
@@ -42,9 +42,25 @@ docker-compose down
 ## Usage
 - Use `/help` to see all commands.
 - Customise the bot using the `.env` files.
-- Debts are stored in a JSON file.
+- Debts, transactions, and preferences are stored in a local SQLite database.
 
 Both mixed numbers (`2 1/3`) and improper fractions (`7/3`) are supported, as well as decimals.
+
+## Database
+
+By default, the API creates the SQLite database at `api/data/pint_bot.db`. The schema is created automatically on startup. Set the `PINT_BOT_DATABASE_FILE` environment variable to use a different path.
+
+All database access goes through the `DataManager` interface in `api/data_manager.py`. The API endpoints do not contain SQL; `SQLiteDataManager` is the local SQLite implementation.
+
+### Migrating from the JSON files
+
+If you are upgrading an existing installation, import the old `api/data` JSON files into the new database before starting the API:
+
+```bash
+python -m api.migrate_json_to_sqlite
+```
+
+The migration only runs against an empty database and will refuse to overwrite existing data.
 
 ## Testing
 Unit tests are written using **pytest**.
@@ -61,6 +77,7 @@ pytest
 - Customise the way the bot sends messages in the `send_messages.py` file (by default it uses embeds).
 
 ## Configuration
+- **PINT_BOT_DATABASE_FILE**: Optional path to the local SQLite database (default: `api/data/pint_bot.db`).
 - **BOT_NAME**: The name of the bot in Discord.
 - **API_URL**: The URL of your API for the economy.
 - **CURRENCY_NAME**: The name of the currency used in the economy.

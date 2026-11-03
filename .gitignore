@@ -5,3 +5,10 @@
 *.DS_Store
 data/transactions.json
 data/debts.json
+
+# Local SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
